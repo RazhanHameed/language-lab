@@ -1,0 +1,18 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Server logs
+.logs/
+
+# macOS
+.DS_Store
+
+# Editor noise
+.vscode/
+.idea/
+*.swp
+
+# Local backup downloads (generated on user action)
+leer-nl-backup-*.json
