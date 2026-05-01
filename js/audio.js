@@ -54,7 +54,27 @@ window.Speech = (function () {
 
   let mlxState = "unknown"; // 'unknown' | 'probing' | 'available' | 'unavailable'
   let probePromise = null;
-  let currentEl = null;     // currently playing HTMLAudioElement
+
+  // ---------- concurrency control ----------
+  // Race we're guarding against: speak() awaits an MLX fetch that may take
+  // 1-2s. If a SECOND speak() arrives before the first finishes, we kick off
+  // another fetch. When BOTH fetches resolve they each create an Audio
+  // element; the older orphans become untrackable and play through to
+  // completion alongside the new one — that's the "voxtral + Xander on top
+  // of each other" the user reports.
+  //
+  // Two safeguards:
+  //   1. speakGen — bumps on every cancel/new-call. Each in-flight
+  //      coroutine captures its gen and bails out after each await if it's
+  //      stale.
+  //   2. activeAudios — every <audio> we ever create is tracked here so
+  //      cancelCurrent() can stop them all, including orphaned ones from
+  //      earlier overlapping calls.
+  //   3. activeFetches — AbortControllers for every in-flight mlxFetch.
+  //      cancelCurrent() aborts them so they can't even resolve into a play.
+  let speakGen = 0;
+  const activeAudios = new Set();
+  const activeFetches = new Set();
 
   // Cache only the SUCCESS state. Failures stay un-cached so a transient
   // network glitch on first probe doesn't permanently disable MLX for the
@@ -82,43 +102,69 @@ window.Speech = (function () {
   }
 
   function cancelCurrent() {
-    if (supported) window.speechSynthesis.cancel();
-    if (currentEl) {
-      try { currentEl.pause(); currentEl.src = ""; } catch (_) {}
-      currentEl = null;
+    speakGen++;                                    // invalidate every in-flight coroutine
+    if (supported) window.speechSynthesis.cancel(); // stop Web Speech if it's talking
+    for (const ctrl of activeFetches) {            // abort outstanding mlxFetches
+      try { ctrl.abort(); } catch (_) {}
     }
+    activeFetches.clear();
+    for (const el of activeAudios) {               // stop EVERY <audio> still playing
+      try { el.pause(); el.src = ""; el.load(); } catch (_) {}
+    }
+    activeAudios.clear();
   }
 
   async function mlxFetch(text, voice) {
     const key = `${voice}|${text}`;
     if (blobCache.has(key)) return blobCache.get(key);
-    const res = await fetch(`${ttsBase}/v1/audio/speech`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ model: MLX_MODEL, input: text, voice, response_format: "wav" }),
-    });
-    if (!res.ok) throw new Error(`tts ${res.status}`);
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    blobCache.set(key, url);
-    if (blobCache.size > MAX_CACHE) {
-      const oldest = blobCache.keys().next().value;
-      const stale = blobCache.get(oldest);
-      blobCache.delete(oldest);
-      URL.revokeObjectURL(stale);
+    const ctrl = new AbortController();
+    activeFetches.add(ctrl);
+    try {
+      const res = await fetch(`${ttsBase}/v1/audio/speech`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ model: MLX_MODEL, input: text, voice, response_format: "wav" }),
+        signal: ctrl.signal,
+      });
+      if (!res.ok) throw new Error(`tts ${res.status}`);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      blobCache.set(key, url);
+      if (blobCache.size > MAX_CACHE) {
+        const oldest = blobCache.keys().next().value;
+        const stale = blobCache.get(oldest);
+        blobCache.delete(oldest);
+        URL.revokeObjectURL(stale);
+      }
+      return url;
+    } finally {
+      activeFetches.delete(ctrl);
     }
-    return url;
   }
 
-  function playUrl(url, opts) {
+  function playUrl(url, opts, gen) {
     return new Promise((resolve, reject) => {
+      // If we were cancelled between the await mlxFetch and now, don't even
+      // create the <audio>. Resolve silently so the caller's onend fires
+      // through but no audio plays.
+      if (gen !== speakGen) { resolve(); return; }
       const el = new window.Audio(url);
-      currentEl = el;
+      activeAudios.add(el);
       el.playbackRate = opts.rate != null ? opts.rate : 1;
       el.volume = opts.volume != null ? opts.volume : 1;
-      el.onended = () => { if (opts.onend) opts.onend(); resolve(); };
-      el.onerror = () => reject(new Error("playback failed"));
-      el.play().catch(reject);
+      el.onended = () => {
+        activeAudios.delete(el);
+        if (opts.onend) opts.onend();
+        resolve();
+      };
+      el.onerror = () => {
+        activeAudios.delete(el);
+        reject(new Error("playback failed"));
+      };
+      el.play().catch((e) => {
+        activeAudios.delete(el);
+        reject(e);
+      });
     });
   }
 
@@ -161,6 +207,7 @@ window.Speech = (function () {
   async function speak(text, opts = {}) {
     if (!text) return false;
     cancelCurrent();
+    const myGen = speakGen;          // capture generation; bail if it changes
     const lang = opts.lang || "nl-NL";
     const voice = mlxVoiceForLang(lang, opts.voice);
 
@@ -168,17 +215,21 @@ window.Speech = (function () {
     // it, pt, ar, hi). Falls back to Web Speech if MLX is offline or errors.
     if (voice) {
       const useMlx = await probeMlx();
+      if (myGen !== speakGen) return false;   // cancelled while probing
       if (useMlx) {
         try {
           const url = await mlxFetch(text, voice);
-          await playUrl(url, opts);
+          if (myGen !== speakGen) return false; // cancelled while fetching
+          await playUrl(url, opts, myGen);
           return true;
         } catch (e) {
+          if (e.name === "AbortError") return false; // expected on cancel
           console.warn("MLX TTS failed, falling back to Web Speech:", e);
-          mlxState = "unavailable"; // don't keep retrying this session
+          mlxState = "unavailable";
         }
       }
     }
+    if (myGen !== speakGen) return false;     // don't double up via fallback
     return webSpeak(text, opts);
   }
 
