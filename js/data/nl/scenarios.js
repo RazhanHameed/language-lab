@@ -1,6 +1,6 @@
 // Real-life Amsterdam scenarios. Read them aloud, shadow the audio, then try
 // the production versions in the study session.
-window.SCENARIOS = [
+window.__DECK.nl.SCENARIOS = [
   {
     id: "sc_cafe",
     title: "Ordering at a café",

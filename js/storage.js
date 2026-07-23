@@ -1,6 +1,9 @@
-// Tiny localStorage wrapper. Keeps the entire app state in one JSON blob.
+// Tiny localStorage wrapper. Keeps each language's app state in its own JSON
+// blob so Dutch and German progress never mix. The active key is set by the
+// app from Lang.cfg().storageKey before load().
 window.Store = (function () {
-  const KEY = "leer-nl:v1";
+  let KEY = "leer-nl:v1";
+  function setKey(k) { KEY = k; }
 
   function freshState() {
     return {
@@ -19,7 +22,7 @@ window.Store = (function () {
         prefRate: 0.9,          // TTS rate
         autoPlay: true,         // auto-pronounce on card flip
         ratingMode: "four",     // 'four' (Again/Hard/Good/Easy) | 'two' (Wrong/Right)
-        dutchVoice: "nl_male",      // MLX voice: 'nl_male' | 'nl_female'
+        targetVoice: null,      // MLX voice for the language being learned (filled from Lang default)
         englishVoice: "casual_female", // MLX voice: casual_male/female, cheerful_female, neutral_male/female
       },
     };
@@ -70,7 +73,7 @@ window.Store = (function () {
 
   // Trigger a browser download of the current state. Used both by the
   // explicit Export button and by the periodic auto-checkpoint.
-  function downloadBackup(state, prefix = "leer-nl") {
+  function downloadBackup(state, prefix = "learn") {
     const blob = new Blob([exportJSON(state)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const today = new Date().toISOString().slice(0, 10);
@@ -88,6 +91,6 @@ window.Store = (function () {
   }
 
   return {
-    load, save, reset, exportJSON, importJSON, downloadBackup, daysSinceExport, freshState,
+    setKey, load, save, reset, exportJSON, importJSON, downloadBackup, daysSinceExport, freshState,
   };
 })();

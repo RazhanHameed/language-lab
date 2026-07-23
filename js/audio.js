@@ -1,6 +1,11 @@
 // Speech wrapper. Two backends:
-//   1. MLX-Audio TTS server (local, on-device Voxtral 4-bit) — preferred for Dutch.
-//   2. Web Speech API — used for English and as Dutch fallback.
+//   1. MLX-Audio TTS server (local, on-device Voxtral 4-bit) — preferred for
+//      the language being learned.
+//   2. Web Speech API — used for English and as the target-language fallback.
+//
+// The target language (its BCP-47 code and its Voxtral voice) is configured by
+// the app from Lang.cfg() via setTargetLang()/setTargetVoice(), so the same
+// wrapper serves Dutch, German, or any other Voxtral language.
 //
 // The MLX server URL is auto-detected from a ?tts=URL query param (set by
 // start-mlx.sh) or inferred from localhost:5500. If unreachable, we silently
@@ -35,6 +40,10 @@ window.Speech = (function () {
       v = voices.find((x) => x.name && /dutch|nederland/i.test(x.name));
       if (v) return v;
     }
+    if (prefix === "de") {
+      v = voices.find((x) => x.name && /german|deutsch/i.test(x.name));
+      if (v) return v;
+    }
     if (prefix === "en") {
       v = voices.find((x) => x.name && /english/i.test(x.name));
       if (v) return v;
@@ -46,7 +55,7 @@ window.Speech = (function () {
   const params = new URLSearchParams(location.search);
   const ttsBase =
     params.get("tts") ||
-    localStorage.getItem("leer-nl:tts") ||
+    localStorage.getItem("learn:tts") ||
     "http://127.0.0.1:5500";
   const MLX_MODEL = "mlx-community/Voxtral-4B-TTS-2603-mlx-4bit";
   const blobCache = new Map(); // `${voice}|${text}` -> ObjectURL
@@ -60,25 +69,19 @@ window.Speech = (function () {
   // 1-2s. If a SECOND speak() arrives before the first finishes, we kick off
   // another fetch. When BOTH fetches resolve they each create an Audio
   // element; the older orphans become untrackable and play through to
-  // completion alongside the new one — that's the "voxtral + Xander on top
-  // of each other" the user reports.
+  // completion alongside the new one — that's the "voxtral + system voice on
+  // top of each other" overlap.
   //
-  // Two safeguards:
-  //   1. speakGen — bumps on every cancel/new-call. Each in-flight
-  //      coroutine captures its gen and bails out after each await if it's
-  //      stale.
+  // Safeguards:
+  //   1. speakGen — bumps on every cancel/new-call. Each in-flight coroutine
+  //      captures its gen and bails out after each await if it's stale.
   //   2. activeAudios — every <audio> we ever create is tracked here so
-  //      cancelCurrent() can stop them all, including orphaned ones from
-  //      earlier overlapping calls.
+  //      cancelCurrent() can stop them all, including orphaned ones.
   //   3. activeFetches — AbortControllers for every in-flight mlxFetch.
-  //      cancelCurrent() aborts them so they can't even resolve into a play.
   let speakGen = 0;
   const activeAudios = new Set();
   const activeFetches = new Set();
 
-  // Cache only the SUCCESS state. Failures stay un-cached so a transient
-  // network glitch on first probe doesn't permanently disable MLX for the
-  // session (the user might start the server right after the app loads).
   async function probeMlx() {
     if (mlxState === "available") return true;
     if (probePromise) return probePromise;
@@ -144,9 +147,6 @@ window.Speech = (function () {
 
   function playUrl(url, opts, gen) {
     return new Promise((resolve, reject) => {
-      // If we were cancelled between the await mlxFetch and now, don't even
-      // create the <audio>. Resolve silently so the caller's onend fires
-      // through but no audio plays.
       if (gen !== speakGen) { resolve(); return; }
       const el = new window.Audio(url);
       activeAudios.add(el);
@@ -168,20 +168,20 @@ window.Speech = (function () {
     });
   }
 
-  // Voice mapping: every supported lang resolves to a Voxtral voice.
-  // Voxtral 4B-TTS-2603 ships 9 languages; we expose en + nl in the UI.
-  let defaultDutchVoice = "nl_male";
+  // Voice mapping. There's one active target language at a time (the one being
+  // learned) plus English. Any non-English request resolves to the configured
+  // target voice; English resolves to the English voice.
+  let targetVoice = "nl_male";
   let defaultEnglishVoice = "casual_female";
-  function setDutchVoice(v) { defaultDutchVoice = v; }
-  function setEnglishVoice(v) { defaultEnglishVoice = v; }
+  let defaultLang = "nl-NL";        // BCP-47 code of the target language
+  function setTargetVoice(v) { if (v) targetVoice = v; }
+  function setEnglishVoice(v) { if (v) defaultEnglishVoice = v; }
+  function setTargetLang(code) { if (code) defaultLang = code; }
   function mlxVoiceForLang(lang, prefVoice) {
     if (prefVoice) return prefVoice;
-    const prefix = (lang || "").toLowerCase().slice(0, 2);
-    if (prefix === "nl") return defaultDutchVoice;
+    const prefix = (lang || defaultLang).toLowerCase().slice(0, 2);
     if (prefix === "en") return defaultEnglishVoice;
-    // Other supported Voxtral langs: fr, es, de, it, pt, ar, hi
-    const fallback = { fr: "fr_male", es: "es_male", de: "de_male", it: "it_male", pt: "pt_male", ar: "ar_male", hi: "hi_male" };
-    return fallback[prefix] || null;
+    return targetVoice;
   }
 
   function webSpeak(text, opts) {
@@ -189,7 +189,7 @@ window.Speech = (function () {
     try {
       window.speechSynthesis.cancel();
       const u = new SpeechSynthesisUtterance(text);
-      u.lang = opts.lang || "nl-NL";
+      u.lang = opts.lang || defaultLang;
       u.rate = opts.rate != null ? opts.rate : 0.9;
       u.pitch = opts.pitch || 1;
       u.volume = opts.volume != null ? opts.volume : 1;
@@ -208,11 +208,11 @@ window.Speech = (function () {
     if (!text) return false;
     cancelCurrent();
     const myGen = speakGen;          // capture generation; bail if it changes
-    const lang = opts.lang || "nl-NL";
+    const lang = opts.lang || defaultLang;
     const voice = mlxVoiceForLang(lang, opts.voice);
 
-    // Route through MLX for any language Voxtral supports (nl, en, fr, es, de,
-    // it, pt, ar, hi). Falls back to Web Speech if MLX is offline or errors.
+    // Route through MLX for the target language (and English). Falls back to
+    // Web Speech if MLX is offline or errors.
     if (voice) {
       const useMlx = await probeMlx();
       if (myGen !== speakGen) return false;   // cancelled while probing
@@ -236,9 +236,6 @@ window.Speech = (function () {
   function cancel() { cancelCurrent(); }
 
   // Speech-to-text via mlx-audio's OpenAI-compatible Whisper endpoint.
-  // First call triggers a 1-3 min model download server-side; subsequent
-  // calls return in ~1-2 s for short utterances. Returns the transcript
-  // string, or throws on failure (caller should toast a friendly error).
   const STT_MODEL = "mlx-community/whisper-large-v3-turbo-asr-fp16";
   async function transcribe(blob, opts = {}) {
     if (!blob || !blob.size) throw new Error("empty audio");
@@ -247,7 +244,8 @@ window.Speech = (function () {
     const fd = new FormData();
     fd.append("file", blob, opts.filename || "speech.webm");
     fd.append("model", opts.model || STT_MODEL);
-    if (opts.lang) fd.append("language", opts.lang);
+    const lang = opts.lang || defaultLang.slice(0, 2);
+    if (lang) fd.append("language", lang);
     const res = await fetch(`${ttsBase}/v1/audio/transcriptions`, {
       method: "POST",
       body: fd,
@@ -261,7 +259,7 @@ window.Speech = (function () {
     return (await res.text()).trim();
   }
 
-  function hasDutchVoice() { return !!pickVoice("nl-NL"); }
+  function hasTargetVoice() { return !!pickVoice(defaultLang); }
   function hasEnglishVoice() { return !!pickVoice("en-US"); }
   function backend() {
     if (mlxState === "available") return "mlx";
@@ -269,7 +267,7 @@ window.Speech = (function () {
     return "unknown";
   }
   function setTtsBase(url) {
-    localStorage.setItem("leer-nl:tts", url);
+    localStorage.setItem("learn:tts", url);
     mlxState = "unknown";
   }
 
@@ -282,15 +280,16 @@ window.Speech = (function () {
     speak,
     cancel,
     transcribe,
-    hasDutchVoice,
+    hasTargetVoice,
     hasEnglishVoice,
     supported,
     pickVoice,
     backend,
     probeMlx,
     setTtsBase,
-    setDutchVoice,
+    setTargetVoice,
     setEnglishVoice,
+    setTargetLang,
     ttsBase,
   };
 })();

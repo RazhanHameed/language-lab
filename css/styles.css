@@ -169,6 +169,21 @@ input, select, textarea { font: inherit; color: inherit; }
 }
 .icon-btn:hover { color: var(--text); border-color: var(--border-strong); background: var(--surface-2); }
 
+.header-actions { display: inline-flex; align-items: center; gap: 8px; }
+.lang-select {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+  border-radius: 10px;
+  height: 38px;
+  padding: 0 8px;
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  transition: color 120ms, border-color 120ms, background 120ms;
+}
+.lang-select:hover { color: var(--text); border-color: var(--border-strong); background: var(--surface-2); }
+
 /* ---------- Main + Bottom nav ---------- */
 .app-main {
   flex: 1;

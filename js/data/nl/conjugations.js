@@ -4,7 +4,7 @@
 //
 // Forms order: ik, jij, hij/zij/het, wij, jullie, zij(plural).
 // 'jij_inv' is the inverted form ("werk je?") which drops the -t.
-window.CONJUGATIONS = [
+window.__DECK.nl.CONJUGATIONS = [
   { inf: "zijn",    en: "to be",       irregular: true,
     ik: "ben",  jij: "bent",   jij_inv: "ben",   hij: "is",     wij: "zijn",   jullie: "zijn",   zij: "zijn" },
   { inf: "hebben",  en: "to have",     irregular: true,

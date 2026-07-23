@@ -1,7 +1,7 @@
 // Pattern sentences. Tim Ferriss's "Deconstruction Dozen" plus production templates
 // you swap vocab into. The point is to internalise grammatical scaffolding through
 // repetition, not to memorise rules.
-window.SENTENCES = [
+window.__DECK.nl.SENTENCES = [
   // ===== FERRISS DIAGNOSTIC DOZEN (the core grammar skeleton) =====
   { id: "s_f01", nl: "De appel is rood.", en: "The apple is red.",
     reveals: ["Basic SVO order", "Article 'de'", "Adjective after copula"],
@@ -136,7 +136,7 @@ window.SENTENCES = [
 ];
 
 // Sentence theme metadata
-window.SENTENCE_THEMES = [
+window.__DECK.nl.SENTENCE_THEMES = [
   { id: "ferriss",   name: "Ferriss diagnostic dozen", icon: "🧬",
     blurb: "Twelve sentences that expose the entire grammar skeleton." },
   { id: "v2",        name: "V2 rule (verb-second)", icon: "🔁",

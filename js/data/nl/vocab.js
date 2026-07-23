@@ -1,6 +1,6 @@
 // High-frequency Dutch vocabulary, themed for daily life in Amsterdam.
 // Each item: { id, nl, en, pos, gender ('de'|'het'|null), theme, example, note }
-window.VOCAB = [
+window.__DECK.nl.VOCAB = [
   // ============ GREETINGS & POLITENESS ============
   { id: "v_g01", nl: "hallo", en: "hello", pos: "interj", theme: "greetings",
     example: { nl: "Hallo, hoe gaat het?", en: "Hello, how are you?" },
@@ -420,7 +420,7 @@ window.VOCAB = [
 ];
 
 // Theme metadata for browse/filtering
-window.VOCAB_THEMES = [
+window.__DECK.nl.VOCAB_THEMES = [
   { id: "greetings",    name: "Greetings & politeness", icon: "👋" },
   { id: "pronouns",     name: "Pronouns & question words", icon: "❓" },
   { id: "verbs",        name: "Core verbs", icon: "⚙️" },

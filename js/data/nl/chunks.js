@@ -7,7 +7,7 @@
 // Curated from the existing scenarios + sentence patterns + everyday
 // Amsterdam life. Mix of greetings, social formulas, transactional fillers,
 // office tics. The "context" string suggests a typical situation.
-window.CHUNKS = [
+window.__DECK.nl.CHUNKS = [
   // ---- social & conversational fillers ----
   { nl: "doe maar",              en: "sure / I'll have that",            context: "ordering, accepting an offer" },
   { nl: "even kijken",           en: "let me just look",                  context: "buying time when checking something" },

@@ -1,6 +1,6 @@
 // Grammar capsules — short, pattern-based explanations.
 // Use as a reference; the real learning happens through the pattern sentences.
-window.GRAMMAR = [
+window.__DECK.nl.GRAMMAR = [
   {
     id: "g_v2",
     title: "The V2 rule",

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Launch the local Dutch-learning app.
+# Launch the local language-learning app (Dutch + German, switchable in-app).
 # Usage: ./start.sh [port]
 set -euo pipefail
 
@@ -24,7 +24,7 @@ while lsof -iTCP:"$PORT" -sTCP:LISTEN >/dev/null 2>&1; do
   URL="http://localhost:${PORT}/"
 done
 
-echo "🇳🇱  Leer Nederlands"
+echo "🇳🇱  Leer Nederlands  /  🇩🇪  Lern Deutsch"
 echo "   serving from $(pwd)"
 echo "   open ${URL}"
 echo "   (Ctrl+C to stop)"

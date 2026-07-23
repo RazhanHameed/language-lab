@@ -11,7 +11,7 @@
    ===================================================================== */
 
 const App = (function () {
-  let state = Store.load();
+  let state = null;          // loaded in init(), after the active language is set
   let currentView = "home";
   let currentSession = null; // active study session
   let currentDrill = null;   // active drill round
@@ -43,68 +43,15 @@ const App = (function () {
   }
 
   /* ---------- respeller ----------
-   * Crude Dutch-to-English-respelling. Rule-based, not perfect — Dutch open vs
-   * closed syllable rules make a fully accurate transliteration intractable
-   * without a dictionary. Use the audio button as the source of truth; this is
-   * a reading aid, not a phonetic standard.
+   * Crude target-language → English respelling. Rule-based, not perfect — the
+   * actual rules live in the active language pack (Lang.cfg().respellWord).
+   * Use the audio button as the source of truth; this is a reading aid, not a
+   * phonetic standard.
    */
-  function respellWord(raw) {
-    const m = raw.match(/^([^A-Za-zÀ-ÿ]*)([A-Za-zÀ-ÿ]+)(.*)$/);
-    if (!m) return raw;
-    const [, pre, core, post] = m;
-    let s = core.toLowerCase();
-
-    // Multi-letter consonant clusters
-    s = s.replace(/schr/g, "skhr");
-    s = s.replace(/sch/g,  "skh");
-    s = s.replace(/ch/g,   "kh");
-
-    // Diphthongs (3-letter first)
-    s = s.replace(/aai/g, "eye");
-    s = s.replace(/ooi/g, "oy");
-    s = s.replace(/oei/g, "ooy");
-    s = s.replace(/eeuw/g, "ay-oo");
-    s = s.replace(/ieuw/g, "ee-oo");
-    s = s.replace(/uw/g,   "oo");
-
-    s = s.replace(/ij/g, "eye");
-    s = s.replace(/ei/g, "eye");
-    s = s.replace(/ui/g, "ow");
-    s = s.replace(/au/g, "ow");
-    s = s.replace(/ou/g, "ow");
-    s = s.replace(/eu/g, "uh");
-
-    // Long doubled vowels
-    s = s.replace(/aa/g, "ah");
-    s = s.replace(/ee/g, "ay");
-    s = s.replace(/oo/g, "oh");
-    s = s.replace(/uu/g, "oo");
-
-    // Vowel digraphs
-    s = s.replace(/oe/g, "oo");
-    s = s.replace(/ie/g, "ee");
-
-    // Consonants where Dutch differs from English.
-    // Order matters: handle Dutch v (≈ English f) BEFORE turning w into v,
-    // otherwise the new v's get cascaded into f's.
-    s = s.replace(/g/g, "kh");
-    s = s.replace(/j/g, "y");
-    s = s.replace(/v/g, "f");
-    s = s.replace(/w/g, "v");
-
-    // Word-final 'd' often devoiced to 't' in Dutch
-    s = s.replace(/d$/g, "t");
-
-    // Capitalise if the original started uppercase
-    if (core[0] === core[0].toUpperCase()) {
-      s = s[0].toUpperCase() + s.slice(1);
-    }
-    return pre + s + post;
-  }
-
   function respell(text, override) {
     if (override) return override;
     if (!text) return "";
+    const respellWord = Lang.cfg().respellWord;
     return text.split(/(\s+)/).map((tok) => /\S/.test(tok) ? respellWord(tok) : tok).join("");
   }
 
@@ -139,23 +86,12 @@ const App = (function () {
     setTimeout(() => t.remove(), 2400);
   }
 
-  /* ---------- learning-science tips (rotated daily) ---------- */
-  const TIPS = [
-    { title: "Retrieval > rereading", body: "Pulling a word from memory once teaches you more than reading it five times. The discomfort is the learning." },
-    { title: "Embrace desirable difficulty", body: "If recall feels easy, the schedule is too short. The cards that strain you are the ones cementing." },
-    { title: "Sleep is part of the protocol", body: "Long-term consolidation happens during sleep. An evening session compounds overnight." },
-    { title: "Interleave, don't block", body: "Mixed card types beat doing 20 of the same. Your brain learns to distinguish, not just recognise." },
-    { title: "Production beats recognition", body: "Recognising 'koffie' on a flashcard is half the work. Producing it from English is the real test." },
-    { title: "Speak to the room", body: "Even in an empty kitchen, say it aloud. Articulation engages motor memory the eyes alone don't." },
-    { title: "The 1/3/7/14/30 ladder", body: "Ebbinghaus's intervals — that's why your cards come back tomorrow, then in three days, then a week." },
-    { title: "V2 is the Dutch tell", body: "Saying 'morgen ik ga…' is the #1 give-away you're a beginner. Drill the inversion every day." },
-    { title: "Lekker covers everything", body: "It's the Dutch Swiss Army knife: tasty, nice, fun, well. Use it generously and you'll sound local." },
-    { title: "Kennen vs weten", body: "Like Spanish saber/conocer. Weten = facts you know. Kennen = people and places you're familiar with." },
-  ];
+  /* ---------- learning-science tips (rotated daily, per language) ---------- */
   function tipForToday() {
+    const tips = Lang.cfg().tips;
     const d = new Date();
-    const idx = (d.getFullYear() * 372 + d.getMonth() * 31 + d.getDate()) % TIPS.length;
-    return TIPS[idx];
+    const idx = (d.getFullYear() * 372 + d.getMonth() * 31 + d.getDate()) % tips.length;
+    return tips[idx];
   }
 
   /* ---------- card universe ---------- */
@@ -319,7 +255,7 @@ const App = (function () {
     const today = todayISO();
     const todaySession = state.sessions.find((s) => s.date === today);
     const tip = tipForToday();
-    const greeting = nlGreeting();
+    const greeting = targetGreeting();
 
     const wrap = el(`<div class="view view-home"></div>`);
 
@@ -341,7 +277,7 @@ const App = (function () {
         </div>
       `);
       banner.querySelector("#banner-backup").addEventListener("click", () => {
-        Store.downloadBackup(state);
+        Store.downloadBackup(state, Lang.cfg().backupPrefix);
         persist();
         banner.remove();
         toast("Backup saved to your Downloads folder.");
@@ -363,7 +299,7 @@ const App = (function () {
           <span class="streak-badge">🔥 ${state.streak} day streak</span>
           <span class="chip">${todayLabel()}</span>
         </div>
-        <h1><span class="greeting-nl">${greeting.nl}!</span></h1>
+        <h1><span class="greeting-nl">${greeting.target}!</span></h1>
         <p class="muted">${greeting.en}. ${tip.body}</p>
       </section>
     `);
@@ -470,22 +406,22 @@ const App = (function () {
           <button class="drill-chip" data-drill="minpair">
             <span class="drill-chip-emoji">👂</span>
             <span class="drill-chip-label">Minimal pairs</span>
-            <span class="drill-chip-sub">huis vs heus · ear training</span>
+            <span class="drill-chip-sub">${Lang.cfg().drillHints.minpair}</span>
           </button>
           <button class="drill-chip" data-drill="chunk">
             <span class="drill-chip-emoji">🧩</span>
             <span class="drill-chip-label">Chunks</span>
-            <span class="drill-chip-sub">'doe maar', 'fijne dag verder'…</span>
+            <span class="drill-chip-sub">${Lang.cfg().drillHints.chunk}</span>
           </button>
           <button class="drill-chip" data-drill="number">
             <span class="drill-chip-emoji">🔢</span>
             <span class="drill-chip-label">Numbers</span>
-            <span class="drill-chip-sub">vierentwintig drill</span>
+            <span class="drill-chip-sub">${Lang.cfg().drillHints.number}</span>
           </button>
           <button class="drill-chip" data-drill="time">
             <span class="drill-chip-emoji">🕗</span>
             <span class="drill-chip-label">Times</span>
-            <span class="drill-chip-sub">half negen, kwart over…</span>
+            <span class="drill-chip-sub">${Lang.cfg().drillHints.time}</span>
           </button>
           <button class="drill-chip" data-drill="conjugation">
             <span class="drill-chip-emoji">🧬</span>
@@ -507,7 +443,7 @@ const App = (function () {
       const readCard = el(`
         <article class="card home-read">
           <span class="eyebrow">Read</span>
-          <h3 style="margin: 6px 0 4px">Short Dutch passages</h3>
+          <h3 style="margin: 6px 0 4px">Short ${Lang.cfg().name} passages</h3>
           <p class="muted" style="margin: 0 0 12px; font-size: 13px">Tap any word for the translation.</p>
           <div class="passage-list" id="passage-list"></div>
         </article>
@@ -536,16 +472,12 @@ const App = (function () {
     return wrap;
   }
 
-  function nlGreeting() {
-    const h = new Date().getHours();
-    if (h < 12) return { nl: "Goedemorgen", en: "Good morning" };
-    if (h < 18) return { nl: "Goedemiddag", en: "Good afternoon" };
-    return { nl: "Goedenavond", en: "Good evening" };
+  function targetGreeting() {
+    return Lang.cfg().greeting(new Date().getHours());
   }
 
   function todayLabel() {
-    const days = ["zondag", "maandag", "dinsdag", "woensdag", "donderdag", "vrijdag", "zaterdag"];
-    const months = ["januari", "februari", "maart", "april", "mei", "juni", "juli", "augustus", "september", "oktober", "november", "december"];
+    const { days, months } = Lang.cfg().calendar;
     const d = new Date();
     return `${days[d.getDay()]} ${d.getDate()} ${months[d.getMonth()]}`;
   }
@@ -635,7 +567,7 @@ const App = (function () {
             <button class="audio-btn" id="audio-btn" title="Hear it">
               ${iconSound()}
             </button>
-            <span class="prompt-line">Dutch · what does this mean?</span>
+            <span class="prompt-line">${Lang.cfg().name} · what does this mean?</span>
             <div class="prompt-word">${gloss(card)}</div>
             ${respellLine(card.nl, card.respell)}
             ${card.gender ? `<div class="prompt-meta"><span class="chip primary">${card.gender}</span><span class="chip">${card.pos || ""}</span></div>` : `<div class="prompt-meta"><span class="chip">${card.pos || ""}</span></div>`}
@@ -648,7 +580,7 @@ const App = (function () {
             </div>
             <div class="speak-row" style="margin-top: 6px;">
               <span class="nl-text" style="font-size: 22px;">${escape(card.nl)}</span>
-              <button class="speak-inline" data-speak-nl="${escape(card.nl)}" aria-label="Hear Dutch">${iconSound()}</button>
+              <button class="speak-inline" data-speak-nl="${escape(card.nl)}" aria-label="Hear ${Lang.cfg().name}">${iconSound()}</button>
             </div>
             ${respellLine(card.nl, card.respell)}
             ${exampleBlock(card)}
@@ -689,7 +621,7 @@ const App = (function () {
       <div class="flashcard-wrap">
         <div class="flashcard" id="flash">
           <div class="face front">
-            <span class="prompt-line">Say it in Dutch</span>
+            <span class="prompt-line">Say it in ${Lang.cfg().name}</span>
             <div class="prompt-en">${escape(card.en)}</div>
             <div class="prompt-meta">
               ${card.gender ? `<span class="chip primary">${card.gender}</span>` : ""}
@@ -699,7 +631,7 @@ const App = (function () {
           </div>
           <div class="face back">
             <button class="audio-btn" id="audio-btn">${iconSound()}</button>
-            <span class="prompt-line">Dutch</span>
+            <span class="prompt-line">${Lang.cfg().name}</span>
             <div class="prompt-word">${escape(card.nl)}</div>
             ${respellLine(card.nl, card.respell)}
             ${exampleBlock(card)}
@@ -753,7 +685,7 @@ const App = (function () {
 
     const wrap = el(`
       <div class="card lg stack-sm">
-        <span class="prompt-line">${askInDutch ? "Dutch · pick the meaning" : "English · pick the Dutch"}</span>
+        <span class="prompt-line">${askInDutch ? Lang.cfg().name + " · pick the meaning" : "English · pick the " + Lang.cfg().name}</span>
         <div class="prompt-word ${askInDutch ? "" : "small"}">${escape(promptText)}</div>
         ${askInDutch ? respellLine(card.nl, card.respell) : ""}
         <div class="choice-grid" id="choices"></div>
@@ -772,7 +704,7 @@ const App = (function () {
           if (b.textContent === correctAnswer && !isCorrect) b.classList.add("correct");
           if (b !== btn && b.textContent !== correctAnswer) b.classList.add("dim");
         });
-        Speech.speak(card.nl, { lang: "nl-NL", rate: state.settings.prefRate });
+        Speech.speak(card.nl, { lang: Lang.cfg().langCode, rate: state.settings.prefRate });
         showRatingPad(wrap, { auto: isCorrect ? 4 : 0 });
       });
       grid.appendChild(btn);
@@ -792,12 +724,12 @@ const App = (function () {
     const wrap = el(`
       <div class="card lg stack-sm">
         <span class="prompt-line">Listen and type</span>
-        <p class="muted" style="margin:0">You'll hear a Dutch word — type what you hear.</p>
+        <p class="muted" style="margin:0">You'll hear a ${Lang.cfg().name} word — type what you hear.</p>
         <div class="row" style="gap: 10px">
           <button class="btn primary" id="play-btn">${iconSound()} Play</button>
           <button class="btn ghost" id="play-slow">Slow</button>
         </div>
-        <input type="text" class="cloze-input" id="answer" placeholder="Type Dutch here…" autocomplete="off" autocapitalize="none" />
+        <input type="text" class="cloze-input" id="answer" placeholder="Type ${Lang.cfg().name} here…" autocomplete="off" autocapitalize="none" />
         <button class="btn primary full" id="check-btn">Check</button>
         <div id="reveal-area"></div>
       </div>
@@ -859,7 +791,7 @@ const App = (function () {
             </div>
             <div class="speak-row" style="margin-top: 6px;">
               <span class="nl-text" style="font-size: 18px;">${escape(card.nl)}</span>
-              <button class="speak-inline" data-speak-nl="${escape(card.nl)}" aria-label="Hear Dutch">${iconSound()}</button>
+              <button class="speak-inline" data-speak-nl="${escape(card.nl)}" aria-label="Hear ${Lang.cfg().name}">${iconSound()}</button>
             </div>
             ${respellLine(card.nl, card.respell)}
             ${revealsBlock(card)}
@@ -894,7 +826,7 @@ const App = (function () {
   function cardCloze(card) {
     // Pick a content word — strip articles and ultra-common closed-class words
     const tokens = card.nl.split(/\s+/);
-    const skipSet = new Set(["de", "het", "een", "en", "of", "ik", "is", "in", "op", "te", "ja", "nee"]);
+    const skipSet = Lang.cfg().clozeStopwords;
     const cleaned = tokens.map((t) => t.replace(/[.,!?]/g, ""));
     const candidates = cleaned
       .map((t, i) => ({ tok: t, i }))
@@ -1105,7 +1037,7 @@ const App = (function () {
       <div class="prompt-example">
         <div class="speak-row">
           <span class="nl-text">${escape(card.example.nl)}</span>
-          <button class="speak-inline" data-speak-nl="${escape(card.example.nl)}" aria-label="Hear Dutch">${iconSound()}</button>
+          <button class="speak-inline" data-speak-nl="${escape(card.example.nl)}" aria-label="Hear ${Lang.cfg().name}">${iconSound()}</button>
         </div>
         <div class="speak-row muted">
           <span>${escape(card.example.en)}</span>
@@ -1137,7 +1069,7 @@ const App = (function () {
     $$("[data-speak-nl]", root).forEach((b) => {
       b.addEventListener("click", (e) => {
         e.stopPropagation();
-        Speech.speak(b.dataset.speakNl, { lang: "nl-NL", rate: state.settings.prefRate });
+        Speech.speak(b.dataset.speakNl, { lang: Lang.cfg().langCode, rate: state.settings.prefRate });
       });
     });
     $$("[data-speak-en]", root).forEach((b) => {
@@ -1222,9 +1154,9 @@ const App = (function () {
       checkBtn.disabled = true;
       skipBtn.disabled = true;
       const hearBtn = fb.querySelector("[data-hear]");
-      if (hearBtn) hearBtn.addEventListener("click", () => Speech.speak(q.answer, { lang: "nl-NL", rate: 0.85 }));
+      if (hearBtn) hearBtn.addEventListener("click", () => Speech.speak(q.answer, { lang: Lang.cfg().langCode, rate: 0.85 }));
       // Auto-pronounce
-      Speech.speak(q.answer, { lang: "nl-NL", rate: 0.9 });
+      Speech.speak(q.answer, { lang: Lang.cfg().langCode, rate: 0.9 });
       $("#drill-next", fb).addEventListener("click", nextOrFinish);
       $("#drill-next", fb).focus();
     }
@@ -1245,12 +1177,13 @@ const App = (function () {
   }
 
   function drillLabel(kind) {
+    const L = Lang.cfg().name;
     return ({
-      number: "Numbers · type Dutch",
-      time: "Times · type Dutch",
+      number: `Numbers · type ${L}`,
+      time: `Times · type ${L}`,
       conjugation: "Conjugation · type the form",
-      chunk: "Chunks · type Dutch",
-      speaking: "Speaking · say it in Dutch",
+      chunk: `Chunks · type ${L}`,
+      speaking: `Speaking · say it in ${L}`,
       shadow: "Shadowing · repeat after Voxtral",
       minpair: "Minimal pairs · which did you hear?",
     })[kind] || kind;
@@ -1299,7 +1232,7 @@ const App = (function () {
             </div>
           </div>
         `);
-        item.querySelector("[data-speak]").addEventListener("click", () => Speech.speak(w.q.answer, { lang: "nl-NL", rate: 0.85 }));
+        item.querySelector("[data-speak]").addEventListener("click", () => Speech.speak(w.q.answer, { lang: Lang.cfg().langCode, rate: 0.85 }));
         list.appendChild(item);
       });
     }
@@ -1375,7 +1308,7 @@ const App = (function () {
         </div>
         <div class="progress-track" style="margin-bottom: 16px"><div class="progress-fill" style="width:${pct}%"></div></div>
         <div class="card lg drill-card">
-          <span class="eyebrow">Speaking · say it in Dutch</span>
+          <span class="eyebrow">Speaking · say it in ${Lang.cfg().name}</span>
           <div class="speaking-prompt">${escape(q.prompt)}</div>
           <div class="muted" style="font-size: 13px;">Tap the mic, say it aloud, then stop.</div>
           <div class="speaking-controls">
@@ -1398,7 +1331,7 @@ const App = (function () {
     let mediaRecorder = null, chunks = [], stream = null, recording = false;
 
     $("#rec-listen", wrap).addEventListener("click", () => {
-      Speech.speak(q.answer, { lang: "nl-NL", rate: 0.85 });
+      Speech.speak(q.answer, { lang: Lang.cfg().langCode, rate: 0.85 });
     });
 
     async function startRecording() {
@@ -1441,7 +1374,7 @@ const App = (function () {
     async function onRecordingDone() {
       const blob = new Blob(chunks, { type: chunks[0]?.type || "audio/webm" });
       try {
-        const heard = await Speech.transcribe(blob, { lang: "nl" });
+        const heard = await Speech.transcribe(blob, { lang: Lang.active() });
         const grade = gradeSpeaking(q.answer, heard);
         showFeedback(heard, grade);
       } catch (e) {
@@ -1488,7 +1421,7 @@ const App = (function () {
           <button class="btn primary" id="speak-next" style="flex:1; justify-content: center">Next →</button>
         </div>
       `;
-      Speech.speak(q.answer, { lang: "nl-NL", rate: 0.85 });
+      Speech.speak(q.answer, { lang: Lang.cfg().langCode, rate: 0.85 });
       // Wire noticing chips: clicking one logs to the wrong-answer entry.
       $$(".noticing-chip", fb).forEach((chip) => {
         chip.addEventListener("click", () => {
@@ -1582,7 +1515,7 @@ const App = (function () {
     let mediaRecorder = null, chunks = [], stream = null;
 
     $("#rec-listen-only", wrap).addEventListener("click", () => {
-      Speech.speak(q.answer, { lang: "nl-NL", rate: state.settings.prefRate });
+      Speech.speak(q.answer, { lang: Lang.cfg().langCode, rate: state.settings.prefRate });
     });
 
     async function playThenRecord() {
@@ -1592,7 +1525,7 @@ const App = (function () {
       recLabel.textContent = "Playing target…";
       status.textContent = "Listen carefully — recording starts when audio ends.";
       Speech.speak(q.answer, {
-        lang: "nl-NL",
+        lang: Lang.cfg().langCode,
         rate: state.settings.prefRate,
         onend: async () => {
           // Then record
@@ -1632,7 +1565,7 @@ const App = (function () {
     async function onDone() {
       const blob = new Blob(chunks, { type: chunks[0]?.type || "audio/webm" });
       try {
-        const heard = await Speech.transcribe(blob, { lang: "nl" });
+        const heard = await Speech.transcribe(blob, { lang: Lang.active() });
         const grade = gradeSpeaking(q.answer, heard);
         showFeedback(heard, grade);
       } catch (e) {
@@ -1659,7 +1592,7 @@ const App = (function () {
           <button class="btn primary" id="shadow-next" style="flex:1; justify-content:center">Next →</button>
         </div>
       `;
-      Speech.speak(q.answer, { lang: "nl-NL", rate: state.settings.prefRate });
+      Speech.speak(q.answer, { lang: Lang.cfg().langCode, rate: state.settings.prefRate });
       $("#shadow-retry", fb).addEventListener("click", () => {
         if (!ok && currentDrill.wrongAnswers.length) currentDrill.wrongAnswers.pop();
         if (ok) currentDrill.correct -= 1;
@@ -1728,7 +1661,7 @@ const App = (function () {
     const playBtn = $("#play-pair", wrap);
     function playOnce() {
       played = true;
-      Speech.speak(heard.nl, { lang: "nl-NL", rate: state.settings.prefRate });
+      Speech.speak(heard.nl, { lang: Lang.cfg().langCode, rate: state.settings.prefRate });
     }
     playBtn.addEventListener("click", playOnce);
     setTimeout(playOnce, 250);
@@ -1778,7 +1711,7 @@ const App = (function () {
       <div class="view stack">
         <div class="hero" style="text-align:center">
           <div style="font-size:48px; margin-bottom:8px;">🎉</div>
-          <h1 style="margin-bottom:4px;">Goed gedaan!</h1>
+          <h1 style="margin-bottom:4px;">${Lang.cfg().doneHeading}</h1>
           <p class="muted">You finished the session. Streak: ${state.streak} day${state.streak === 1 ? "" : "s"}.</p>
         </div>
         <div class="grid-2">
@@ -1810,7 +1743,7 @@ const App = (function () {
     $("#another", wrap).addEventListener("click", () => { currentSession = null; startSession(); });
     const sb = $("#summary-backup", wrap);
     if (sb) sb.addEventListener("click", () => {
-      Store.downloadBackup(state);
+      Store.downloadBackup(state, Lang.cfg().backupPrefix);
       persist();
       sb.textContent = "Saved ✓";
       sb.disabled = true;
@@ -2123,7 +2056,8 @@ const App = (function () {
       }
       btn.innerHTML = "■ Stop narrow listen";
       const passes = 3;
-      const voiceSeq = ["nl_male", "nl_female", "nl_male"];
+      const voiceSeq = Lang.cfg().narrowVoices;
+      const altVoice = Lang.cfg().voices[1] ? Lang.cfg().voices[1].value : voiceSeq[0];
       let cancelled = false;
       narrowCancel = () => { cancelled = true; };
       (async () => {
@@ -2132,10 +2066,10 @@ const App = (function () {
           for (let i = 0; i < s.dialogue.length && !cancelled; i++) {
             const line = s.dialogue[i];
             // Alternate voices PER LINE within a pass too — gives high-variability exposure
-            const voice = (i + p) % 2 === 0 ? voiceSeq[p] : (voiceSeq[p] === "nl_male" ? "nl_female" : "nl_male");
+            const voice = (i + p) % 2 === 0 ? voiceSeq[p] : (voiceSeq[p] === voiceSeq[0] ? altVoice : voiceSeq[0]);
             await new Promise((resolve) => {
               Speech.speak(line.nl, {
-                lang: "nl-NL",
+                lang: Lang.cfg().langCode,
                 voice,
                 rate: state.settings.prefRate,
                 onend: () => setTimeout(resolve, 280),
@@ -2193,7 +2127,7 @@ const App = (function () {
           </div>
         </article>
         <div class="lookup-bar" id="lookup-bar">
-          <div class="lookup-empty">Tap any Dutch word for its meaning.</div>
+          <div class="lookup-empty">Tap any ${Lang.cfg().name} word for its meaning.</div>
         </div>
       </div>
     `);
@@ -2239,10 +2173,10 @@ const App = (function () {
           </div>
         `;
         bar.querySelector("[data-speak]").addEventListener("click", () => {
-          Speech.speak(word, { lang: "nl-NL", rate: 0.85 });
+          Speech.speak(word, { lang: Lang.cfg().langCode, rate: 0.85 });
         });
         // Auto-pronounce on tap (fast)
-        Speech.speak(word, { lang: "nl-NL", rate: 0.9 });
+        Speech.speak(word, { lang: Lang.cfg().langCode, rate: 0.9 });
       } else {
         bar.innerHTML = `
           <div class="lookup-row">
@@ -2254,9 +2188,9 @@ const App = (function () {
           </div>
         `;
         bar.querySelector("[data-speak]").addEventListener("click", () => {
-          Speech.speak(word, { lang: "nl-NL", rate: 0.85 });
+          Speech.speak(word, { lang: Lang.cfg().langCode, rate: 0.85 });
         });
-        Speech.speak(word, { lang: "nl-NL", rate: 0.9 });
+        Speech.speak(word, { lang: Lang.cfg().langCode, rate: 0.9 });
       }
     }
 
@@ -2266,7 +2200,7 @@ const App = (function () {
       const playNext = () => {
         if (i >= p.paragraphs.length) return;
         Speech.speak(p.paragraphs[i], {
-          lang: "nl-NL",
+          lang: Lang.cfg().langCode,
           rate: state.settings.prefRate,
           onend: () => { i += 1; setTimeout(playNext, 600); },
         });
@@ -2389,10 +2323,9 @@ const App = (function () {
               </select>
             </label>
             <label class="row spread" style="gap:12px">
-              <span>Dutch voice (MLX)</span>
+              <span>${Lang.cfg().name} voice (MLX)</span>
               <select id="set-dutch-voice">
-                <option value="nl_male" ${state.settings.dutchVoice === "nl_male" ? "selected" : ""}>Voxtral · nl_male</option>
-                <option value="nl_female" ${state.settings.dutchVoice === "nl_female" ? "selected" : ""}>Voxtral · nl_female</option>
+                ${Lang.cfg().voices.map(v => `<option value="${v.value}" ${state.settings.targetVoice === v.value ? "selected" : ""}>${v.label}</option>`).join("")}
               </select>
             </label>
             <label class="row spread" style="gap:12px">
@@ -2455,10 +2388,10 @@ const App = (function () {
       persist();
     });
     $("#set-dutch-voice", wrap).addEventListener("change", (e) => {
-      state.settings.dutchVoice = e.target.value;
-      if (Speech.setDutchVoice) Speech.setDutchVoice(e.target.value);
+      state.settings.targetVoice = e.target.value;
+      if (Speech.setTargetVoice) Speech.setTargetVoice(e.target.value);
       persist();
-      Speech.speak("Hallo, dit is een test.", { lang: "nl-NL", voice: e.target.value, rate: state.settings.prefRate });
+      Speech.speak(Lang.cfg().voiceTest, { lang: Lang.cfg().langCode, voice: e.target.value, rate: state.settings.prefRate });
     });
     $("#set-english-voice", wrap).addEventListener("change", (e) => {
       state.settings.englishVoice = e.target.value;
@@ -2471,7 +2404,7 @@ const App = (function () {
     (async () => {
       const statusEl = $("#tts-status", wrap);
       if (!statusEl) return;
-      const webOK = Speech.supported && Speech.hasDutchVoice();
+      const webOK = Speech.supported && Speech.hasTargetVoice();
       const mlxOK = Speech.probeMlx ? await Speech.probeMlx() : false;
       const parts = [];
       if (mlxOK) {
@@ -2481,8 +2414,8 @@ const App = (function () {
       }
       if (Speech.supported) {
         parts.push(webOK
-          ? `<span class="chip primary">Web Speech: Dutch voice OK</span>`
-          : `<span class="chip">Web Speech: no Dutch voice on device</span>`);
+          ? `<span class="chip primary">Web Speech: ${Lang.cfg().name} voice OK</span>`
+          : `<span class="chip">Web Speech: no ${Lang.cfg().name} voice on device</span>`);
       } else {
         parts.push(`<span class="chip">Web Speech: not supported</span>`);
       }
@@ -2490,7 +2423,7 @@ const App = (function () {
     })();
 
     $("#export-btn", wrap).addEventListener("click", () => {
-      Store.downloadBackup(state);
+      Store.downloadBackup(state, Lang.cfg().backupPrefix);
       persist();
       toast("Exported.");
     });
@@ -2540,13 +2473,72 @@ const App = (function () {
     toast(`Theme: ${state.settings.theme}`);
   }
 
+  /* ============ LANGUAGE SWITCHING ============ */
+  const LANG_PREF_KEY = "learn:lang";
+
+  function activeLangId() {
+    let id = null;
+    try { id = localStorage.getItem(LANG_PREF_KEY); } catch (_) {}
+    const q = new URLSearchParams(location.search).get("lang");
+    if (q && Lang.has(q)) id = q;
+    return (id && Lang.has(id)) ? id : Lang.list()[0].id;
+  }
+
+  // Load the active language's deck + state and configure the speech backend.
+  function loadLanguage(id) {
+    Lang.use(id);
+    const cfg = Lang.cfg();
+    Store.setKey(cfg.storageKey);
+    state = Store.load();
+    if (!state.settings.targetVoice) state.settings.targetVoice = cfg.defaultVoice;
+    if (Speech.setTargetLang)  Speech.setTargetLang(cfg.langCode);
+    if (Speech.setTargetVoice) Speech.setTargetVoice(state.settings.targetVoice);
+    if (Speech.setEnglishVoice) Speech.setEnglishVoice(state.settings.englishVoice || "casual_female");
+    applyBranding(cfg);
+  }
+
+  function applyBranding(cfg) {
+    document.title = `${cfg.brand} — daily ${cfg.name} practice`;
+    const nameEl = document.querySelector(".brand-name");
+    if (nameEl) nameEl.textContent = cfg.brand;
+    const markEl = document.querySelector(".brand-mark");
+    if (markEl) markEl.textContent = cfg.brand.charAt(0);
+    const fav = document.querySelector('link[rel="icon"]');
+    if (fav) fav.href = `data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>${encodeURIComponent(cfg.flag)}</text></svg>`;
+  }
+
+  // A switch reloads the page so every deck/engine hook re-reads the new
+  // language from a clean slate (state, voices, langCode). Simple and safe.
+  // We navigate to the bare pathname so any ?lang= deep-link override is
+  // dropped and the stored choice governs after reload.
+  function switchLanguage(id) {
+    if (!Lang.has(id) || id === Lang.active()) return;
+    try { localStorage.setItem(LANG_PREF_KEY, id); } catch (_) {}
+    Speech.cancel();
+    location.href = location.pathname;
+  }
+
+  function buildLangSwitcher() {
+    const host = document.getElementById("lang-switch");
+    if (!host) return;
+    host.innerHTML = "";
+    const sel = el(`<select id="lang-select" class="lang-select" name="lang-select" aria-label="Learning language"></select>`);
+    Lang.list().forEach((cfg) => {
+      const opt = document.createElement("option");
+      opt.value = cfg.id;
+      opt.textContent = `${cfg.flag} ${cfg.name}`;
+      if (cfg.id === Lang.active()) opt.selected = true;
+      sel.appendChild(opt);
+    });
+    sel.addEventListener("change", (e) => switchLanguage(e.target.value));
+    host.appendChild(sel);
+  }
+
   /* ============ INIT ============ */
   function init() {
+    loadLanguage(activeLangId());
     applyTheme();
-
-    // Tell the speech backend which Voxtral voices to use.
-    if (Speech.setDutchVoice)   Speech.setDutchVoice(state.settings.dutchVoice || "nl_male");
-    if (Speech.setEnglishVoice) Speech.setEnglishVoice(state.settings.englishVoice || "casual_female");
+    buildLangSwitcher();
 
     $$(".tab, .bn-tab").forEach((b) => {
       b.addEventListener("click", () => navigate(b.dataset.view));
@@ -2567,7 +2559,7 @@ const App = (function () {
   }
 
   // expose for debugging
-  window.__app = { state: () => state, store: Store, srs: SRS };
+  window.__app = { state: () => state, store: Store, srs: SRS, lang: Lang };
 
   return { init, navigate, startSession };
 })();

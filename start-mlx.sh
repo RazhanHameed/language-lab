@@ -184,7 +184,7 @@ done
 URL="http://localhost:${WEB_PORT}/?tts=http://127.0.0.1:${TTS_PORT}"
 
 echo
-echo "🇳🇱  Leer Nederlands  +  Voxtral 4-bit"
+echo "🇳🇱  Leer Nederlands  /  🇩🇪  Lern Deutsch  +  Voxtral 4-bit"
 echo "    web:  ${URL}"
 echo "    tts:  http://127.0.0.1:${TTS_PORT}/v1/audio/speech"
 echo "    Ctrl+C to stop both."

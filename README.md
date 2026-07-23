@@ -1,8 +1,8 @@
-# Leer Nederlands
+# Leer Nederlands / Lern Deutsch
 
-A single-user, local-first Dutch learning app. Built around scientifically-validated SLA techniques (FSRS spaced repetition, retrieval practice, interleaving, shadowing, minimal-pair perception, formulaic chunks, extensive reading) and powered by on-device speech via Apple's MLX framework — no cloud, no accounts, no subscriptions.
+A single-user, local-first language-learning app. Built around scientifically-validated SLA techniques (FSRS spaced repetition, retrieval practice, interleaving, shadowing, minimal-pair perception, formulaic chunks, extensive reading) and powered by on-device speech via Apple's MLX framework — no cloud, no accounts, no subscriptions.
 
-Designed for someone living in Amsterdam working at a tech startup, but the engine is agnostic — swap the data files and it'll teach any language with a Voxtral voice.
+**Two languages, one app.** It ships with full **Dutch** (Amsterdam-flavoured) and **German** (Berlin-flavoured) decks — every card, sentence, scenario, grammar capsule, drill, and reading passage exists in both, hand-written for each. Flip between them with the 🇳🇱 / 🇩🇪 selector in the top bar; each language keeps its own separate progress, streak, and settings. The engine is language-agnostic — adding a third language is a data folder plus a small language pack (see below).
 
 ---
 
@@ -127,27 +127,29 @@ Stop both servers with **Ctrl+C** in the terminal — the trap cleans up the bac
 
 ```
 learn-dutch/
-├── index.html                 # single-page app shell
+├── index.html                 # single-page app shell (loads both decks + both language packs)
 ├── start.sh                   # minimal launcher (browser TTS only)
 ├── start-mlx.sh               # full launcher (uv + mlx-audio + Voxtral + Whisper)
 ├── css/
 │   └── styles.css             # mobile-first; desktop grid at min-width: 960px
 └── js/
-    ├── app.js                 # router, all 4 views, all 8 card types, all 7 drills
-    ├── audio.js               # MLX server probe + fetch; Web Speech fallback
-    ├── srs.js                 # FSRS-4.5 with SM-2 backward compat
-    ├── storage.js             # localStorage wrapper + backup helpers
-    ├── drills.js              # number/time/conjugation/chunk/min-pair generators + diagnoseError
+    ├── app.js                 # router, all 4 views, all 8 card types, all 7 drills, language switcher
+    ├── audio.js               # MLX server probe + fetch; Web Speech fallback (target voice is set per language)
+    ├── srs.js                 # FSRS-4.5 with SM-2 backward compat (language-agnostic)
+    ├── storage.js             # localStorage wrapper + backup helpers (one key per language)
+    ├── drills.js              # generic drill controllers; delegates spelling/diagnosis to the active language pack
+    ├── lang.js                # language registry + active-language manager (deck swap)
+    ├── lang/
+    │   ├── nl.js              # Dutch pack: numbers, time, respeller, error diagnosis, tips, calendar, voices
+    │   └── de.js              # German pack: same surface, German rules
     └── data/
-        ├── vocab.js           # 232 cards × 11 themes
-        ├── sentences.js       # Ferriss diagnostic dozen + pattern drills
-        ├── scenarios.js       # 10 Amsterdam dialogues
-        ├── grammar.js         # 9 capsules
-        ├── conjugations.js    # top 25 verbs × 6 forms
-        ├── chunks.js          # 33 formulaic sequences
-        ├── minimal_pairs.js   # 16 perception-training pairs
-        └── passages.js        # 6 reading passages
+        ├── _boot.js           # sets up the per-language deck registry (window.__DECK)
+        ├── nl/                # Dutch deck (Amsterdam): vocab, sentences, scenarios, grammar,
+        │                      #   conjugations, chunks, minimal_pairs, passages
+        └── de/                # German deck (Berlin): same eight files, hand-written in German
 ```
+
+Each data file registers its arrays under `window.__DECK.<lang>`; `Lang.use(id)` then points the bare globals (`VOCAB`, `SENTENCES`, …) at the active language's deck, so the rest of the engine reads them unchanged.
 
 No build step. No `package.json`. Open `index.html` in a browser and the app runs.
 
@@ -216,9 +218,14 @@ The data files are intentionally small, hand-readable JS objects. To add your ow
 
 After editing any data file, just reload the page — no build, no restart needed.
 
-### Use it for a different language
+### Add a third language
 
-Swap the data files and change `lang: "nl-NL"` to your target language code in `js/audio.js`. Voxtral supports `nl`, `en`, `fr`, `es`, `de`, `it`, `pt`, `ar`, `hi` out of the box. Whisper handles ~99 languages.
+The app is already multi-language (Dutch + German). To add a third — say French:
+
+1. **Data:** create `js/data/fr/` with the eight data files, each registering into `window.__DECK.fr` (copy the shape of `js/data/de/*.js`), and add their `<script>` tags to `index.html`.
+2. **Language pack:** create `js/lang/fr.js` that calls `Lang.register({ id: "fr", name: "French", brand: "Apprends le français", flag: "🇫🇷", langCode: "fr-FR", storageKey: "lern-fr:v1", … })` with the French number/time spelling, respeller, error diagnosis, tips, calendar, and Voxtral voices. Add its `<script>` after `js/lang/de.js`.
+
+That's it — the selector, per-language progress, voices, and drills pick it up automatically. Voxtral supports `nl`, `en`, `fr`, `es`, `de`, `it`, `pt`, `ar`, `hi` out of the box; Whisper handles ~99 languages.
 
 ---
 

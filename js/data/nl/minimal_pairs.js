@@ -3,7 +3,7 @@
 //   { a: { nl, en }, b: { nl, en }, contrast: <descriptive label> }
 // During the drill we play one of the two via Voxtral and the user picks
 // which they heard.
-window.MINIMAL_PAIRS = [
+window.__DECK.nl.MINIMAL_PAIRS = [
   // ---- short vs long vowels (Dutch's biggest single trap) ----
   { a: { nl: "man", en: "man" },     b: { nl: "maan", en: "moon" },     contrast: "short a vs long aa" },
   { a: { nl: "bos", en: "forest" },  b: { nl: "boos", en: "angry" },    contrast: "short o vs long oo" },

@@ -9,7 +9,7 @@
 // glosses[] is an OPTIONAL override map — use it for words that aren't in
 // VOCAB but still merit an inline definition. The reader falls back to
 // VOCAB lookup first.
-window.PASSAGES = [
+window.__DECK.nl.PASSAGES = [
   {
     id: "p_morning",
     title: "Een gewone ochtend",
