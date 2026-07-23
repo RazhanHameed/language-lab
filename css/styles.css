@@ -351,7 +351,7 @@ p { margin: 0 0 .8em; }
   box-shadow: var(--shadow-md);
   border: 0;
   width: 100%;
-  text-align: left;
+  text-align: start;
   cursor: pointer;
   transition: transform 80ms, box-shadow 120ms;
 }
@@ -443,7 +443,7 @@ p { margin: 0 0 .8em; }
 .audio-btn {
   position: absolute;
   top: 16px;
-  right: 16px;
+  inset-inline-end: 16px;
   border: 1px solid var(--border);
   background: var(--surface-2);
   border-radius: 999px;
@@ -492,7 +492,7 @@ p { margin: 0 0 .8em; }
   font-size: 10px;
   letter-spacing: 0.12em;
   font-weight: 600;
-  margin-right: 4px;
+  margin-inline-end: 4px;
 }
 
 /* ---------- Answer pad (SRS rating) ---------- */
@@ -558,7 +558,7 @@ p { margin: 0 0 .8em; }
   background: var(--surface);
   border-radius: 12px;
   padding: 14px 16px;
-  text-align: left;
+  text-align: start;
   font-size: 17px;
   font-family: var(--serif);
   font-weight: 500;
@@ -597,6 +597,7 @@ p { margin: 0 0 .8em; }
 
 /* ---------- Progress bar ---------- */
 .progress-track {
+  display: flex;
   height: 4px;
   background: var(--surface-2);
   border-radius: 999px;
@@ -633,7 +634,7 @@ p { margin: 0 0 .8em; }
   border: 1px solid var(--border);
   border-radius: 12px;
   transition: background 100ms, border-color 100ms;
-  text-align: left;
+  text-align: start;
   width: 100%;
 }
 .list-item:hover { background: var(--surface-2); border-color: var(--border-strong); }
@@ -647,7 +648,7 @@ p { margin: 0 0 .8em; }
 .vocab-word, .vocab-example {
   display: flex; width: 100%;
   background: none; border: 0; margin: 0; padding: 3px 0;
-  color: inherit; font: inherit; text-align: left; cursor: pointer;
+  color: inherit; font: inherit; text-align: start; cursor: pointer;
 }
 .vocab-word { flex-direction: column; align-items: flex-start; }
 .vocab-word:hover .li-title { color: var(--primary); }
@@ -685,13 +686,39 @@ p { margin: 0 0 .8em; }
 [data-no-speech] .vocab-word:hover .li-title,
 [data-no-speech] .vocab-example:hover { color: inherit; }
 
-/* Right-to-left scripts (Sorani): the whole app flips via <html dir="rtl">.
-   Keep digits, respelling hints, and Latin fragments left-to-right, and let
-   mixed target/English runs isolate cleanly. */
+/* =====================================================================
+   Direction (LTR / RTL) — modular & extensible
+   ---------------------------------------------------------------------
+   The whole app flips when an RTL language (e.g. Sorani) is active: app.js
+   sets <html dir="rtl">. To keep layout automatically direction-correct,
+   FUTURE CODE SHOULD:
+     • use CSS *logical* properties, never physical ones:
+         margin-inline-start/-end, padding-inline-*, inset-inline-*,
+         border-inline-*, text-align: start/end   (not left/right)
+       Flexbox/grid already follow `dir`, so prefer them for layout.
+     • render any directional arrow/chevron with the helper classes below
+       (App.arrowFwd() / App.arrowBack() in app.js) instead of a bare
+       "→" / "←" glyph. They mirror automatically under dir="rtl".
+     • wrap content that must stay LTR (digits, code, Latin transliteration)
+       in an element and add it to the `direction: ltr` list below.
+   Do that and RTL "just works" — no per-feature RTL patches needed.
+   ===================================================================== */
+
+/* Mirrored arrow indicators (base glyph is a forward "→"). */
+.icon-arrow, .icon-arrow-back { display: inline-block; line-height: 1; }
+.icon-arrow-back { transform: scaleX(-1); }                 /* ← in LTR */
+[dir="rtl"] .icon-arrow { transform: scaleX(-1); }          /* ← in RTL */
+[dir="rtl"] .icon-arrow-back { transform: none; }           /* → in RTL */
+/* Standalone list/CTA arrows keep their "→" glyph; just mirror them in RTL. */
+[dir="rtl"] .li-arrow,
+[dir="rtl"] .arrow { display: inline-block; transform: scaleX(-1); }
+
+/* Keep inherently-LTR content upright inside an RTL page. */
 [dir="rtl"] .respell,
 [dir="rtl"] .drill-big,
 [dir="rtl"] .mono,
 [dir="rtl"] .heat-cell { direction: ltr; }
+/* Let mixed target-language/English runs isolate cleanly. */
 [dir="rtl"] .nl-text,
 [dir="rtl"] .prompt-word,
 [dir="rtl"] .cloze-prompt,
@@ -741,7 +768,7 @@ p { margin: 0 0 .8em; }
   margin-top: 14px;
   padding: 12px 14px;
   background: var(--accent-soft);
-  border-left: 3px solid var(--accent);
+  border-inline-start: 3px solid var(--accent);
   border-radius: 6px;
   font-size: 14px;
 }
@@ -831,7 +858,7 @@ p { margin: 0 0 .8em; }
   background: var(--surface-2);
   border: 1px solid var(--border);
   border-radius: 12px;
-  text-align: left;
+  text-align: start;
   transition: background 100ms, border-color 100ms, transform 60ms;
 }
 .drill-chip:hover { background: var(--surface); border-color: var(--border-strong); transform: translateY(-1px); }
@@ -891,7 +918,7 @@ p { margin: 0 0 .8em; }
 }
 #rec-toggle #rec-icon {
   display: inline-block;
-  margin-right: 8px;
+  margin-inline-end: 8px;
   font-size: 14px;
   color: #ff5b5b;
 }
@@ -964,7 +991,7 @@ p { margin: 0 0 .8em; }
   margin-top: 10px;
   padding: 10px 14px;
   background: var(--accent-soft);
-  border-left: 3px solid var(--accent);
+  border-inline-start: 3px solid var(--accent);
   border-radius: 6px;
   font-size: 14px;
   line-height: 1.5;
@@ -1012,7 +1039,7 @@ p { margin: 0 0 .8em; }
   background: var(--surface-2);
   border: 1px solid var(--border);
   border-radius: 12px;
-  text-align: left;
+  text-align: start;
   transition: background 100ms, border-color 100ms;
 }
 .passage-item:hover { background: var(--surface); border-color: var(--border-strong); }

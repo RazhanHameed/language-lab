@@ -500,7 +500,7 @@ const App = (function () {
       <div style="display:grid; grid-template-columns: 90px 1fr 40px; gap:10px; align-items:center; padding:6px 0;">
         <span class="muted" style="font-size:13px">${label}</span>
         <div class="progress-track"><div class="progress-fill" style="width:${(val/total)*100}%; background: ${cls}"></div></div>
-        <span class="mono" style="font-size:13px; text-align:right">${val}</span>
+        <span class="mono" style="font-size:13px; text-align:end">${val}</span>
       </div>
     `;
     return mk("Mature",   c.mature,   "var(--success)") +
@@ -1039,7 +1039,7 @@ const App = (function () {
     if (card.gender) {
       // Trailing space INSIDE the span keeps copy/paste readable: "de tram"
       // not "detram", while CSS margin-right gives the visual gap.
-      return `<span style="color:var(--text-subtle); font-size:24px; font-family:var(--sans); font-weight:400; margin-right:6px">${card.gender} </span>${escape(card.nl)}`;
+      return `<span style="color:var(--text-subtle); font-size:24px; font-family:var(--sans); font-weight:400; margin-inline-end:6px">${card.gender} </span>${escape(card.nl)}`;
     }
     return escape(card.nl);
   }
@@ -1090,6 +1090,10 @@ const App = (function () {
       return Promise.resolve();
     } catch (e) { return Promise.reject(e); }
   }
+  // Directional arrows that mirror automatically under <html dir="rtl">.
+  // Use these instead of a bare "→"/"←" glyph so RTL languages flip correctly.
+  function arrowFwd()  { return `<span class="icon-arrow">→</span>`; }      // → (LTR) / ← (RTL)
+  function arrowBack() { return `<span class="icon-arrow-back">→</span>`; } // ← (LTR) / → (RTL)
 
   // Delegated handler that wires every [data-speak-nl] / [data-speak-en] button
   // inside `root`. Buttons stop event propagation so they don't flip the card.
@@ -1177,7 +1181,7 @@ const App = (function () {
         ${q.kind === "number" || q.kind === "time"
           ? `<button class="btn ghost full" data-hear style="margin-top:8px">${iconSound()} Hear it</button>`
           : ""}
-        <div style="margin-top:6px"><button class="btn primary full" id="drill-next">Next →</button></div>
+        <div style="margin-top:6px"><button class="btn primary full" id="drill-next">Next ${arrowFwd()}</button></div>
       `;
       checkBtn.disabled = true;
       skipBtn.disabled = true;
@@ -1446,7 +1450,7 @@ const App = (function () {
         ` : ""}
         <div class="row" style="gap:8px; margin-top: 12px;">
           <button class="btn ghost" id="speak-retry" style="flex:0">Retry</button>
-          <button class="btn primary" id="speak-next" style="flex:1; justify-content: center">Next →</button>
+          <button class="btn primary" id="speak-next" style="flex:1; justify-content: center">Next ${arrowFwd()}</button>
         </div>
       `;
       Speech.speak(q.answer, { lang: Lang.cfg().langCode, rate: 0.85 });
@@ -1617,7 +1621,7 @@ const App = (function () {
         </div>
         <div class="row" style="gap:8px; margin-top:12px">
           <button class="btn ghost" id="shadow-retry" style="flex:0">Retry</button>
-          <button class="btn primary" id="shadow-next" style="flex:1; justify-content:center">Next →</button>
+          <button class="btn primary" id="shadow-next" style="flex:1; justify-content:center">Next ${arrowFwd()}</button>
         </div>
       `;
       Speech.speak(q.answer, { lang: Lang.cfg().langCode, rate: state.settings.prefRate });
@@ -1713,7 +1717,7 @@ const App = (function () {
           <div class="feedback ${ok ? "correct" : "incorrect"}">
             ${ok ? "Spot on." : `You heard: <strong class="nl-text">${escape(heard.nl)}</strong> — ${escape(heard.en)}`}
           </div>
-          <button class="btn primary full" id="mp-next" style="margin-top: 10px">Next →</button>
+          <button class="btn primary full" id="mp-next" style="margin-top: 10px">Next ${arrowFwd()}</button>
         `;
         $("#mp-next", fb).addEventListener("click", () => {
           const done = Drills.advance(currentDrill);
@@ -1896,7 +1900,7 @@ const App = (function () {
       if (!t || items.length === 0) { navigate("browse"); return el(`<div></div>`); }
       const wrap = el(`
         <div class="view stack">
-          <button class="btn ghost" id="back" style="align-self:flex-start; padding:6px 12px; font-size:13px">← Back</button>
+          <button class="btn ghost" id="back" style="align-self:flex-start; padding:6px 12px; font-size:13px">${arrowBack()} Back</button>
           <h1>${t.icon} ${escape(t.name)}</h1>
           <p class="muted">${items.length} cards. Tap a card to hear it.</p>
           <div class="row" style="gap: 8px; flex-wrap: wrap;">
@@ -1957,7 +1961,7 @@ const App = (function () {
       if (!t || items.length === 0) { navigate("browse"); return el(`<div></div>`); }
       const wrap = el(`
         <div class="view stack">
-          <button class="btn ghost" id="back" style="align-self:flex-start; padding:6px 12px; font-size:13px">← Back</button>
+          <button class="btn ghost" id="back" style="align-self:flex-start; padding:6px 12px; font-size:13px">${arrowBack()} Back</button>
           <h1>${t.icon} ${escape(t.name)}</h1>
           <p class="muted">${escape(t.blurb)}</p>
           <button class="btn primary lg full" id="study-theme">Drill these patterns</button>
@@ -2044,7 +2048,7 @@ const App = (function () {
 
     const wrap = el(`
       <div class="view stack">
-        <button class="btn ghost" id="back" style="align-self:flex-start; padding:6px 12px; font-size:13px">← Back</button>
+        <button class="btn ghost" id="back" style="align-self:flex-start; padding:6px 12px; font-size:13px">${arrowBack()} Back</button>
         <h1>${s.icon || "📍"} ${escape(s.title)}</h1>
         <p class="muted">${escape(s.setting)}</p>
         <div class="row" style="flex-wrap: wrap; gap: 8px;">
@@ -2173,7 +2177,7 @@ const App = (function () {
 
     const wrap = el(`
       <div class="view stack">
-        <button class="btn ghost" id="back" style="align-self:flex-start; padding:6px 12px; font-size:13px">← Back</button>
+        <button class="btn ghost" id="back" style="align-self:flex-start; padding:6px 12px; font-size:13px">${arrowBack()} Back</button>
         <article class="card lg passage-card">
           <span class="eyebrow">${escape(p.level)} · Reading</span>
           <h1 style="margin: 8px 0 6px">${escape(p.title)}</h1>
@@ -2276,7 +2280,7 @@ const App = (function () {
 
     const wrap = el(`
       <div class="view stack">
-        <button class="btn ghost" id="back" style="align-self:flex-start; padding:6px 12px; font-size:13px">← Back</button>
+        <button class="btn ghost" id="back" style="align-self:flex-start; padding:6px 12px; font-size:13px">${arrowBack()} Back</button>
         <article class="capsule">
           <span class="eyebrow">Grammar capsule</span>
           <h1 style="margin: 6px 0 8px">${escape(g.title)}</h1>
@@ -2641,7 +2645,7 @@ const App = (function () {
   // expose for debugging
   window.__app = { state: () => state, store: Store, srs: SRS, lang: Lang };
 
-  return { init, navigate, startSession };
+  return { init, navigate, startSession, arrowFwd, arrowBack };
 })();
 
 document.addEventListener("DOMContentLoaded", App.init);
