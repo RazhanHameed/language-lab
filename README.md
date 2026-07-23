@@ -103,7 +103,7 @@ Adds [`mlx-audio`](https://github.com/Blaizzy/mlx-audio) — Apple's MLX framewo
 **First run setup** (one-time, ~5–10 minutes):
 
 1. The script detects [`uv`](https://docs.astral.sh/uv/) and uses `uv venv` if present (handles standalone Python 3.12 builds without `ensurepip`). Otherwise falls back to `python -m venv`.
-2. Installs `mlx-audio[server,tts]` plus `mistral-common[audio]>=1.11` (Voxtral's tokenizer needs the newer field schema).
+2. Installs `mlx-audio[server,tts]` plus `mistral-common[audio]>=1.11` (Voxtral's tokenizer needs the newer field schema) and pins `mlx==0.31.1` (mlx 0.32.0 made GPU streams thread-local, which breaks Whisper STT on the server's worker thread; 0.31.1 keeps both Voxtral TTS and Whisper STT working).
 3. Spawns `mlx_audio.server` on `127.0.0.1:5500` with permissive CORS.
 4. Pre-warms Voxtral (`mlx-community/Voxtral-4B-TTS-2603-mlx-4bit`, ~2.5 GB).
 5. Pre-warms Whisper (`mlx-community/whisper-large-v3-turbo-asr-fp16`, ~800 MB) — set `PREWARM_STT=0` to skip.
