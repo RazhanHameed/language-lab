@@ -129,6 +129,17 @@ const App = (function () {
 
   // Choose a presentation mode based on card type and SRS maturity.
   function pickMode(cardId) {
+    let mode = pickModeRaw(cardId);
+    // Listen-and-type modes need a voice — swap them out when the language
+    // has no speech model yet (Kurdish).
+    if (!hasSpeech()) {
+      if (mode === "listen") mode = "choice";
+      else if (mode === "listen_sentence") mode = "cloze";
+    }
+    return mode;
+  }
+
+  function pickModeRaw(cardId) {
     const card = getCard(cardId);
     const st = state.cards[cardId];
     const mature = SRS.maturity(st);
@@ -393,6 +404,7 @@ const App = (function () {
         <h3 style="margin: 6px 0 4px">30-second sprints</h3>
         <p class="muted" style="margin: 0 0 12px; font-size: 13px">Targeted practice — each drill closes a gap flashcards can't catch.</p>
         <div class="drill-chips">
+          ${hasSpeech() ? `
           <button class="drill-chip" data-drill="speaking">
             <span class="drill-chip-emoji">🎙️</span>
             <span class="drill-chip-label">Speaking</span>
@@ -407,7 +419,7 @@ const App = (function () {
             <span class="drill-chip-emoji">👂</span>
             <span class="drill-chip-label">Minimal pairs</span>
             <span class="drill-chip-sub">${Lang.cfg().drillHints.minpair}</span>
-          </button>
+          </button>` : ``}
           <button class="drill-chip" data-drill="chunk">
             <span class="drill-chip-emoji">🧩</span>
             <span class="drill-chip-label">Chunks</span>
@@ -1061,6 +1073,22 @@ const App = (function () {
 
   function iconSound() {
     return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>`;
+  }
+  function iconCopy() {
+    return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
+  }
+  // Copy text to the clipboard, with a graceful fallback for older browsers.
+  function copyText(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(text);
+    }
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.select();
+      document.execCommand("copy"); ta.remove();
+      return Promise.resolve();
+    } catch (e) { return Promise.reject(e); }
   }
 
   // Delegated handler that wires every [data-speak-nl] / [data-speak-en] button
@@ -1863,6 +1891,9 @@ const App = (function () {
     if (active.kind === "vocab") {
       const t = VOCAB_THEMES.find((x) => x.id === active.themeId);
       const items = VOCAB.filter((v) => v.theme === active.themeId);
+      // The theme may not exist in the active language (e.g. a German-only
+      // category after switching languages) — fall back to Browse.
+      if (!t || items.length === 0) { navigate("browse"); return el(`<div></div>`); }
       const wrap = el(`
         <div class="view stack">
           <button class="btn ghost" id="back" style="align-self:flex-start; padding:6px 12px; font-size:13px">← Back</button>
@@ -1887,20 +1918,32 @@ const App = (function () {
                 <span class="li-sub">${escape(v.en)}</span>
               </button>
               ${v.example ? `
-                <button class="vocab-example" title="Hear the example sentence">
-                  ${iconSound()}<em class="nl-text">${escape(v.example.nl)}</em>
-                </button>` : ""}
+                <div class="vocab-example-row">
+                  <button class="vocab-example" title="Hear the example sentence">
+                    ${iconSound()}<em class="nl-text">${escape(v.example.nl)}</em>
+                  </button>
+                  <button class="vocab-copy" title="Copy sentence" aria-label="Copy sentence">${iconCopy()}</button>
+                </div>` : ""}
             </div>
             <span class="chip ${m === "mature" ? "success" : m === "young" ? "primary" : ""}">${m}</span>
           </div>
         `);
-        // Clicking anywhere on the card → word pronunciation; clicking the
-        // example sentence → sentence pronunciation (it stops the bubble).
+        // Clicking anywhere on the card → word pronunciation; the example
+        // sentence → sentence pronunciation; the copy button → copy only.
         item.addEventListener("click", () => Speech.speak(v.nl, { rate: state.settings.prefRate }));
         const exBtn = $(".vocab-example", item);
         if (exBtn) exBtn.addEventListener("click", (e) => {
           e.stopPropagation();
           Speech.speak(v.example.nl, { rate: state.settings.prefRate });
+        });
+        const copyBtn = $(".vocab-copy", item);
+        if (copyBtn) copyBtn.addEventListener("click", (e) => {
+          e.stopPropagation();  // don't play the word or the sentence
+          copyText(v.example.nl).then(() => {
+            copyBtn.classList.add("copied");
+            toast("Copied");
+            setTimeout(() => copyBtn.classList.remove("copied"), 1200);
+          }).catch(() => toast("Couldn't copy"));
         });
         list.appendChild(item);
       });
@@ -1911,6 +1954,7 @@ const App = (function () {
     } else {
       const t = SENTENCE_THEMES.find((x) => x.id === active.themeId);
       const items = SENTENCES.filter((s) => s.theme === active.themeId);
+      if (!t || items.length === 0) { navigate("browse"); return el(`<div></div>`); }
       const wrap = el(`
         <div class="view stack">
           <button class="btn ghost" id="back" style="align-self:flex-start; padding:6px 12px; font-size:13px">← Back</button>
@@ -2497,6 +2541,9 @@ const App = (function () {
     return (id && Lang.has(id)) ? id : Lang.list()[0].id;
   }
 
+  // Does the active language have a wired-up speech (TTS/STT) model?
+  function hasSpeech() { return Lang.cfg().hasSpeech !== false; }
+
   // Load the active language's deck + state and configure the speech backend.
   function loadLanguage(id) {
     Lang.use(id);
@@ -2504,9 +2551,16 @@ const App = (function () {
     Store.setKey(cfg.storageKey);
     state = Store.load();
     if (!state.settings.targetVoice) state.settings.targetVoice = cfg.defaultVoice;
-    if (Speech.setTargetLang)  Speech.setTargetLang(cfg.langCode);
-    if (Speech.setTargetVoice) Speech.setTargetVoice(state.settings.targetVoice);
+    const speech = cfg.hasSpeech !== false;
+    if (Speech.setTargetLang)   Speech.setTargetLang(cfg.langCode);
+    if (Speech.setTargetVoice)  Speech.setTargetVoice(state.settings.targetVoice);
     if (Speech.setEnglishVoice) Speech.setEnglishVoice(state.settings.englishVoice || "casual_female");
+    if (Speech.setTargetSpeech) Speech.setTargetSpeech(speech);
+    // Root flags: hide audio-only UI when there's no speech; flip the WHOLE app
+    // to right-to-left for scripts like Sorani (Arabic-based). Latin-script
+    // languages — including Kurmanji — stay left-to-right (the default).
+    document.documentElement.toggleAttribute("data-no-speech", !speech);
+    document.documentElement.setAttribute("dir", cfg.rtl ? "rtl" : "ltr");
     applyBranding(cfg);
   }
 

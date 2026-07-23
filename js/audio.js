@@ -174,9 +174,11 @@ window.Speech = (function () {
   let targetVoice = "nl_male";
   let defaultEnglishVoice = "casual_female";
   let defaultLang = "nl-NL";        // BCP-47 code of the target language
+  let targetSpeech = true;          // false for languages with no TTS/STT yet (e.g. Kurdish)
   function setTargetVoice(v) { if (v) targetVoice = v; }
   function setEnglishVoice(v) { if (v) defaultEnglishVoice = v; }
   function setTargetLang(code) { if (code) defaultLang = code; }
+  function setTargetSpeech(on) { targetSpeech = on !== false; }
   function mlxVoiceForLang(lang, prefVoice) {
     if (prefVoice) return prefVoice;
     const prefix = (lang || defaultLang).toLowerCase().slice(0, 2);
@@ -218,6 +220,9 @@ window.Speech = (function () {
     cancelCurrent();
     const myGen = speakGen;          // capture generation; bail if it changes
     const lang = opts.lang || defaultLang;
+    // Languages without a speech model yet (Kurdish) stay silent for target-
+    // language text rather than mispronouncing it with a wrong system voice.
+    if (!targetSpeech && lang.toLowerCase().slice(0, 2) !== "en") return false;
     const voice = mlxVoiceForLang(lang, opts.voice);
     const clean = cleanForTts(text);
 
@@ -315,6 +320,7 @@ window.Speech = (function () {
     setTargetVoice,
     setEnglishVoice,
     setTargetLang,
+    setTargetSpeech,
     ttsBase,
   };
 })();

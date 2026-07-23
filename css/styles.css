@@ -659,6 +659,45 @@ p { margin: 0 0 .8em; }
 .vocab-example:hover { color: var(--primary); }
 .vocab-example svg { flex-shrink: 0; margin-top: 2px; opacity: 0.75; }
 
+/* example sentence row: [ play sentence ............ ] [copy] */
+.vocab-example-row { display: flex; align-items: flex-start; gap: 4px; width: 100%; margin-top: 4px; }
+.vocab-example-row .vocab-example { margin-top: 0; }
+.vocab-copy {
+  flex-shrink: 0; background: none; border: 0; margin: 0; padding: 4px;
+  color: var(--text-subtle); cursor: pointer; border-radius: 8px;
+  display: inline-grid; place-items: center;
+  transition: color 120ms, background 120ms;
+}
+.vocab-copy:hover { color: var(--primary); background: var(--primary-soft); }
+.vocab-copy.copied { color: var(--success); }
+
+/* Languages with no speech model yet: hide audio-only controls */
+[data-no-speech] .audio-btn,
+[data-no-speech] .speak-inline,
+[data-no-speech] .audio-btn-inline,
+[data-no-speech] #play-all,
+[data-no-speech] #narrow-listen,
+[data-no-speech] #play-passage,
+[data-no-speech] .vocab-example svg { display: none; }
+[data-no-speech] .vocab-item,
+[data-no-speech] .vocab-word,
+[data-no-speech] .vocab-example { cursor: default; }
+[data-no-speech] .vocab-word:hover .li-title,
+[data-no-speech] .vocab-example:hover { color: inherit; }
+
+/* Right-to-left scripts (Sorani): the whole app flips via <html dir="rtl">.
+   Keep digits, respelling hints, and Latin fragments left-to-right, and let
+   mixed target/English runs isolate cleanly. */
+[dir="rtl"] .respell,
+[dir="rtl"] .drill-big,
+[dir="rtl"] .mono,
+[dir="rtl"] .heat-cell { direction: ltr; }
+[dir="rtl"] .nl-text,
+[dir="rtl"] .prompt-word,
+[dir="rtl"] .cloze-prompt,
+[dir="rtl"] .passage-para,
+[dir="rtl"] .dlg-nl { unicode-bidi: plaintext; }
+
 /* ---------- Dialogue ---------- */
 .dialogue { display: flex; flex-direction: column; gap: 10px; }
 .dlg-line {

@@ -17,3 +17,5 @@ __pycache__/
 # Local backup downloads (generated on user action)
 leer-nl-backup-*.json
 lern-de-backup-*.json
+fer-ckb-backup-*.json
+fer-kmr-backup-*.json

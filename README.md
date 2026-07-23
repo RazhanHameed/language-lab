@@ -2,7 +2,9 @@
 
 A single-user, local-first language-learning app. Built around scientifically-validated SLA techniques (FSRS spaced repetition, retrieval practice, interleaving, shadowing, minimal-pair perception, formulaic chunks, extensive reading) and powered by on-device speech via Apple's MLX framework — no cloud, no accounts, no subscriptions.
 
-**Two languages, one app.** It ships with full **Dutch** (Amsterdam-flavoured) and **German** (Berlin-flavoured) decks — every card, sentence, scenario, grammar capsule, drill, and reading passage exists in both, hand-written for each. Flip between them with the 🇳🇱 / 🇩🇪 selector in the top bar; each language keeps its own separate progress, streak, and settings. The engine is language-agnostic — adding a third language is a data folder plus a small language pack (see below).
+**Four languages, one app.** It ships with full **Dutch** (Amsterdam-flavoured), **German** (Berlin-flavoured), **Central Kurdish / Sorani** (Arabic script, right-to-left), and **Kurmanji** (Latin script) decks — every card, sentence, scenario, grammar capsule, drill, and reading passage exists in each, hand-written and culturally specific. Flip between them with the 🇳🇱 / 🇩🇪 / ☀️ / 🏔️ selector in the top bar; each language keeps its own separate progress, streak, and settings. The engine is language-agnostic — adding another language is a data folder plus a small language pack (see below).
+
+Speech (on-device Voxtral TTS + Whisper STT) is wired for Dutch and German. The two Kurdish decks are text-first for now (`hasSpeech: false` — audio-only drills and buttons are hidden) until a Kurdish speech model is added; everything else works today.
 
 ---
 
@@ -218,14 +220,19 @@ The data files are intentionally small, hand-readable JS objects. To add your ow
 
 After editing any data file, just reload the page — no build, no restart needed.
 
-### Add a third language
+### Add another language
 
-The app is already multi-language (Dutch + German). To add a third — say French:
+The app ships four languages (Dutch, German, Sorani, Kurmanji). To add another — say French:
 
-1. **Data:** create `js/data/fr/` with the eight data files, each registering into `window.__DECK.fr` (copy the shape of `js/data/de/*.js`), and add their `<script>` tags to `index.html`.
-2. **Language pack:** create `js/lang/fr.js` that calls `Lang.register({ id: "fr", name: "French", brand: "Apprends le français", flag: "🇫🇷", langCode: "fr-FR", storageKey: "lern-fr:v1", … })` with the French number/time spelling, respeller, error diagnosis, tips, calendar, and Voxtral voices. Add its `<script>` after `js/lang/de.js`.
+1. **Data:** register the language in `js/data/_boot.js` (`window.__DECK.fr = {}`), create `js/data/fr/` with the eight data files (copy the shape of `js/data/de/*.js`, each registering into `window.__DECK.fr`), and add their `<script>` tags to `index.html`.
+2. **Language pack:** create `js/lang/fr.js` that calls `Lang.register({ id: "fr", name: "French", brand: "Apprends le français", flag: "🇫🇷", langCode: "fr-FR", storageKey: "lern-fr:v1", … })` with the French number/time spelling, respeller, error diagnosis, tips, calendar, and (if speech is available) Voxtral voices. Add its `<script>` after `js/lang/de.js`.
 
-That's it — the selector, per-language progress, voices, and drills pick it up automatically. Voxtral supports `nl`, `en`, `fr`, `es`, `de`, `it`, `pt`, `ar`, `hi` out of the box; Whisper handles ~99 languages.
+That's it — the selector, per-language progress, and drills pick it up automatically. Two optional pack flags cover the harder cases:
+
+- **`hasSpeech: false`** — the language has no TTS/STT model yet (like Kurdish today). The engine stays silent instead of mispronouncing with a wrong voice, and hides the audio-only drills (Speaking, Shadowing, Minimal pairs) and buttons. Flip it to `true` and add `voices` once a model exists.
+- **`rtl: true`** — right-to-left script (like Sorani). The whole app flips to right-to-left (`<html dir="rtl">`) while that language is active; Latin-script languages (including Kurmanji) stay left-to-right.
+
+Voxtral supports `nl`, `en`, `fr`, `es`, `de`, `it`, `pt`, `ar`, `hi` out of the box; Whisper handles ~99 languages.
 
 ---
 
