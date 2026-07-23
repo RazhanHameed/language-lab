@@ -126,7 +126,7 @@ Stop both servers with **Ctrl+C** in the terminal — the trap cleans up the bac
 ## Project structure
 
 ```
-learn-dutch/
+language-lab/
 ├── index.html                 # single-page app shell (loads both decks + both language packs)
 ├── start.sh                   # minimal launcher (browser TTS only)
 ├── start-mlx.sh               # full launcher (uv + mlx-audio + Voxtral + Whisper)
