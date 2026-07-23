@@ -201,4 +201,4 @@ if command -v open >/dev/null 2>&1; then
   ( sleep 0.6 && open "$URL" ) &
 fi
 
-exec python -m http.server "$WEB_PORT" --bind 127.0.0.1
+exec python serve.py "$WEB_PORT"

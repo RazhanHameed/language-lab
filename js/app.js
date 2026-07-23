@@ -2507,15 +2507,28 @@ const App = (function () {
     if (fav) fav.href = `data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>${encodeURIComponent(cfg.flag)}</text></svg>`;
   }
 
-  // A switch reloads the page so every deck/engine hook re-reads the new
-  // language from a clean slate (state, voices, langCode). Simple and safe.
-  // We navigate to the bare pathname so any ?lang= deep-link override is
-  // dropped and the stored choice governs after reload.
+  // Switch language IN PLACE — no page reload, stay on the current view.
+  // Both decks share the same theme/scenario/grammar/passage IDs, so a detail
+  // view maps 1:1 to the other language and simply re-renders in it.
+  //
+  // Views backed by an in-progress session or drill can't survive the swap
+  // (their queued card IDs belong to the old deck), so those fall back to Home.
+  const SESSION_VIEWS = ["study", "summary", "drill", "drill-summary"];
   function switchLanguage(id) {
     if (!Lang.has(id) || id === Lang.active()) return;
     try { localStorage.setItem(LANG_PREF_KEY, id); } catch (_) {}
     Speech.cancel();
-    location.href = location.pathname;
+    currentSession = null;
+    currentDrill = null;
+    loadLanguage(id);          // re-point deck, reload that language's state, voices, branding
+    applyTheme();              // each language keeps its own theme setting
+    // Drop any ?lang= override from the URL so a later reload honours the stored choice.
+    if (window.history && history.replaceState) {
+      history.replaceState(null, "", location.pathname);
+    }
+    buildLangSwitcher();       // reflect the newly-active language in the selector
+    const view = SESSION_VIEWS.includes(currentView) ? "home" : currentView;
+    navigate(view);            // re-sync tabs, re-render the (preserved) view, scroll to top
   }
 
   function buildLangSwitcher() {

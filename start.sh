@@ -35,4 +35,4 @@ if command -v open >/dev/null 2>&1; then
   ( sleep 0.6 && open "$URL" ) &
 fi
 
-exec "$PY" -m http.server "$PORT" --bind 127.0.0.1
+exec "$PY" serve.py "$PORT"
