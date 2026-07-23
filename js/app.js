@@ -1880,15 +1880,28 @@ const App = (function () {
         const st = state.cards[v.id];
         const m = SRS.maturity(st);
         const item = el(`
-          <button class="list-item">
+          <div class="list-item vocab-item">
             <div class="li-main">
-              <div class="li-title nl-text" style="font-size:18px">${v.gender ? `<span class="muted" style="font-weight:400">${v.gender}</span> ` : ""}${escape(v.nl)}</div>
-              <div class="li-sub">${escape(v.en)} ${v.example ? `· <em>${escape(v.example.nl)}</em>` : ""}</div>
+              <button class="vocab-word" title="Hear the word">
+                <span class="li-title nl-text" style="font-size:18px">${v.gender ? `<span class="muted" style="font-weight:400">${v.gender}</span> ` : ""}${escape(v.nl)}</span>
+                <span class="li-sub">${escape(v.en)}</span>
+              </button>
+              ${v.example ? `
+                <button class="vocab-example" title="Hear the example sentence">
+                  ${iconSound()}<em class="nl-text">${escape(v.example.nl)}</em>
+                </button>` : ""}
             </div>
             <span class="chip ${m === "mature" ? "success" : m === "young" ? "primary" : ""}">${m}</span>
-          </button>
+          </div>
         `);
+        // Clicking anywhere on the card → word pronunciation; clicking the
+        // example sentence → sentence pronunciation (it stops the bubble).
         item.addEventListener("click", () => Speech.speak(v.nl, { rate: state.settings.prefRate }));
+        const exBtn = $(".vocab-example", item);
+        if (exBtn) exBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          Speech.speak(v.example.nl, { rate: state.settings.prefRate });
+        });
         list.appendChild(item);
       });
       $("#back", wrap).addEventListener("click", () => navigate("browse"));

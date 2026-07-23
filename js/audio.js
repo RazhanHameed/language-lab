@@ -204,33 +204,58 @@ window.Speech = (function () {
     }
   }
 
+  // Normalise text before it reaches Voxtral. Collapsed whitespace + a trailing
+  // sentence terminator noticeably reduces the model's tendency to prepend a
+  // garbled lead-in syllable on bare words/fragments (e.g. a single vocab word).
+  function cleanForTts(text) {
+    let t = String(text).replace(/\s+/g, " ").trim();
+    if (t && !/[.!?…:;,]$/.test(t)) t += ".";
+    return t;
+  }
+
   async function speak(text, opts = {}) {
     if (!text) return false;
     cancelCurrent();
     const myGen = speakGen;          // capture generation; bail if it changes
     const lang = opts.lang || defaultLang;
     const voice = mlxVoiceForLang(lang, opts.voice);
+    const clean = cleanForTts(text);
 
-    // Route through MLX for the target language (and English). Falls back to
-    // Web Speech if MLX is offline or errors.
+    // Route through MLX for the target language (and English).
     if (voice) {
       const useMlx = await probeMlx();
       if (myGen !== speakGen) return false;   // cancelled while probing
       if (useMlx) {
+        let url = null;
         try {
-          const url = await mlxFetch(text, voice);
-          if (myGen !== speakGen) return false; // cancelled while fetching
-          await playUrl(url, opts, myGen);
-          return true;
+          url = await mlxFetch(clean, voice);
         } catch (e) {
-          if (e.name === "AbortError") return false; // expected on cancel
-          console.warn("MLX TTS failed, falling back to Web Speech:", e);
+          if (e.name === "AbortError") return false;        // expected on cancel
+          // The FETCH failed (server down / cold-start error) — MLX produced no
+          // audio, so Web Speech is the right fallback. Mark unavailable; the
+          // next call re-probes and recovers once the server is ready.
+          console.warn("MLX TTS fetch failed, falling back to Web Speech:", e);
           mlxState = "unavailable";
+        }
+        if (myGen !== speakGen) return false; // cancelled while fetching
+        if (url) {
+          // We HAVE valid Voxtral audio. A play() failure here is environmental
+          // (browser autoplay policy, device hiccup); Web Speech would only
+          // garble with the wrong system voice, so give up quietly instead of
+          // falling back — avoids the "system voice then Voxtral" double.
+          try {
+            await playUrl(url, opts, myGen);
+            return true;
+          } catch (e) {
+            if (e.name === "AbortError") return false;
+            console.warn("MLX audio playback failed:", e);
+            return false;
+          }
         }
       }
     }
     if (myGen !== speakGen) return false;     // don't double up via fallback
-    return webSpeak(text, opts);
+    return webSpeak(clean, opts);
   }
 
   function cancel() { cancelCurrent(); }
