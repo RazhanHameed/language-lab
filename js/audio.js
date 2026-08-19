@@ -51,14 +51,20 @@ window.Speech = (function () {
     return null;
   }
 
-  // --- MLX server wiring ---
+  // --- local speech servers ---
+  // TTS  = Supertonic-3 (on-device ONNX/CoreML), default :5510
+  // STT  = Whisper via the mlx-audio server, default :5500
   const params = new URLSearchParams(location.search);
   const ttsBase =
     params.get("tts") ||
     localStorage.getItem("learn:tts") ||
+    "http://127.0.0.1:5510";
+  const sttBase =
+    params.get("stt") ||
+    localStorage.getItem("learn:stt") ||
     "http://127.0.0.1:5500";
-  const MLX_MODEL = "mlx-community/Voxtral-4B-TTS-2603-mlx-4bit";
-  const blobCache = new Map(); // `${voice}|${text}` -> ObjectURL
+  const TTS_MODEL = "supertonic-3";
+  const blobCache = new Map(); // `${voice}|${lang}|${text}` -> ObjectURL
   const MAX_CACHE = 80;
 
   let mlxState = "unknown"; // 'unknown' | 'probing' | 'available' | 'unavailable'
@@ -117,8 +123,8 @@ window.Speech = (function () {
     activeAudios.clear();
   }
 
-  async function mlxFetch(text, voice) {
-    const key = `${voice}|${text}`;
+  async function ttsFetch(text, voice, lang) {
+    const key = `${voice}|${lang}|${text}`;
     if (blobCache.has(key)) return blobCache.get(key);
     const ctrl = new AbortController();
     activeFetches.add(ctrl);
@@ -126,7 +132,7 @@ window.Speech = (function () {
       const res = await fetch(`${ttsBase}/v1/audio/speech`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ model: MLX_MODEL, input: text, voice, response_format: "wav" }),
+        body: JSON.stringify({ model: TTS_MODEL, input: text, voice, language: lang, response_format: "wav" }),
         signal: ctrl.signal,
       });
       if (!res.ok) throw new Error(`tts ${res.status}`);
@@ -168,18 +174,18 @@ window.Speech = (function () {
     });
   }
 
-  // Voice mapping. There's one active target language at a time (the one being
-  // learned) plus English. Any non-English request resolves to the configured
-  // target voice; English resolves to the English voice.
-  let targetVoice = "nl_male";
-  let defaultEnglishVoice = "casual_female";
+  // Voice mapping. Supertonic voices are speaker PRESETS (M1/M2/F1/F2) that are
+  // language-agnostic — the language is sent separately. The target language
+  // uses the configured target voice; English uses the English voice.
+  let targetVoice = "M1";
+  let defaultEnglishVoice = "M1";
   let defaultLang = "nl-NL";        // BCP-47 code of the target language
   let targetSpeech = true;          // false for languages with no TTS/STT yet (e.g. Kurdish)
   function setTargetVoice(v) { if (v) targetVoice = v; }
   function setEnglishVoice(v) { if (v) defaultEnglishVoice = v; }
   function setTargetLang(code) { if (code) defaultLang = code; }
   function setTargetSpeech(on) { targetSpeech = on !== false; }
-  function mlxVoiceForLang(lang, prefVoice) {
+  function voiceForLang(lang, prefVoice) {
     if (prefVoice) return prefVoice;
     const prefix = (lang || defaultLang).toLowerCase().slice(0, 2);
     if (prefix === "en") return defaultEnglishVoice;
@@ -206,8 +212,8 @@ window.Speech = (function () {
     }
   }
 
-  // Normalise text before it reaches Voxtral. Collapsed whitespace + a trailing
-  // sentence terminator noticeably reduces the model's tendency to prepend a
+  // Normalise text before it reaches the TTS model. Collapsed whitespace + a
+  // trailing sentence terminator reduces a model's tendency to prepend a
   // garbled lead-in syllable on bare words/fragments (e.g. a single vocab word).
   function cleanForTts(text) {
     let t = String(text).replace(/\s+/g, " ").trim();
@@ -220,40 +226,42 @@ window.Speech = (function () {
     cancelCurrent();
     const myGen = speakGen;          // capture generation; bail if it changes
     const lang = opts.lang || defaultLang;
+    const lang2 = lang.toLowerCase().slice(0, 2);
     // Languages without a speech model yet (Kurdish) stay silent for target-
     // language text rather than mispronouncing it with a wrong system voice.
-    if (!targetSpeech && lang.toLowerCase().slice(0, 2) !== "en") return false;
-    const voice = mlxVoiceForLang(lang, opts.voice);
+    if (!targetSpeech && lang2 !== "en") return false;
+    const voice = voiceForLang(lang, opts.voice);
     const clean = cleanForTts(text);
 
-    // Route through MLX for the target language (and English).
+    // Route through the on-device Supertonic TTS server for the target language
+    // (and English).
     if (voice) {
-      const useMlx = await probeMlx();
+      const useTts = await probeMlx();
       if (myGen !== speakGen) return false;   // cancelled while probing
-      if (useMlx) {
+      if (useTts) {
         let url = null;
         try {
-          url = await mlxFetch(clean, voice);
+          url = await ttsFetch(clean, voice, lang2);
         } catch (e) {
           if (e.name === "AbortError") return false;        // expected on cancel
-          // The FETCH failed (server down / cold-start error) — MLX produced no
-          // audio, so Web Speech is the right fallback. Mark unavailable; the
-          // next call re-probes and recovers once the server is ready.
-          console.warn("MLX TTS fetch failed, falling back to Web Speech:", e);
+          // The FETCH failed (server down / cold-start) — no audio was produced,
+          // so Web Speech is the right fallback. Mark unavailable; the next call
+          // re-probes and recovers once the server is ready.
+          console.warn("Supertonic TTS fetch failed, falling back to Web Speech:", e);
           mlxState = "unavailable";
         }
         if (myGen !== speakGen) return false; // cancelled while fetching
         if (url) {
-          // We HAVE valid Voxtral audio. A play() failure here is environmental
-          // (browser autoplay policy, device hiccup); Web Speech would only
-          // garble with the wrong system voice, so give up quietly instead of
-          // falling back — avoids the "system voice then Voxtral" double.
+          // We HAVE valid Supertonic audio. A play() failure here is
+          // environmental (autoplay policy, device hiccup); Web Speech would
+          // only garble with the wrong system voice, so give up quietly instead
+          // of falling back — avoids the "system voice then real voice" double.
           try {
             await playUrl(url, opts, myGen);
             return true;
           } catch (e) {
             if (e.name === "AbortError") return false;
-            console.warn("MLX audio playback failed:", e);
+            console.warn("TTS audio playback failed:", e);
             return false;
           }
         }
@@ -265,21 +273,22 @@ window.Speech = (function () {
 
   function cancel() { cancelCurrent(); }
 
-  // Speech-to-text via mlx-audio's OpenAI-compatible Whisper endpoint.
+  // Speech-to-text via the mlx-audio server's OpenAI-compatible Whisper endpoint
+  // (separate from the Supertonic TTS server).
   const STT_MODEL = "mlx-community/whisper-large-v3-turbo-asr-fp16";
   async function transcribe(blob, opts = {}) {
     if (!blob || !blob.size) throw new Error("empty audio");
-    const useMlx = await probeMlx();
-    if (!useMlx) throw new Error("MLX server not running");
     const fd = new FormData();
     fd.append("file", blob, opts.filename || "speech.webm");
     fd.append("model", opts.model || STT_MODEL);
     const lang = opts.lang || defaultLang.slice(0, 2);
     if (lang) fd.append("language", lang);
-    const res = await fetch(`${ttsBase}/v1/audio/transcriptions`, {
-      method: "POST",
-      body: fd,
-    });
+    let res;
+    try {
+      res = await fetch(`${sttBase}/v1/audio/transcriptions`, { method: "POST", body: fd });
+    } catch (e) {
+      throw new Error("STT server not running — start with ./start-mlx.sh");
+    }
     if (!res.ok) throw new Error(`transcribe ${res.status}`);
     const ct = res.headers.get("content-type") || "";
     if (ct.includes("json")) {

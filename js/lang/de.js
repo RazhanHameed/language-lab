@@ -183,11 +183,13 @@
     storageKey: "lern-de:v1",
     backupPrefix: "lern-de",
     voices: [
-      { value: "de_male",   label: "Voxtral · de_male" },
-      { value: "de_female", label: "Voxtral · de_female" },
+      { value: "M1", label: "Supertonic · Male 1" },
+      { value: "F1", label: "Supertonic · Female 1" },
+      { value: "M2", label: "Supertonic · Male 2" },
+      { value: "F2", label: "Supertonic · Female 2" },
     ],
-    defaultVoice: "de_male",
-    narrowVoices: ["de_male", "de_female", "de_male"],
+    defaultVoice: "M1",
+    narrowVoices: ["M1", "F1", "M1"],
     greeting(h) {
       if (h < 11) return { target: "Guten Morgen", en: "Good morning" };
       if (h < 18) return { target: "Guten Tag", en: "Good afternoon" };

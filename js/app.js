@@ -413,7 +413,7 @@ const App = (function () {
           <button class="drill-chip" data-drill="shadow">
             <span class="drill-chip-emoji">🌓</span>
             <span class="drill-chip-label">Shadowing</span>
-            <span class="drill-chip-sub">repeat after Voxtral · prosody</span>
+            <span class="drill-chip-sub">repeat after the voice · prosody</span>
           </button>
           <button class="drill-chip" data-drill="minpair">
             <span class="drill-chip-emoji">👂</span>
@@ -1216,7 +1216,7 @@ const App = (function () {
       conjugation: "Conjugation · type the form",
       chunk: `Chunks · type ${L}`,
       speaking: `Speaking · say it in ${L}`,
-      shadow: "Shadowing · repeat after Voxtral",
+      shadow: "Shadowing · repeat after the voice",
       minpair: "Minimal pairs · which did you hear?",
     })[kind] || kind;
   }
@@ -1487,7 +1487,7 @@ const App = (function () {
 
     // Probe: warn if MLX server isn't running
     Speech.probeMlx().then((ok) => {
-      if (!ok) status.textContent = "MLX server not running — start with ./start-mlx.sh to score speaking.";
+      if (!ok) status.textContent = "Speech server not running — start with ./start-mlx.sh to score speaking.";
     });
 
     return wrap;
@@ -1645,7 +1645,7 @@ const App = (function () {
       if (confirm("Quit this drill?")) { currentDrill = null; navigate("home"); }
     });
     Speech.probeMlx().then((ok) => {
-      if (!ok) status.textContent = "MLX server not running — start with ./start-mlx.sh to score shadowing.";
+      if (!ok) status.textContent = "Speech server not running — start with ./start-mlx.sh to score shadowing.";
     });
     return wrap;
   }
@@ -1653,7 +1653,7 @@ const App = (function () {
   // ----- Minimal-pair perception drill -----
   // Plays one of two near-identical NL words, user picks which they heard.
   // No typing, no speaking — pure ear training (high-variability phonetic
-  // training, HVPT). Voxtral pronounces both as standard nl_male/female.
+  // training, HVPT). The TTS server pronounces the chosen word for each side.
   function renderMinPairQuestion() {
     const d = currentDrill;
     const q = d.queue[d.idx];
@@ -2384,16 +2384,16 @@ const App = (function () {
               </select>
             </label>
             <label class="row spread" style="gap:12px">
-              <span>${Lang.cfg().name} voice (MLX)</span>
+              <span>${Lang.cfg().name} voice</span>
               <select id="set-dutch-voice">
                 ${Lang.cfg().voices.map(v => `<option value="${v.value}" ${state.settings.targetVoice === v.value ? "selected" : ""}>${v.label}</option>`).join("")}
               </select>
             </label>
             <label class="row spread" style="gap:12px">
-              <span>English voice (MLX)</span>
+              <span>English voice</span>
               <select id="set-english-voice">
-                ${["casual_female","casual_male","cheerful_female","neutral_female","neutral_male"]
-                  .map(v => `<option value="${v}" ${state.settings.englishVoice === v ? "selected" : ""}>Voxtral · ${v}</option>`).join("")}
+                ${[["M1","Male 1"],["F1","Female 1"],["M2","Male 2"],["F2","Female 2"]]
+                  .map(([v,l]) => `<option value="${v}" ${state.settings.englishVoice === v ? "selected" : ""}>Supertonic · ${l}</option>`).join("")}
               </select>
             </label>
             <div id="tts-status" class="muted" style="font-size:12px;"></div>
@@ -2469,9 +2469,9 @@ const App = (function () {
       const mlxOK = Speech.probeMlx ? await Speech.probeMlx() : false;
       const parts = [];
       if (mlxOK) {
-        parts.push(`<span class="chip success">MLX: Voxtral 4-bit ready</span>`);
+        parts.push(`<span class="chip success">TTS: Supertonic-3 (on-device) ready</span>`);
       } else {
-        parts.push(`<span class="chip">MLX: not running — start with <span class="mono">./start-mlx.sh</span></span>`);
+        parts.push(`<span class="chip">TTS: not running — start with <span class="mono">./start-mlx.sh</span></span>`);
       }
       if (Speech.supported) {
         parts.push(webOK
@@ -2558,7 +2558,7 @@ const App = (function () {
     const speech = cfg.hasSpeech !== false;
     if (Speech.setTargetLang)   Speech.setTargetLang(cfg.langCode);
     if (Speech.setTargetVoice)  Speech.setTargetVoice(state.settings.targetVoice);
-    if (Speech.setEnglishVoice) Speech.setEnglishVoice(state.settings.englishVoice || "casual_female");
+    if (Speech.setEnglishVoice) Speech.setEnglishVoice(state.settings.englishVoice || "M1");
     if (Speech.setTargetSpeech) Speech.setTargetSpeech(speech);
     // Root flags: hide audio-only UI when there's no speech; flip the WHOLE app
     // to right-to-left for scripts like Sorani (Arabic-based). Latin-script

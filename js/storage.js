@@ -23,7 +23,7 @@ window.Store = (function () {
         autoPlay: true,         // auto-pronounce on card flip
         ratingMode: "four",     // 'four' (Again/Hard/Good/Easy) | 'two' (Wrong/Right)
         targetVoice: null,      // MLX voice for the language being learned (filled from Lang default)
-        englishVoice: "casual_female", // MLX voice: casual_male/female, cheerful_female, neutral_male/female
+        englishVoice: "M1",     // Supertonic preset for English audio (M1/M2/F1/F2)
       },
     };
   }

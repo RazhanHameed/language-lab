@@ -92,15 +92,16 @@ need_install=0
 python -c "import mlx_audio" 2>/dev/null || need_install=1
 python -c "import uvicorn, fastapi, webrtcvad" 2>/dev/null || need_install=1
 python -c "import scipy" 2>/dev/null || need_install=1
+python -c "import supertonic" 2>/dev/null || need_install=1
 python -c "import mistral_common, sys; sys.exit(0 if tuple(int(x) for x in mistral_common.__version__.split('.')[:2]) >= (1, 11) else 1)" 2>/dev/null || need_install=1
 python -c "import importlib.metadata as m, sys; sys.exit(0 if m.version('mlx') == '0.31.1' else 1)" 2>/dev/null || need_install=1
 if [ "$need_install" = "1" ]; then
-  echo "[2/4] installing mlx-audio[server,tts] + mistral-common>=1.11 + scipy + $MLX_PIN (one-time, ~1-3 min)..."
+  echo "[2/4] installing mlx-audio[server,tts] + mistral-common>=1.11 + scipy + supertonic + $MLX_PIN (one-time, ~1-3 min)..."
   if [ "$USE_UV" = "1" ]; then
-    uv pip install --quiet "mlx-audio[server,tts]" "mistral-common[audio]>=1.11" scipy "$MLX_PIN"
+    uv pip install --quiet "mlx-audio[server,tts]" "mistral-common[audio]>=1.11" scipy supertonic "$MLX_PIN"
   else
     python -m pip install --upgrade pip --quiet
-    python -m pip install --quiet "mlx-audio[server,tts]" "mistral-common[audio]>=1.11" scipy "$MLX_PIN"
+    python -m pip install --quiet "mlx-audio[server,tts]" "mistral-common[audio]>=1.11" scipy supertonic "$MLX_PIN"
   fi
 fi
 
@@ -109,9 +110,9 @@ while lsof -iTCP:"$TTS_PORT" -sTCP:LISTEN >/dev/null 2>&1; do
   TTS_PORT=$((TTS_PORT + 1))
 done
 
-# --- start the TTS server ---
+# --- start the mlx-audio server (Whisper STT lives here; TTS is Supertonic) ---
 mkdir -p .logs
-echo "[3/4] starting MLX-Audio server on :${TTS_PORT}..."
+echo "[3/4] starting mlx-audio server on :${TTS_PORT} (Whisper STT)..."
 mlx_audio.server \
   --host 127.0.0.1 \
   --port "$TTS_PORT" \
@@ -123,7 +124,7 @@ TTS_PID=$!
 cleanup() {
   echo
   echo "shutting down..."
-  kill "$TTS_PID" 2>/dev/null || true
+  kill "$TTS_PID" "${SUP_PID:-}" 2>/dev/null || true
   wait "$TTS_PID" 2>/dev/null || true
 }
 trap cleanup EXIT INT TERM
@@ -145,18 +146,29 @@ for i in $(seq 1 30); do
   fi
 done
 
-# --- pre-warm Voxtral so the first user click is fast ---
-echo "[4/4] pre-warming Voxtral TTS (downloads ~2.5 GB on first run)..."
-echo "      → tail -f .logs/server.stderr.log if you want progress."
-warm_started=$(date +%s)
-if curl -sf -X POST "http://127.0.0.1:${TTS_PORT}/v1/audio/speech" \
+# --- start the on-device Supertonic-3 TTS server ---
+SUP_PORT="${SUP_PORT:-5510}"
+while lsof -iTCP:"$SUP_PORT" -sTCP:LISTEN >/dev/null 2>&1; do SUP_PORT=$((SUP_PORT + 1)); done
+echo "[4/4] starting Supertonic-3 TTS server on :${SUP_PORT} (on-device ONNX/CoreML; downloads model on first run)..."
+python supertonic_server.py "$SUP_PORT" >.logs/supertonic.stdout.log 2>.logs/supertonic.stderr.log &
+SUP_PID=$!
+printf "      waiting for Supertonic"
+for i in $(seq 1 90); do
+  if curl -sf "http://127.0.0.1:${SUP_PORT}/v1/models" >/dev/null 2>&1; then echo " ready."; break; fi
+  printf "."
+  sleep 1
+  if ! kill -0 "$SUP_PID" 2>/dev/null; then
+    echo
+    echo "Supertonic server died. Check .logs/supertonic.stderr.log:" >&2
+    tail -n 20 .logs/supertonic.stderr.log >&2
+    exit 1
+  fi
+done
+# warm one synth so the first user click is instant
+if curl -sf -X POST "http://127.0.0.1:${SUP_PORT}/v1/audio/speech" \
      -H "Content-Type: application/json" \
-     -d "{\"model\":\"${MODEL}\",\"input\":\"hallo\",\"voice\":\"${PROBE_VOICE}\"}" \
-     -o /dev/null; then
-  warm_secs=$(( $(date +%s) - warm_started ))
-  echo "      → Voxtral ready in ${warm_secs}s."
-else
-  echo "      → Voxtral warm-up failed (model still loadable on first request)."
+     -d '{"input":"hallo","voice":"M1","language":"nl"}' -o /dev/null; then
+  echo "      → Supertonic warm."
 fi
 
 # --- pre-warm Whisper STT so the first speaking-drill turn is fast ---
@@ -192,13 +204,14 @@ fi
 while lsof -iTCP:"$WEB_PORT" -sTCP:LISTEN >/dev/null 2>&1; do
   WEB_PORT=$((WEB_PORT + 1))
 done
-URL="http://localhost:${WEB_PORT}/?tts=http://127.0.0.1:${TTS_PORT}"
+URL="http://localhost:${WEB_PORT}/?tts=http://127.0.0.1:${SUP_PORT}&stt=http://127.0.0.1:${TTS_PORT}"
 
 echo
-echo "🇳🇱  Leer Nederlands  /  🇩🇪  Lern Deutsch  +  Voxtral 4-bit"
+echo "🇳🇱  Leer Nederlands  /  🇩🇪  Lern Deutsch  +  Supertonic-3 (on-device)"
 echo "    web:  ${URL}"
-echo "    tts:  http://127.0.0.1:${TTS_PORT}/v1/audio/speech"
-echo "    Ctrl+C to stop both."
+echo "    tts:  http://127.0.0.1:${SUP_PORT}/v1/audio/speech   (Supertonic-3)"
+echo "    stt:  http://127.0.0.1:${TTS_PORT}/v1/audio/transcriptions   (Whisper)"
+echo "    Ctrl+C to stop all."
 echo
 
 if command -v open >/dev/null 2>&1; then

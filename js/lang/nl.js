@@ -171,11 +171,13 @@
     storageKey: "leer-nl:v1",
     backupPrefix: "leer-nl",
     voices: [
-      { value: "nl_male",   label: "Voxtral · nl_male" },
-      { value: "nl_female", label: "Voxtral · nl_female" },
+      { value: "M1", label: "Supertonic · Male 1" },
+      { value: "F1", label: "Supertonic · Female 1" },
+      { value: "M2", label: "Supertonic · Male 2" },
+      { value: "F2", label: "Supertonic · Female 2" },
     ],
-    defaultVoice: "nl_male",
-    narrowVoices: ["nl_male", "nl_female", "nl_male"],
+    defaultVoice: "F1",
+    narrowVoices: ["M1", "F1", "M1"],
     greeting(h) {
       if (h < 12) return { target: "Goedemorgen", en: "Good morning" };
       if (h < 18) return { target: "Goedemiddag", en: "Good afternoon" };

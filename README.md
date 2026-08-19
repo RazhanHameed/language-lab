@@ -4,24 +4,24 @@ A single-user, local-first language-learning app. Built around scientifically-va
 
 **Four languages, one app.** It ships with full **Dutch** (Amsterdam-flavoured), **German** (Berlin-flavoured), **Central Kurdish / Sorani** (Arabic script, right-to-left), and **Kurmanji** (Latin script) decks — every card, sentence, scenario, grammar capsule, drill, and reading passage exists in each, hand-written and culturally specific. Flip between them with the 🇳🇱 / 🇩🇪 / ☀️ / 🏔️ selector in the top bar; each language keeps its own separate progress, streak, and settings. The engine is language-agnostic — adding another language is a data folder plus a small language pack (see below).
 
-Speech (on-device Voxtral TTS + Whisper STT) is wired for Dutch and German. The two Kurdish decks are text-first for now (`hasSpeech: false` — audio-only drills and buttons are hidden) until a Kurdish speech model is added; everything else works today.
+Speech is on-device: **Supertonic-3** for TTS (ONNX Runtime + CoreML, ~99M params, 31 languages) and **Whisper** for STT, wired for Dutch and German. The two Kurdish decks are text-first for now (`hasSpeech: false` — audio-only drills and buttons are hidden) until a Kurdish speech model is added; everything else works today.
 
 ---
 
 ## Quick start
 
 ```bash
-git clone https://github.com/RazhanHameed/learn-dutch.git
-cd learn-dutch
+git clone https://github.com/RazhanHameed/language-lab.git
+cd language-lab
 
 # Option A — minimal: browser TTS only (Xander/Samantha on macOS)
 ./start.sh
 
-# Option B — full speech stack: on-device Voxtral 4-bit + Whisper STT
+# Option B — full speech stack: on-device Supertonic-3 TTS + Whisper STT
 ./start-mlx.sh
 ```
 
-`start.sh` opens `http://localhost:8123/` and works on any machine with Python 3.10+. `start-mlx.sh` additionally bootstraps a Python venv (via [uv](https://docs.astral.sh/uv/) when present), installs `mlx-audio[server,tts]`, downloads the Voxtral and Whisper weights on first run (~3.5 GB total), and routes Dutch + English through the local mlx-audio server for higher-quality voices and on-device speech recognition.
+`start.sh` opens `http://localhost:8123/` and works on any machine with Python 3.10+. `start-mlx.sh` additionally bootstraps a Python venv (via [uv](https://docs.astral.sh/uv/) when present), installs `supertonic` + `mlx-audio[server,tts]`, downloads the Supertonic-3 and Whisper weights on first run, and runs two small local servers: **Supertonic-3** (`:5510`) for text-to-speech and **mlx-audio/Whisper** (`:5500`) for speech recognition. No cloud calls.
 
 Mac with Apple Silicon recommended for the MLX path. The minimal `start.sh` works anywhere.
 
@@ -49,7 +49,7 @@ Cards mature on FSRS-4.5: stability + difficulty per card, retrievability predic
 | Drill | Mechanic | Research basis |
 |---|---|---|
 | 🎙️ **Speaking** | Record yourself saying a target phrase. Whisper transcribes; word-level edit distance scores. | Pushed output, immediate feedback |
-| 🌓 **Shadowing** | Hear Voxtral say a phrase, then echo it. Whisper transcribes your echo. | Whitworth 2025 systematic review |
+| 🌓 **Shadowing** | Hear the voice say a phrase, then echo it. Whisper transcribes your echo. | Whitworth 2025 systematic review |
 | 👂 **Minimal pairs** | Hear one of two near-identical Dutch words, pick which. | HVPT (Dherbey Chapuis & Berthele 2024) |
 | 🧩 **Chunks** | Translate 33 high-frequency formulaic sequences as units. | Hou et al. 2018 — chunks are processed holistically |
 | 🔢 **Numbers** | Type the Dutch for any 0–100 (vierentwintig drill). | Closes the tens/ones-swap blind spot |
@@ -60,7 +60,7 @@ Cards mature on FSRS-4.5: stability + difficulty per card, retrievability predic
 
 - **Vocabulary** — 232 cards across 11 themes (greetings, café, transport, work, daily, numbers, etc.). Each card carries gender (`de`/`het`), part of speech, an example sentence, and a free-form note for cultural details.
 - **Sentence patterns** — Tim Ferriss's 12 diagnostic sentences + V2 rule + ordering + work + negation + daily phrases.
-- **Scenario dialogues** — 10 hand-written Amsterdam scripts (café, AH, tram, standup, borrel, pharmacy, directions, bike, landlord, restaurant). Each has a "Narrow listen · 3×" button that loops the dialogue with alternating Voxtral voices.
+- **Scenario dialogues** — 10 hand-written Amsterdam scripts (café, AH, tram, standup, borrel, pharmacy, directions, bike, landlord, restaurant). Each has a "Narrow listen · 3×" button that loops the dialogue with alternating voices.
 - **Grammar capsules** — V2, modal verbs, de/het, niet vs geen, separable verbs, pronoun forms, Time-Manner-Place ordering, throaty G + ui/eu/ij sounds, plurals.
 - **Reading** — 6 short Dutch passages at A1–B1 difficulty. Tap any word for an inline gloss.
 
@@ -96,20 +96,20 @@ Bootstrap-free. Just a static-server wrapper.
 
 ### `start-mlx.sh` (full speech pipeline, Apple Silicon recommended)
 
-Adds [`mlx-audio`](https://github.com/Blaizzy/mlx-audio) — Apple's MLX framework — for on-device TTS via Voxtral 4-bit and STT via Whisper-large-v3-turbo. Same web app, but:
+Adds on-device speech: **[Supertonic-3](https://huggingface.co/Supertone/supertonic-3)** for TTS (ONNX Runtime + CoreML, runs several × faster than real-time on Apple Silicon) and **Whisper-large-v3-turbo** for STT via [`mlx-audio`](https://github.com/Blaizzy/mlx-audio). Same web app, but:
 
-- Voxtral 9-language voices, including male + female Dutch and 5 English variants
+- Supertonic-3 voices M1/M2 (male) and F1/F2 (female), across 31 languages incl. Dutch, German, and English
 - Speaking + shadowing drills work end-to-end with real transcription scoring
-- Reader auto-pronunciation uses Voxtral instead of system voices
+- Reader auto-pronunciation uses Supertonic instead of system voices
 
-**First run setup** (one-time, ~5–10 minutes):
+**First run setup** (one-time):
 
 1. The script detects [`uv`](https://docs.astral.sh/uv/) and uses `uv venv` if present (handles standalone Python 3.12 builds without `ensurepip`). Otherwise falls back to `python -m venv`.
-2. Installs `mlx-audio[server,tts]` plus `mistral-common[audio]>=1.11` (Voxtral's tokenizer needs the newer field schema) and pins `mlx==0.31.1` (mlx 0.32.0 made GPU streams thread-local, which breaks Whisper STT on the server's worker thread; 0.31.1 keeps both Voxtral TTS and Whisper STT working).
-3. Spawns `mlx_audio.server` on `127.0.0.1:5500` with permissive CORS.
-4. Pre-warms Voxtral (`mlx-community/Voxtral-4B-TTS-2603-mlx-4bit`, ~2.5 GB).
-5. Pre-warms Whisper (`mlx-community/whisper-large-v3-turbo-asr-fp16`, ~800 MB) — set `PREWARM_STT=0` to skip.
-6. Starts the static server on `8123` and opens the browser at `http://localhost:8123/?tts=http://127.0.0.1:5500`.
+2. Installs `supertonic` (TTS) + `mlx-audio[server,tts]` + `scipy` (Whisper needs it) + `mistral-common[audio]>=1.11`, pinning `mlx==0.31.1` (mlx 0.32.0 made GPU streams thread-local, which breaks Whisper STT on the server's worker thread; 0.31.1 keeps STT working).
+3. Spawns `mlx_audio.server` on `127.0.0.1:5500` (Whisper STT) with permissive CORS.
+4. Starts the on-device Supertonic-3 TTS server (`supertonic_server.py`) on `127.0.0.1:5510` and warms it (its ONNX weights download on first run).
+5. Pre-warms Whisper (`mlx-community/whisper-large-v3-turbo-asr-fp16`) — set `PREWARM_STT=0` to skip.
+6. Starts the static server on `8123` and opens the browser at `http://localhost:8123/?tts=http://127.0.0.1:5510&stt=http://127.0.0.1:5500`.
 
 Subsequent runs take ~30–60 s to load weights into memory.
 
@@ -131,7 +131,9 @@ Stop both servers with **Ctrl+C** in the terminal — the trap cleans up the bac
 language-lab/
 ├── index.html                 # single-page app shell (loads both decks + both language packs)
 ├── start.sh                   # minimal launcher (browser TTS only)
-├── start-mlx.sh               # full launcher (uv + mlx-audio + Voxtral + Whisper)
+├── start-mlx.sh               # full launcher (uv + Supertonic-3 TTS + mlx-audio/Whisper STT)
+├── supertonic_server.py       # on-device Supertonic-3 TTS server (OpenAI-style /v1/audio/speech)
+├── serve.py                   # no-cache static file server used by the launchers
 ├── css/
 │   └── styles.css             # mobile-first; desktop grid at min-width: 960px
 └── js/
@@ -162,10 +164,10 @@ No build step. No `package.json`. Open `index.html` in a browser and the app run
 - **Frontend:** vanilla HTML/CSS/JS, ~5,800 lines total. No frameworks, no bundler.
 - **State:** `localStorage` (single JSON blob, ~50 KB at full scale)
 - **SRS:** FSRS-4.5 in plain JS, ~220 lines
-- **TTS:** [Voxtral-4B-TTS-2603-mlx-4bit](https://huggingface.co/mlx-community/Voxtral-4B-TTS-2603-mlx-4bit) via [mlx-audio](https://github.com/Blaizzy/mlx-audio), with Web Speech API as fallback
-- **STT:** [whisper-large-v3-turbo-asr-fp16](https://huggingface.co/mlx-community/whisper-large-v3-turbo-asr-fp16) via mlx-audio
+- **TTS:** [Supertonic-3](https://huggingface.co/Supertone/supertonic-3) (ONNX Runtime + CoreML, on-device) via a small local server (`supertonic_server.py`), with Web Speech API as fallback
+- **STT:** [whisper-large-v3-turbo-asr-fp16](https://huggingface.co/mlx-community/whisper-large-v3-turbo-asr-fp16) via [mlx-audio](https://github.com/Blaizzy/mlx-audio)
 - **Audio recording:** browser MediaRecorder API + `audio/webm;codecs=opus`
-- **Local TTS server:** FastAPI + uvicorn (shipped by mlx-audio)
+- **Local speech servers:** Supertonic-3 TTS (`:5510`, stdlib http.server) + mlx-audio/Whisper STT (`:5500`, FastAPI/uvicorn)
 - **Python version manager:** [uv](https://docs.astral.sh/uv/) preferred, system Python fallback
 
 ---
@@ -225,14 +227,14 @@ After editing any data file, just reload the page — no build, no restart neede
 The app ships four languages (Dutch, German, Sorani, Kurmanji). To add another — say French:
 
 1. **Data:** register the language in `js/data/_boot.js` (`window.__DECK.fr = {}`), create `js/data/fr/` with the eight data files (copy the shape of `js/data/de/*.js`, each registering into `window.__DECK.fr`), and add their `<script>` tags to `index.html`.
-2. **Language pack:** create `js/lang/fr.js` that calls `Lang.register({ id: "fr", name: "French", brand: "Apprends le français", flag: "🇫🇷", langCode: "fr-FR", storageKey: "lern-fr:v1", … })` with the French number/time spelling, respeller, error diagnosis, tips, calendar, and (if speech is available) Voxtral voices. Add its `<script>` after `js/lang/de.js`.
+2. **Language pack:** create `js/lang/fr.js` that calls `Lang.register({ id: "fr", name: "French", brand: "Apprends le français", flag: "🇫🇷", langCode: "fr-FR", storageKey: "lern-fr:v1", … })` with the French number/time spelling, respeller, error diagnosis, tips, calendar, and (if speech is available) TTS voices. Add its `<script>` after `js/lang/de.js`.
 
 That's it — the selector, per-language progress, and drills pick it up automatically. Two optional pack flags cover the harder cases:
 
 - **`hasSpeech: false`** — the language has no TTS/STT model yet (like Kurdish today). The engine stays silent instead of mispronouncing with a wrong voice, and hides the audio-only drills (Speaking, Shadowing, Minimal pairs) and buttons. Flip it to `true` and add `voices` once a model exists.
 - **`rtl: true`** — right-to-left script (like Sorani). The whole app flips to right-to-left (`<html dir="rtl">`) while that language is active; Latin-script languages (including Kurmanji) stay left-to-right.
 
-Voxtral supports `nl`, `en`, `fr`, `es`, `de`, `it`, `pt`, `ar`, `hi` out of the box; Whisper handles ~99 languages.
+Supertonic-3 supports 31 languages (incl. `nl`, `de`, `en`, `fr`, `es`, `pt`, and more); Whisper handles ~99 languages for STT.
 
 ---
 
@@ -279,7 +281,7 @@ To restore: Stats → Backup & reset → Import JSON.
 - File System Access API for one-pick auto-backup (Chromium-only, would write silently to a chosen file)
 - Multi-language deck switching (the engine is agnostic; just needs a profile selector)
 - A "review intensity" slider that exposes FSRS's retention target (90% default → 95% for high-stakes prep)
-- WebRTC speaker comparison: side-by-side waveforms of your shadow vs Voxtral's
+- WebRTC speaker comparison: side-by-side waveforms of your shadow vs the model's
 - A curated "Day 1–7" guided plan view that walks through everything systematically
 
 ---
@@ -299,7 +301,7 @@ MIT. Use it, fork it, swap the data files for whatever language you want to lear
 ## Credits
 
 - [mlx-audio](https://github.com/Blaizzy/mlx-audio) by Prince Canuma for the on-device MLX speech runtime
-- [Voxtral-4B-TTS-2603](https://huggingface.co/mistralai/Voxtral-4B-TTS-2603) by Mistral AI
+- [Supertonic-3](https://huggingface.co/Supertone/supertonic-3) by Supertone — on-device TTS
 - [whisper-large-v3-turbo](https://huggingface.co/openai/whisper-large-v3-turbo) by OpenAI, MLX port via mlx-community
 - FSRS-4.5 by [open-spaced-repetition](https://github.com/open-spaced-repetition)
 - Tim Ferriss for the diagnostic-dozen sentence-deconstruction approach
