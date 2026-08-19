@@ -125,6 +125,24 @@ Stop both servers with **Ctrl+C** in the terminal — the trap cleans up the bac
 
 ---
 
+## Static deploy (GitHub Pages, no backend)
+
+The app can run with **no server at all** by pre-rendering every spoken word/sentence to audio files at build time:
+
+```bash
+./deploy.sh
+```
+
+This (1) enumerates every spoken item, (2) runs Supertonic-3 locally to render each to `audio/<hash>.mp3` — **caching by content hash, so re-runs only synthesise genuinely new content** — writes `audio/manifest.json`, then (3) commits and pushes; GitHub Pages redeploys from `main`.
+
+At runtime the app looks up `audio/<hash>.mp3` (hash = `SHA-256(voice|lang|text)`) and plays it directly — the TTS server is only used in local dev for content not yet pre-rendered. STT is intentionally **not** part of the static build (the speaking/shadowing drills need a live Whisper server; everything else works).
+
+**Live:** <https://razhanhameed.github.io/language-lab/>
+
+Pieces: `tools/extract_audio_items.js` (enumerate), `build_static_audio.py` (render + cache + manifest), `deploy.sh` (build + push), `.nojekyll` (so Pages serves `js/data/_boot.js` and all assets verbatim).
+
+---
+
 ## Project structure
 
 ```

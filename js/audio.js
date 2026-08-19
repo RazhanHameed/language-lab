@@ -123,6 +123,52 @@ window.Speech = (function () {
     activeAudios.clear();
   }
 
+  // --- pre-generated static audio (backendless deploy) ---
+  // audio/manifest.json lists the available clip keys; each clip is
+  // audio/<key>.mp3. When a clip exists we play it directly — no server needed.
+  // Keys are SHA-256(voice|lang|cleanText)[:20], matching build_static_audio.py.
+  const audioBase = params.get("audio") || "audio";
+  let pregen = null;          // Set<key> once loaded
+  let pregenVoices = {};      // lang -> the voice the clips were rendered with
+  const pregenReady = fetch(`${audioBase}/manifest.json`, { cache: "force-cache" })
+    .then((r) => (r.ok ? r.json() : null))
+    .then((m) => {
+      if (Array.isArray(m)) pregen = new Set(m);                       // legacy shape
+      else if (m && m.keys) { pregen = new Set(m.keys); pregenVoices = m.voices || {}; }
+      else pregen = new Set();
+      return pregen;
+    })
+    .catch(() => { pregen = new Set(); return pregen; });
+
+  async function clipKey(voice, lang, clean) {
+    if (!(typeof crypto !== "undefined" && crypto.subtle)) return null;
+    const data = new TextEncoder().encode(`${voice}|${lang}|${clean}`);
+    const buf = await crypto.subtle.digest("SHA-256", data);
+    return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("").slice(0, 20);
+  }
+
+  async function staticFetch(key) {
+    const ck = "static:" + key;
+    if (blobCache.has(ck)) return blobCache.get(ck);
+    const ctrl = new AbortController();
+    activeFetches.add(ctrl);
+    try {
+      const res = await fetch(`${audioBase}/${key}.mp3`, { signal: ctrl.signal });
+      if (!res.ok) throw new Error(`static ${res.status}`);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      blobCache.set(ck, url);
+      if (blobCache.size > MAX_CACHE) {
+        const oldest = blobCache.keys().next().value;
+        URL.revokeObjectURL(blobCache.get(oldest));
+        blobCache.delete(oldest);
+      }
+      return url;
+    } finally {
+      activeFetches.delete(ctrl);
+    }
+  }
+
   async function ttsFetch(text, voice, lang) {
     const key = `${voice}|${lang}|${text}`;
     if (blobCache.has(key)) return blobCache.get(key);
@@ -233,8 +279,35 @@ window.Speech = (function () {
     const voice = voiceForLang(lang, opts.voice);
     const clean = cleanForTts(text);
 
-    // Route through the on-device Supertonic TTS server for the target language
-    // (and English).
+    // 1) Pre-generated static audio — works with no backend, so try it first.
+    if (voice) {
+      try { await pregenReady; } catch (_) {}
+      if (myGen !== speakGen) return false;
+      if (pregen && pregen.size) {
+        let key = await clipKey(voice, lang2, clean);
+        // Fall back to the voice the clips were rendered with, so any voice
+        // choice still plays a pre-generated clip on the static site.
+        if (key && !pregen.has(key) && pregenVoices[lang2] && pregenVoices[lang2] !== voice) {
+          const alt = await clipKey(pregenVoices[lang2], lang2, clean);
+          if (alt && pregen.has(alt)) key = alt;
+        }
+        if (myGen !== speakGen) return false;
+        if (key && pregen.has(key)) {
+          try {
+            const url = await staticFetch(key);
+            if (myGen !== speakGen) return false;
+            await playUrl(url, opts, myGen);
+            return true;
+          } catch (e) {
+            if (e.name === "AbortError") return false;
+            // fall through to the live server / Web Speech
+          }
+        }
+      }
+    }
+
+    // 2) Route through the on-device Supertonic TTS server (local dev / new
+    // content not yet pre-rendered), then Web Speech.
     if (voice) {
       const useTts = await probeMlx();
       if (myGen !== speakGen) return false;   // cancelled while probing
@@ -330,6 +403,8 @@ window.Speech = (function () {
     setEnglishVoice,
     setTargetLang,
     setTargetSpeech,
+    pregenReady,
+    pregenCount: () => (pregen ? pregen.size : 0),
     ttsBase,
   };
 })();

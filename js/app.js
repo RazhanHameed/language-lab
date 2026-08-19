@@ -2466,11 +2466,14 @@ const App = (function () {
       const statusEl = $("#tts-status", wrap);
       if (!statusEl) return;
       const webOK = Speech.supported && Speech.hasTargetVoice();
-      const mlxOK = Speech.probeMlx ? await Speech.probeMlx() : false;
       const parts = [];
+      if (Speech.pregenReady) { try { await Speech.pregenReady; } catch (_) {} }
+      const pregen = Speech.pregenCount ? Speech.pregenCount() : 0;
+      if (pregen > 0) parts.push(`<span class="chip success">TTS: pre-rendered audio (${pregen} clips)</span>`);
+      const mlxOK = Speech.probeMlx ? await Speech.probeMlx() : false;
       if (mlxOK) {
-        parts.push(`<span class="chip success">TTS: Supertonic-3 (on-device) ready</span>`);
-      } else {
+        parts.push(`<span class="chip primary">Live TTS: Supertonic-3 ready</span>`);
+      } else if (pregen === 0) {
         parts.push(`<span class="chip">TTS: not running — start with <span class="mono">./start-mlx.sh</span></span>`);
       }
       if (Speech.supported) {
