@@ -85,18 +85,22 @@ source .venv/bin/activate
 # raises "There is no Stream(gpu, N) in current thread"). 0.31.1 keeps both
 # Voxtral TTS and Whisper STT working on the server's threading model.
 MLX_PIN="mlx==0.31.1"
+# scipy is required by mlx-audio's Whisper STT (audio resampling) but isn't
+# always pulled in transitively — without it transcription fails with
+# "No module named 'scipy'". Install it explicitly.
 need_install=0
 python -c "import mlx_audio" 2>/dev/null || need_install=1
 python -c "import uvicorn, fastapi, webrtcvad" 2>/dev/null || need_install=1
+python -c "import scipy" 2>/dev/null || need_install=1
 python -c "import mistral_common, sys; sys.exit(0 if tuple(int(x) for x in mistral_common.__version__.split('.')[:2]) >= (1, 11) else 1)" 2>/dev/null || need_install=1
 python -c "import importlib.metadata as m, sys; sys.exit(0 if m.version('mlx') == '0.31.1' else 1)" 2>/dev/null || need_install=1
 if [ "$need_install" = "1" ]; then
-  echo "[2/4] installing mlx-audio[server,tts] + mistral-common>=1.11 + $MLX_PIN (one-time, ~1-3 min)..."
+  echo "[2/4] installing mlx-audio[server,tts] + mistral-common>=1.11 + scipy + $MLX_PIN (one-time, ~1-3 min)..."
   if [ "$USE_UV" = "1" ]; then
-    uv pip install --quiet "mlx-audio[server,tts]" "mistral-common[audio]>=1.11" "$MLX_PIN"
+    uv pip install --quiet "mlx-audio[server,tts]" "mistral-common[audio]>=1.11" scipy "$MLX_PIN"
   else
     python -m pip install --upgrade pip --quiet
-    python -m pip install --quiet "mlx-audio[server,tts]" "mistral-common[audio]>=1.11" "$MLX_PIN"
+    python -m pip install --quiet "mlx-audio[server,tts]" "mistral-common[audio]>=1.11" scipy "$MLX_PIN"
   fi
 fi
 
