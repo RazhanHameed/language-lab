@@ -7,7 +7,7 @@
 // The bare data globals (VOCAB, SENTENCES, SCENARIOS, GRAMMAR, CONJUGATIONS,
 // MINIMAL_PAIRS, CHUNKS, PASSAGES and the *_THEMES) are pointed at the active
 // language's deck by Lang.use(), so the rest of the engine reads them
-// unchanged.
+// unchanged. PRONUNCIATION is the one object (not an array): null when missing.
 window.Lang = (function () {
   const registry = {};   // id -> config
   const order = [];      // registration order (for the switcher)
@@ -16,8 +16,9 @@ window.Lang = (function () {
   const DECK_KEYS = [
     "VOCAB", "VOCAB_THEMES", "SENTENCES", "SENTENCE_THEMES",
     "SCENARIOS", "GRAMMAR", "CONJUGATIONS", "MINIMAL_PAIRS",
-    "CHUNKS", "PASSAGES",
+    "CHUNKS", "PASSAGES", "PRONUNCIATION",
   ];
+  const OBJECT_KEYS = ["PRONUNCIATION"];
 
   function register(cfg) {
     registry[cfg.id] = cfg;
@@ -27,7 +28,7 @@ window.Lang = (function () {
   // Point the bare data globals at the given language's deck.
   function applyDeck(id) {
     const deck = (window.__DECK && window.__DECK[id]) || {};
-    for (const k of DECK_KEYS) window[k] = deck[k] || [];
+    for (const k of DECK_KEYS) window[k] = deck[k] || (OBJECT_KEYS.includes(k) ? null : []);
   }
 
   function use(id) {

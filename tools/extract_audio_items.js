@@ -17,7 +17,8 @@ const LANGS = fs.readdirSync(path.join(ROOT, "js/data"), { withFileTypes: true }
 
 load("js/data/_boot.js");
 for (const l of LANGS) {
-  for (const f of ["vocab", "sentences", "scenarios", "grammar", "conjugations", "minimal_pairs", "chunks", "passages"]) {
+  for (const f of ["vocab", "sentences", "scenarios", "grammar", "conjugations", "minimal_pairs", "chunks", "passages", "pronunciation"]) {
+    if (f === "pronunciation" && !fs.existsSync(path.join(ROOT, `js/data/${l}/${f}.js`))) continue;   // optional per language
     load(`js/data/${l}/${f}.js`);
   }
 }
@@ -76,6 +77,12 @@ for (const cfg of Lang.list()) {
       readerTokens(para).filter((tok) => /\p{L}/u.test(tok)).forEach((tok) => add(V, lang, tok));
     });
   });
+  // Pronunciation guide: every example and practice sentence.
+  const P = d.PRONUNCIATION;
+  if (P) {
+    (P.sections || []).forEach((s) => (s.rules || []).forEach((r) => (r.examples || []).forEach((ex) => add(V, lang, ex.nl))));
+    (P.practice || []).forEach((ex) => add(V, lang, ex.nl));
+  }
   // Drill answers that are generated (numbers 0-100, times on 5-min marks).
   for (let n = 0; n <= 100; n++) add(V, lang, cfg.numberToWord(n));
   for (let h = 1; h <= 12; h++) for (let m = 0; m < 60; m += 5) add(V, lang, cfg.timeToWord(h, m));

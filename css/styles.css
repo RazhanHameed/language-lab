@@ -23,8 +23,8 @@
   --radius-sm: 8px;
   --radius: 14px;
   --radius-lg: 20px;
-  --serif: "Fraunces", Georgia, "Times New Roman", serif;
-  --sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --serif: "Fraunces", "Vazirmatn", Georgia, "Times New Roman", serif;
+  --sans: "Inter", "Vazirmatn", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
   --max-w: 760px;
 }
 
@@ -1321,3 +1321,278 @@ ruby.guide { ruby-overhang: none; }
 .stats-settings select { min-height: 40px; padding: 4px 10px; border-radius: 8px; }
 /* Keep neighbouring guide words apart when rt is wider than a small base. */
 ruby.guide rt { padding-inline: 0.3em; }
+
+/* =====================================================================
+   Onboarding: coach tips, tour dialog, help page   (js/onboarding.js)
+   Logical properties throughout so it mirrors under <html dir="rtl">.
+   ===================================================================== */
+.help-btn { font-weight: 700; font-size: 16px; font-family: var(--sans); }
+.help-btn:focus-visible, .coach-help:focus-visible, .coach-dismiss:focus-visible,
+.ob-skip:focus-visible, .ob-modal button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+/* --- coach (one-to-two-line instruction on each exercise) --- */
+.coach { margin: 0 0 14px; display: flex; justify-content: flex-end; }
+.coach.is-open { display: block; }
+.coach-card {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 10px 12px;
+  background: var(--accent-soft);
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
+  border-radius: var(--radius);
+  animation: fade-up 200ms ease-out;
+}
+.coach-icon { font-size: 18px; line-height: 1.3; }
+.coach-body { flex: 1; min-width: 0; }
+.coach-body .eyebrow { color: var(--accent); display: block; margin-bottom: 2px; }
+.coach-body p { margin: 0; font-size: 14px; line-height: 1.45; color: var(--text); }
+.coach-dismiss {
+  flex-shrink: 0; align-self: center;
+  border: 1px solid var(--border-strong); background: var(--surface);
+  color: var(--text); font: inherit; font-size: 13px; font-weight: 600;
+  padding: 6px 12px; border-radius: 999px; cursor: pointer;
+}
+.coach-dismiss:hover { background: var(--surface-2); }
+.coach-help {
+  width: 28px; height: 28px; padding: 0;
+  border-radius: 999px; border: 1px solid var(--border);
+  background: var(--primary-soft); color: var(--primary);
+  font: inherit; font-size: 14px; font-weight: 700; cursor: pointer;
+  display: inline-grid; place-items: center;
+}
+.coach-help:hover { border-color: var(--primary); }
+.rating-hint { text-align: center; margin: 14px 0 -2px; font-size: 13px; color: var(--text-muted); }
+@media (max-width: 480px) {
+  .coach-card { flex-wrap: wrap; }
+  .coach-dismiss { margin-inline-start: 28px; }
+}
+
+/* --- home, day one --- */
+.home-welcome { margin-bottom: 12px; }
+.home-cta--first { box-shadow: var(--shadow-lg); margin-bottom: 12px; }
+.home-cta--first .session-due { font-size: 24px; }
+.home-first-links { margin-bottom: 4px; }
+.home-done, .summary-next { margin-top: 4px; }
+
+/* --- tour dialog --- */
+body.ob-open { overflow: hidden; }
+.ob-backdrop {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(10, 12, 18, 0.55);
+  display: grid; place-items: center;
+  padding: 16px;
+  animation: ob-fade 160ms ease-out;
+}
+.ob-modal {
+  width: 100%; max-width: 480px; max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  background: var(--surface); color: var(--text);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: 18px 22px 20px;
+  display: flex; flex-direction: column; gap: 12px;
+  animation: fade-up 220ms ease-out;
+}
+.ob-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 28px; }
+.ob-skip {
+  border: 0; background: transparent; color: var(--text-muted);
+  font: inherit; font-size: 13px; padding: 6px 8px; border-radius: 8px; cursor: pointer;
+}
+.ob-skip:hover { color: var(--text); background: var(--surface-2); }
+.ob-modal h2 { margin: 0; font-size: 24px; line-height: 1.2; }
+.ob-modal h2:focus { outline: none; }
+.ob-text p { margin: 0 0 8px; line-height: 1.5; }
+.ob-text p:last-child { margin-bottom: 0; }
+.ob-text .muted { font-size: 14px; }
+.ob-visual { min-height: 0; }
+.ob-hero {
+  display: flex; align-items: center; justify-content: center; gap: 14px;
+  padding: 18px; border-radius: var(--radius);
+  background: linear-gradient(135deg, var(--primary-soft), var(--accent-soft));
+}
+.ob-hero-mark { font-size: 44px; line-height: 1; }
+.ob-hero-word { font-family: var(--serif); font-size: 26px; font-weight: 600; color: var(--primary); }
+.ob-steps, .ob-areas { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.ob-steps li, .ob-areas li {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 12px; background: var(--surface-2);
+  border: 1px solid var(--border); border-radius: var(--radius);
+}
+.ob-num {
+  flex-shrink: 0; width: 28px; height: 28px; border-radius: 999px;
+  background: var(--primary); color: #fff; font-weight: 700; font-size: 14px;
+  display: inline-grid; place-items: center;
+}
+.ob-area-ico { flex-shrink: 0; font-size: 22px; width: 28px; text-align: center; }
+.ob-step-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.ob-step-text strong { font-size: 15px; }
+.ob-step-text small { font-size: 13px; color: var(--text-muted); line-height: 1.4; }
+.ob-step-text small.ob-tip-text { font-size: 14px; color: var(--text); }
+.ob-mock { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 14px; background: var(--surface-2); border-radius: var(--radius); border: 1px solid var(--border); }
+.ob-mock-card {
+  width: 96px; height: 78px; flex-shrink: 0; border-radius: 12px;
+  background: var(--surface); border: 1px solid var(--border-strong); box-shadow: var(--shadow-sm);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+}
+.ob-mock-q { font-family: var(--serif); font-size: 30px; color: var(--primary); line-height: 1; }
+.ob-mock-card small { font-size: 10px; color: var(--text-subtle); text-align: center; padding: 0 4px; }
+.ob-mock-arrow { color: var(--text-subtle); font-size: 20px; }
+[dir="rtl"] .ob-mock-arrow { transform: scaleX(-1); }
+.ob-mock-rates { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.ob-pill {
+  display: inline-block; text-align: center; padding: 5px 10px; border-radius: 999px;
+  font-size: 12px; font-weight: 600; border: 1px solid transparent;
+}
+.ob-pill.again { background: var(--error-soft); color: var(--error); }
+.ob-pill.hard { background: var(--accent-soft); color: var(--warn); }
+.ob-pill.good { background: var(--primary-soft); color: var(--primary); }
+.ob-pill.easy { background: var(--success-soft); color: var(--success); }
+:root[data-theme="dark"] .ob-pill.hard { color: var(--accent); }
+.ob-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 4px; }
+.ob-dots { display: flex; gap: 6px; }
+.ob-dots span { width: 7px; height: 7px; border-radius: 999px; background: var(--border-strong); }
+.ob-dots span.on { background: var(--primary); width: 18px; }
+.ob-modal.is-final .ob-foot { flex-wrap: wrap; }
+.ob-modal.is-final #ob-next { flex: 1 1 100%; order: -1; justify-content: center; }
+.ob-modal.is-final .ob-dots { flex: 1; justify-content: center; }
+.ob-alt { justify-content: center; }
+@keyframes ob-fade { from { opacity: 0; } to { opacity: 1; } }
+@media (max-width: 480px) {
+  .ob-backdrop { align-items: end; padding: 8px; }
+  .ob-modal { padding: 16px 16px 18px; }
+  .ob-modal h2 { font-size: 21px; }
+  .ob-mock { gap: 8px; padding: 10px; }
+  .ob-mock-card { width: 84px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ob-backdrop, .ob-modal, .coach-card { animation: none !important; }
+}
+
+/* --- help page --- */
+.help-view { gap: 14px; }
+.help-routine { margin: 8px 0 0; padding-inline-start: 20px; display: flex; flex-direction: column; gap: 6px; }
+.help-list, .help-rates { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.help-list li { display: flex; flex-direction: column; gap: 1px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+.help-list li:last-child { border-bottom: 0; padding-bottom: 0; }
+.help-list li strong { font-size: 15px; }
+.help-list li > span { font-size: 14px; color: var(--text-muted); }
+.help-list.tips li { flex-direction: row; gap: 10px; align-items: flex-start; }
+.help-list.tips li > span:last-child { color: var(--text); }
+.help-rates li { display: flex; align-items: center; gap: 12px; font-size: 14px; }
+.help-rates .ob-pill { min-width: 64px; flex-shrink: 0; }
+.help-science { margin: 0; display: flex; flex-direction: column; gap: 10px; }
+.help-science > div { display: grid; grid-template-columns: minmax(120px, 34%) 1fr; gap: 4px 12px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+.help-science > div:last-child { border-bottom: 0; padding-bottom: 0; }
+.help-science dt { font-weight: 600; font-size: 14px; color: var(--primary); }
+.help-science dd { margin: 0; font-size: 14px; color: var(--text-muted); line-height: 1.45; }
+@media (max-width: 480px) { .help-science > div { grid-template-columns: 1fr; } }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .ob-pill.hard { color: var(--accent); }
+  :root:not([data-theme="light"]) .coach-body .eyebrow { color: var(--accent); }
+}
+.coach-body .eyebrow { color: var(--warn); }
+:root[data-theme="dark"] .coach-body .eyebrow { color: var(--accent); }
+
+/* =====================================================================
+ * Arabic-script (Sorani) typography
+ * Vazirmatn (Google Fonts) sits right after Inter/Fraunces in --sans/--serif.
+ * Inter/Fraunces have no Arabic glyphs, so only Arabic-script runs fall
+ * through to it; Latin stays in Inter/Fraunces. Never fake italic/bold on it.
+ * ===================================================================== */
+ruby.guide, em:has(ruby.guide), i:has(ruby.guide), [lang="ckb"] em, [lang="ckb"] i { font-synthesis: none; font-style: normal; }
+ruby.guide rt { font-family: "Inter", sans-serif; }
+/* Arabic-script runs: Vazirmatn needs a little more line room for the dots/marks. */
+[dir="rtl"] .vocab-example, [dir="rtl"] .passage-para { line-height: 1.95; }
+/* Tighter rt padding so Arabic punctuation (، ؟ .) hugs the preceding word. */
+ruby.guide rt { padding-inline: 0.12em; }
+
+/* Narrow headers: brand + language select + help + theme must fit 360px. */
+@media (max-width: 480px) {
+  .app-header { gap: 8px; padding-inline: 12px; }
+  .brand { flex-shrink: 1; min-width: 0; }
+  .brand-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+  .header-actions { margin-inline-start: auto; gap: 6px; min-width: 0; }
+  .header-actions .icon-btn { width: 34px; height: 34px; }
+  .lang-select { max-width: 150px; min-width: 0; height: 34px; font-size: 13px; padding: 0 4px; }
+}
+@media (max-width: 560px) { .brand-name { display: none; } }
+/* Day one: a single focused column on desktop too. */
+.view-home.is-first { display: flex; flex-direction: column; gap: 14px; max-width: 640px; margin-inline: auto; }
+.view-home.is-first > * { grid-area: auto; }
+
+/* =====================================================================
+ * Pronunciation guide (renderPronunciation in app.js) + its entry points
+ * ===================================================================== */
+.pron-view { max-width: 760px; width: 100%; margin-inline: auto; }
+.pron-head h1 { margin: 6px 0 12px; }
+.pron-tools { flex-wrap: wrap; gap: 8px; margin: 0 0 16px; }
+.pron-tools .btn { white-space: normal; text-align: start; }
+.pron-slow[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+[data-no-speech] .pron-slow, [data-no-speech] .pron-play-rule { display: none; }
+.pron-toc ol { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 2px; }
+.pron-toc-item {
+  width: 100%; display: flex; align-items: center; gap: 10px;
+  padding: 8px 6px; border: 0; border-radius: 8px; background: none;
+  color: var(--text); font: inherit; font-size: 15px; text-align: start; cursor: pointer;
+}
+.pron-toc-item:hover { background: var(--surface-2); }
+.pron-toc-n {
+  flex-shrink: 0; width: 26px; height: 26px; border-radius: 999px;
+  display: inline-grid; place-items: center;
+  background: var(--surface-2); color: var(--text-muted); font-size: 12px; font-weight: 600;
+}
+.pron-toc-title { flex: 1; min-width: 0; }
+.pron-toc-done { visibility: hidden; color: var(--success); font-weight: 700; }
+.pron-toc-item.is-read .pron-toc-done { visibility: visible; }
+.pron-toc-item.is-read .pron-toc-n { background: var(--accent-soft); color: var(--accent); }
+.pron-section { scroll-margin-top: 84px; }
+.pron-section > .eyebrow { display: block; }
+.pron-section h2 { margin: 6px 0 6px; }
+.pron-summary { font-weight: 500; }
+.pron-rule { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border); }
+.pron-rule-head { display: flex; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+.pron-rule-text { flex: 1 1 240px; min-width: 0; }
+.pron-rule-text h3 { font-size: 16px; margin: 0 0 2px; }
+.pron-rule-explain { font-size: 14px; margin: 0; }
+.pron-play-rule { min-height: 36px; padding: 6px 12px; font-size: 13px; flex-shrink: 0; }
+.pron-examples { display: flex; flex-direction: column; margin-top: 8px; }
+.pron-ex {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 10px 0; border-bottom: 1px dashed var(--border);
+}
+.pron-ex:last-child { border-bottom: 0; }
+.pron-ex-main { flex: 1; min-width: 0; }
+.pron-ex-word { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.pron-ex-word .nl-text { font-size: 19px; overflow-wrap: anywhere; }
+.pron-ipa { font-size: 13px; color: var(--text-subtle); }
+.pron-ex-en { font-size: 14px; margin-top: 2px; }
+.pron-ex-note { font-size: 13px; margin-top: 2px; line-height: 1.45; }
+.pron-section .pitfall {
+  margin-top: 16px; padding: 12px 14px; background: var(--accent-soft);
+  border-inline-start: 3px solid var(--accent); border-radius: 6px; font-size: 14px;
+}
+.pron-sec-foot { margin-top: 14px; display: flex; justify-content: flex-end; }
+.pron-next { font-size: 14px; max-width: 100%; white-space: normal; text-align: start; }
+.pron-practice #pron-play-practice { margin: 4px 0 6px; align-self: flex-start; }
+[dir="rtl"] .pron-ex-word .nl-text, [dir="rtl"] .pron-practice .nl-text { line-height: 1.95; }
+@media (min-width: 720px) {
+  .pron-ex-main { display: grid; grid-template-columns: minmax(140px, 1fr) 2fr; gap: 4px 16px; align-items: baseline; }
+  .pron-practice .pron-ex-main { grid-template-columns: 1fr; }
+  .pron-section, .pron-section * { -webkit-user-select: text; user-select: text; }
+  .pron-section button, .pron-section button * { -webkit-user-select: none; user-select: none; }
+}
+/* entry points */
+.pron-link-ico { font-size: 22px; flex-shrink: 0; }
+.home-pron-first { margin-bottom: 4px; }
+.home-quick > .pron-link:nth-child(odd):last-child { grid-column: 1 / -1; }
+.pron-capsule-link { margin-top: 16px; white-space: normal; text-align: start; }
+.ob-pron {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 12px 14px; margin-bottom: 12px;
+  background: var(--accent-soft); border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  border-radius: var(--radius);
+}
+.ob-pron .ob-step-text { flex: 1 1 200px; }
+.ob-pron .btn { flex-shrink: 0; }
+/* Browse vocab grid: let tiles shrink at 360px instead of scrolling sideways. */
+@media (max-width: 719px) { .browse-vocab { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

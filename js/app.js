@@ -202,8 +202,8 @@ const App = (function () {
     const ids = allCardIds();
     const batch = SRS.pickBatch(ids, state.cards, { size });
     if (batch.length === 0) {
-      toast("Nothing due. Pick a theme to learn new cards.");
-      navigate("browse");
+      toast("All caught up. Try a drill or read something while you wait.");
+      navigate("home");
       return;
     }
     currentSession = {
@@ -218,6 +218,11 @@ const App = (function () {
   }
 
   // Choose a presentation mode based on card type and SRS maturity.
+  // The very first session: a short one (5 cards) so day one feels easy.
+  function startFirstSession() {
+    startSession({ size: Onboarding.FIRST_SESSION_SIZE });
+  }
+
   function pickMode(cardId) {
     let mode = pickModeRaw(cardId);
     // Listen-and-type modes need a voice — swap them out when the language
@@ -319,8 +324,10 @@ const App = (function () {
   }
 
   /* ---------- routing ---------- */
+  let coachSig = null;       // last (view, object, index) the coaching counter ran for
   function navigate(view) {
     currentView = view;
+    coachSig = null;
     // Sync top tabs
     $$(".tab").forEach((t) => t.classList.toggle("is-active", t.dataset.view === view));
     $$(".bn-tab").forEach((t) => t.classList.toggle("is-active", t.dataset.view === view));
@@ -344,9 +351,46 @@ const App = (function () {
       case "drill":   viewEl = renderDrill(); break;
       case "drill-summary": viewEl = renderDrillSummary(); break;
       case "passage": viewEl = renderPassage(nav.passageId); break;
+      case "help":    viewEl = Onboarding.renderHelp(); break;
+      case "pronunciation": viewEl = renderPronunciation(); break;
       default:       viewEl = renderHome();
     }
-    if (viewEl) main.appendChild(viewEl);
+    if (viewEl) {
+      mountCoach(viewEl);
+      main.appendChild(viewEl);
+    }
+  }
+
+  /* ---------- in-context coaching (see js/onboarding.js) ---------- */
+  function coachKey() {
+    switch (currentView) {
+      case "study": return currentSession ? currentSession.modes[currentSession.index] : null;
+      case "drill": return currentDrill ? currentDrill.kind : null;
+      case "passage": return "reader";
+      case "scenario": return "scenario";
+      case "grammar-detail": return "grammar";
+      case "pronunciation": return "pronunciation";
+      default: return null;
+    }
+  }
+
+  function mountCoach(viewEl) {
+    const key = coachKey();
+    if (!key) return;
+    const obj = currentView === "study" ? currentSession : currentView === "drill" ? currentDrill : null;
+    const idx = obj ? (obj.index !== undefined ? obj.index : obj.idx) : 0;
+    const sig = { key, obj, idx };
+    if (!coachSig || coachSig.key !== key || coachSig.obj !== obj || coachSig.idx !== idx) {
+      coachSig = sig;
+      Onboarding.bump(key);        // one more "meeting" with this exercise
+    }
+    const coach = Onboarding.coachEl(key);
+    if (!coach) return;
+    const anchor = viewEl.querySelector(".flashcard-wrap, .drill-card");
+    const back = viewEl.querySelector("#back");
+    if (anchor) anchor.parentNode.insertBefore(coach, anchor);
+    else if (back) back.after(coach);
+    else viewEl.prepend(coach);
   }
 
   /* ============ HOME ============ */
@@ -393,8 +437,50 @@ const App = (function () {
       wrap.appendChild(banner);
     }
 
+    // Day one: one obvious next action, everything else stays below.
+    const first = Onboarding.isFirstRun();
+    if (first) {
+      wrap.classList.add("is-first");
+      wrap.appendChild(el(`
+        <section class="hero home-hero home-welcome">
+          <div class="row spread" style="margin-bottom: 14px;">
+            <span class="chip accent">New here</span>
+            <span class="chip">${todayLabel()}</span>
+          </div>
+          <h1><span class="greeting-nl">${greeting.target}!</span></h1>
+          <p class="muted">${greeting.en}. Let's start small: ${Onboarding.FIRST_SESSION_SIZE} cards, about two minutes. Try to remember each answer before you flip the card, and rate it honestly.</p>
+        </section>
+      `));
+      const firstCta = el(`
+        <button class="session-cta home-cta home-cta--first" id="cta-first">
+          <div>
+            <div class="session-due">Start your first ${Onboarding.FIRST_SESSION_SIZE}-card session</div>
+            <div class="session-label">Every card has a short tip on screen. No wrong way to begin.</div>
+          </div>
+          <span class="arrow">→</span>
+        </button>
+      `);
+      firstCta.addEventListener("click", () => startFirstSession());
+      wrap.appendChild(firstCta);
+      const pronFirst = pronLinkItem("home-pron-first");
+      if (pronFirst) {
+        $(".li-sub", pronFirst).textContent = `New to the sounds? Start here: ${Number(pronGuide().minutes) || 15} minutes${hasSpeech() ? ", every example with audio" : ""}.`;
+        wrap.appendChild(pronFirst);
+      }
+      const helpRow = el(`
+        <div class="row home-first-links" style="gap:8px; flex-wrap:wrap">
+          <button class="btn" id="home-tour">Take the 1-minute tour</button>
+          <button class="btn ghost" id="home-how">How it works</button>
+        </div>
+      `);
+      $("#home-tour", helpRow).addEventListener("click", () => Onboarding.openTour());
+      $("#home-how", helpRow).addEventListener("click", () => navigate("help"));
+      wrap.appendChild(helpRow);
+      wrap.appendChild(el(`<div class="section-header" style="margin: 24px 0 0"><h2 style="font-size:18px">Or look around first</h2></div>`));
+    }
+
     // Hero
-    const heroEl = el(`
+    const heroEl = first ? null : el(`
       <section class="hero home-hero">
         <div class="row spread" style="margin-bottom: 14px;">
           <span class="streak-badge">🔥 ${state.streak} day streak</span>
@@ -404,12 +490,18 @@ const App = (function () {
         <p class="muted">${greeting.en}. ${tip.body}</p>
       </section>
     `);
-    wrap.appendChild(heroEl);
+    if (heroEl) wrap.appendChild(heroEl);
 
     // Session CTA
-    const dueLabel = counts.due === 0
-      ? `Nothing due — start fresh ones`
-      : `${counts.due} card${counts.due === 1 ? "" : "s"} due`;
+    // "Due" in counts includes never-seen cards; learners care about reviews waiting.
+    const nowMs = Date.now();
+    const reviewDue = ids.filter((id) => {
+      const st = state.cards[id];
+      return st && st.reps > 0 && st.due <= nowMs;
+    }).length;
+    const dueLabel = reviewDue === 0
+      ? `No reviews waiting. Learn some new cards`
+      : `${reviewDue} card${reviewDue === 1 ? "" : "s"} to review`;
     const cta = el(`
       <button class="session-cta home-cta" id="cta-session">
         <div>
@@ -420,14 +512,24 @@ const App = (function () {
       </button>
     `);
     cta.addEventListener("click", () => startSession());
-    wrap.appendChild(cta);
+    if (!first) wrap.appendChild(cta);
+
+    // Caught up for today: say what to do instead of leaving a dead end.
+    if (!first && reviewDue === 0 && todaySession) {
+      wrap.appendChild(el(`
+        <article class="card home-done">
+          <span class="eyebrow">All done for today</span>
+          <p style="margin:6px 0 0">Nothing is due, so you're caught up. Want a bit more? Try one quick drill below or read a short passage. Otherwise, come back tomorrow and your next cards will be waiting.</p>
+        </article>
+      `));
+    }
 
     // Quick stats
     const todayReviews = todaySession ? todaySession.reviewed : 0;
     const accuracy = todaySession && todaySession.reviewed
       ? Math.round((todaySession.correct / todaySession.reviewed) * 100)
       : null;
-    wrap.appendChild(el(`
+    if (!first) wrap.appendChild(el(`
       <div class="grid-2 home-stats">
         <div class="stat">
           <span class="stat-label">Today</span>
@@ -443,7 +545,7 @@ const App = (function () {
     `));
 
     // Tip card
-    wrap.appendChild(el(`
+    if (!first) wrap.appendChild(el(`
       <article class="card home-tip">
         <span class="eyebrow">Today's principle</span>
         <h3 style="margin-top:6px">${escape(tip.title)}</h3>
@@ -454,13 +556,13 @@ const App = (function () {
     // Quick links
     const quickLinks = el(`
       <div class="grid-2 home-quick">
-        <button class="list-item" data-jump="study">
+        ${first ? "" : `<button class="list-item" data-jump="study">
           <div class="li-main">
             <div class="li-title">Quick session</div>
             <div class="li-sub">${state.settings.sessionSize} mixed cards</div>
           </div>
           <span class="li-arrow">→</span>
-        </button>
+        </button>`}
         <button class="list-item" data-jump="browse">
           <div class="li-main">
             <div class="li-title">Browse content</div>
@@ -470,6 +572,8 @@ const App = (function () {
         </button>
       </div>
     `);
+    const pronQuick = first ? null : pronLinkItem();
+    if (pronQuick) quickLinks.appendChild(pronQuick);
     $$("[data-jump]", quickLinks).forEach((b) => {
       b.addEventListener("click", () => {
         if (b.dataset.jump === "study") startSession();
@@ -479,7 +583,7 @@ const App = (function () {
     wrap.appendChild(quickLinks);
 
     // Mastery breakdown
-    wrap.appendChild(el(`
+    if (!first) wrap.appendChild(el(`
       <article class="card home-maturity">
         <span class="eyebrow">Card maturity</span>
         <h3 style="margin: 6px 0 12px">Where your cards are</h3>
@@ -492,7 +596,7 @@ const App = (function () {
       <article class="card home-drills">
         <span class="eyebrow">Quick drills</span>
         <h3 style="margin: 6px 0 4px">30-second sprints</h3>
-        <p class="muted" style="margin: 0 0 12px; font-size: 13px">Targeted practice — each drill closes a gap flashcards can't catch.</p>
+        <p class="muted" style="margin: 0 0 12px; font-size: 13px">${first ? "Try these after your first session. Each one trains a single skill, and has a tip on screen." : "Targeted practice — each drill closes a gap flashcards can't catch."}</p>
         <div class="drill-chips">
           ${hasStt() ? `
           <button class="drill-chip" data-drill="speaking">
@@ -547,7 +651,7 @@ const App = (function () {
         <article class="card home-read">
           <span class="eyebrow">Read</span>
           <h3 style="margin: 6px 0 4px">Short ${Lang.cfg().name} passages</h3>
-          <p class="muted" style="margin: 0 0 12px; font-size: 13px">Tap any word for the translation.</p>
+          <p class="muted" style="margin: 0 0 12px; font-size: 13px">Tap any word for the translation. Aim for the gist, not every word.</p>
           <div class="passage-list" id="passage-list"></div>
         </article>
       `);
@@ -628,8 +732,8 @@ const App = (function () {
         <span class="muted" style="font-size:13px">${idx} / ${total}</span>
         <button class="btn ghost" id="quit-session" style="font-size:13px; padding:4px 10px">Quit</button>
       </div>
-      <div class="progress-track" style="margin-bottom: 16px"><div class="progress-fill" style="width:${pct}%"></div></div>
     `));
+    wrap.appendChild(el(`<div class="progress-track" style="margin-bottom: 16px"><div class="progress-fill" style="width:${pct}%"></div></div>`));
 
     const id = currentSession.queue[idx];
     const mode = currentSession.modes[idx];
@@ -1101,6 +1205,8 @@ const App = (function () {
         <button class="rate-btn" data-q="5">Easy<small>weeks</small></button>
       </div>
     `);
+    const hint = Onboarding.ratingHint();
+    if (hint) reveal.appendChild(el(hint));
     reveal.appendChild(pad);
     $$(".rate-btn", pad).forEach((b) => {
       b.addEventListener("click", () => gradeAndAdvance(parseInt(b.dataset.q, 10)));
@@ -1845,16 +1951,29 @@ const App = (function () {
         ${stale ? `
           <div class="backup-banner" style="margin-top: 8px">
             <div class="backup-banner-text">
-              <strong>Save your progress.</strong> No backup in ${Math.floor(days)} days.
+              <strong>Save your progress.</strong> ${days === Infinity ? "You haven't backed up yet." : `No backup in ${Math.floor(days)} days.`}
             </div>
             <button class="btn primary" id="summary-backup">Download backup</button>
           </div>` : ""}
+        <article class="card summary-next">
+          <span class="eyebrow">${state.sessions.length <= 1 ? "Nice start" : "What next?"}</span>
+          <p style="margin:6px 0 10px">${state.sessions.length <= 1
+            ? "Your cards will come back right when you're about to forget them. If you have a few minutes left, try one of these. Otherwise, see you tomorrow."
+            : "If you have a few minutes left, a drill or a short read rounds off the day."}</p>
+          <div class="row" style="gap:8px; flex-wrap:wrap">
+            <button class="btn" id="next-drill">Try a quick drill</button>
+            ${(window.PASSAGES || []).length ? `<button class="btn" id="next-read">Read a short passage</button>` : ""}
+          </div>
+        </article>
         <div class="row" style="gap:10px">
           <button class="btn full" id="back-home">Home</button>
           <button class="btn primary full" id="another">Another session</button>
         </div>
       </div>
     `);
+    $("#next-drill", wrap).addEventListener("click", () => { currentSession = null; startDrill("chunk"); });
+    const nr = $("#next-read", wrap);
+    if (nr) nr.addEventListener("click", () => { currentSession = null; nav.passageId = window.PASSAGES[0].id; navigate("passage"); });
     $("#back-home", wrap).addEventListener("click", () => { currentSession = null; navigate("home"); });
     $("#another", wrap).addEventListener("click", () => { currentSession = null; startSession(); });
     const sb = $("#summary-backup", wrap);
@@ -1874,6 +1993,9 @@ const App = (function () {
         <h1 style="margin-bottom:0">Browse</h1>
         <p class="muted" style="margin-top:0">Pick a category to learn or revisit.</p>
 
+        <div class="section-header browse-pron-head"><h2>Pronunciation</h2></div>
+        <div class="stack-sm browse-pron" id="browse-pron"></div>
+
         <div class="section-header"><h2>Vocabulary themes</h2></div>
         <div class="grid-2 browse-vocab" id="theme-grid"></div>
 
@@ -1887,6 +2009,10 @@ const App = (function () {
         <div class="stack-sm browse-list" id="grammar-list"></div>
       </div>
     `);
+
+    const pronItem = pronLinkItem();
+    if (pronItem) $("#browse-pron", wrap).appendChild(pronItem);
+    else { $(".browse-pron-head", wrap).remove(); $("#browse-pron", wrap).remove(); }
 
     // Themes
     const themeGrid = $("#theme-grid", wrap);
@@ -2377,9 +2503,12 @@ const App = (function () {
           <p style="margin-top:14px">${escape(g.body)}</p>
           <div class="stack-sm" style="margin-top: 16px" id="examples"></div>
           <div class="pitfall"><strong>Pitfall:</strong> ${escape(g.pitfall)}</div>
+          ${gId === "g_pronunciation" && pronGuide() ? `<button class="btn primary pron-capsule-link" id="pron-open">Read the full guide: ${escape(pronGuide().title)} ${arrowFwd()}</button>` : ""}
         </article>
       </div>
     `);
+    const pronOpen = $("#pron-open", wrap);
+    if (pronOpen) pronOpen.addEventListener("click", () => openPronunciation());
     const exWrap = $("#examples", wrap);
     g.examples.forEach((ex) => {
       const exEl = el(`
@@ -2398,6 +2527,228 @@ const App = (function () {
       exWrap.appendChild(exEl);
     });
     $("#back", wrap).addEventListener("click", () => navigate("browse"));
+    return wrap;
+  }
+
+  /* ============ PRONUNCIATION GUIDE ============ */
+  // One long article per language (window.PRONUNCIATION, see js/data/<lang>/
+  // pronunciation.js). Every example and practice sentence is playable; the
+  // section last read is remembered in state.pronunciation.
+  const PRON_BACK = ["home", "browse", "help", "grammar-detail", "passage", "stats"];
+  const PRON_PRACTICE = "__practice";
+
+  function pronGuide() {
+    const P = window.PRONUNCIATION;
+    return P && Array.isArray(P.sections) && P.sections.length ? P : null;
+  }
+
+  function pronState() {
+    if (!state.pronunciation || typeof state.pronunciation !== "object") state.pronunciation = { last: null, read: {} };
+    if (!state.pronunciation.read) state.pronunciation.read = {};
+    return state.pronunciation;
+  }
+
+  // Title of the section to resume at, or null when there's nothing to resume.
+  function pronResume() {
+    const P = pronGuide();
+    const last = P && pronState().last;
+    if (!last || last === P.sections[0].id) return null;
+    if (last === PRON_PRACTICE) return "Practice sentences";
+    const s = P.sections.find((x) => x.id === last);
+    return s ? s.title : null;
+  }
+
+  // A list-item link to the guide (Home, Browse). Null when the deck has none.
+  function pronLinkItem(cls = "") {
+    const P = pronGuide();
+    if (!P) return null;
+    const resume = pronResume();
+    const sub = resume ? `Continue: ${resume}`
+      : `${Number(P.minutes) || 15}-minute guide${hasSpeech() ? ", every example with audio" : ""}`;
+    const btn = el(`
+      <button class="list-item pron-link ${cls}">
+        <span class="pron-link-ico" aria-hidden="true">🔊</span>
+        <div class="li-main">
+          <div class="li-title">${escape(P.title)}</div>
+          <div class="li-sub">${escape(sub)}</div>
+        </div>
+        <span class="li-arrow">→</span>
+      </button>
+    `);
+    btn.addEventListener("click", () => openPronunciation());
+    return btn;
+  }
+
+  function openPronunciation(sectionId) {
+    if (currentView !== "pronunciation") nav.pronBack = currentView;
+    nav.pronSection = sectionId || null;
+    navigate("pronunciation");
+  }
+
+  // All prose here is English (with inline target words), so it's pinned LTR
+  // rather than left to autoDir(), which would flip a line that starts with a
+  // Sorani letter. Target words (.nl-text) still resolve their own direction.
+  function renderPronunciation() {
+    const P = pronGuide();
+    const back = PRON_BACK.includes(nav.pronBack) ? nav.pronBack : "home";
+    if (!P) {
+      const empty = el(`
+        <div class="view stack">
+          <button class="btn ghost" id="back" style="align-self:flex-start; padding:6px 12px; font-size:13px">${arrowBack()} Back</button>
+          <div class="empty-state">The ${escape(Lang.cfg().name)} pronunciation guide isn't available yet.</div>
+        </div>
+      `);
+      $("#back", empty).addEventListener("click", () => navigate(back));
+      return empty;
+    }
+    const ps = pronState();
+    const sections = P.sections;
+    const practice = P.practice || [];
+    const resume = pronResume();
+    const exRow = (ex) => `
+      <div class="pron-ex">
+        <div class="pron-ex-main">
+          <div class="pron-ex-word"><span class="nl-text">${escape(ex.nl)}</span>${ex.ipa
+            ? `<span class="pron-ipa mono" dir="ltr">/${escape(String(ex.ipa).replace(/^[\/\[]|[\/\]]$/g, ""))}/</span>` : ""}</div>
+          <div class="pron-ex-gloss">
+            ${ex.en ? `<div class="muted pron-ex-en" dir="ltr">${escape(ex.en)}</div>` : ""}
+            ${ex.note ? `<div class="subtle pron-ex-note" dir="ltr">${escape(ex.note)}</div>` : ""}
+          </div>
+        </div>
+        <button class="voice-btn" data-say="${escape(ex.nl)}" aria-label="Hear ${escape(ex.nl)}">${iconSound()}</button>
+      </div>`;
+    const playLabel = (n) => n === 2 ? "Play both" : `Play all ${n}`;
+
+    const wrap = el(`
+      <div class="view stack pron-view">
+        <button class="btn ghost" id="back" style="align-self:flex-start; padding:6px 12px; font-size:13px">${arrowBack()} Back</button>
+        <header class="pron-head" dir="ltr">
+          <span class="eyebrow">Pronunciation guide · ${Number(P.minutes) || 15} min read</span>
+          <h1>${escape(P.title)}</h1>
+          <div class="row pron-tools">
+            ${resume ? `<button class="btn primary" id="pron-resume">Continue: ${escape(resume)} ${arrowFwd()}</button>` : ""}
+            <button class="btn pron-slow" id="pron-slow" aria-pressed="${nav.pronSlow ? "true" : "false"}">🐢 Slow audio</button>
+          </div>
+          ${(P.intro || []).map((p) => `<p>${escape(p)}</p>`).join("")}
+        </header>
+        <nav class="card pron-toc" aria-label="Contents" dir="ltr">
+          <span class="eyebrow">Contents · <span id="pron-count"></span></span>
+          <ol>
+            ${sections.map((s, i) => `<li><button class="pron-toc-item" data-jump="${escape(s.id)}"><span class="pron-toc-n">${i + 1}</span><span class="pron-toc-title">${escape(s.title)}</span><span class="pron-toc-done" aria-hidden="true">✓</span></button></li>`).join("")}
+            ${practice.length ? `<li><button class="pron-toc-item" data-jump="${PRON_PRACTICE}"><span class="pron-toc-n">▶</span><span class="pron-toc-title">Practice sentences</span></button></li>` : ""}
+          </ol>
+        </nav>
+        ${sections.map((s, si) => `
+          <section class="card pron-section" data-sec="${escape(s.id)}">
+            <span class="eyebrow" dir="ltr">Section ${si + 1} of ${sections.length}</span>
+            <h2 dir="ltr">${escape(s.title)}</h2>
+            ${s.summary ? `<p class="pron-summary" dir="ltr">${escape(s.summary)}</p>` : ""}
+            ${(s.body || []).map((p) => `<p dir="ltr">${escape(p)}</p>`).join("")}
+            ${(s.rules || []).map((r, ri) => `
+              <div class="pron-rule">
+                <div class="pron-rule-head">
+                  <div class="pron-rule-text">
+                    <h3 dir="ltr">${escape(r.rule)}</h3>
+                    ${r.explain ? `<p class="muted pron-rule-explain" dir="ltr">${escape(r.explain)}</p>` : ""}
+                  </div>
+                  ${(r.examples || []).length > 1 ? `<button class="btn voice-action pron-play-rule" data-play-rule="${si}:${ri}">${iconSound()} ${playLabel(r.examples.length)}</button>` : ""}
+                </div>
+                <div class="pron-examples">${(r.examples || []).map(exRow).join("")}</div>
+              </div>`).join("")}
+            ${s.pitfall ? `<div class="pitfall" dir="ltr"><strong>Pitfall:</strong> ${escape(s.pitfall)}</div>` : ""}
+            ${sections[si + 1] || practice.length ? `<div class="pron-sec-foot"><button class="btn ghost pron-next" data-jump="${escape(sections[si + 1] ? sections[si + 1].id : PRON_PRACTICE)}">Next: ${escape(sections[si + 1] ? sections[si + 1].title : "Practice sentences")} ${arrowFwd()}</button></div>` : ""}
+          </section>`).join("")}
+        ${practice.length ? `
+          <section class="card pron-section pron-practice" data-sec="${PRON_PRACTICE}">
+            <span class="eyebrow" dir="ltr">Practice</span>
+            <h2 dir="ltr">Read these aloud</h2>
+            <p class="muted" dir="ltr">Say each sentence yourself first, then play it and compare. The notes say which sounds to listen for.</p>
+            <button class="btn primary voice-action" id="pron-play-practice">${iconSound()} Play all practice sentences</button>
+            <div class="pron-examples">${practice.map(exRow).join("")}</div>
+            <div class="pron-sec-foot"><button class="btn ghost" id="pron-top">Back to contents</button></div>
+          </section>` : ""}
+      </div>
+    `);
+
+    const rate = () => (nav.pronSlow ? 0.7 : state.settings.prefRate);
+    const lang = () => Lang.cfg().langCode;
+    let chain = 0;   // bumps on every tap so a running "play all" stops
+    function say(text) {
+      chain += 1;
+      Speech.speak(text, { lang: lang(), rate: rate() });
+    }
+    function playSeq(texts, gap) {
+      const my = ++chain;
+      let i = 0;
+      const next = () => {
+        if (my !== chain || i >= texts.length || !wrap.isConnected) return;
+        const t = texts[i++];
+        let done = false;
+        const advance = () => { if (!done) { done = true; setTimeout(next, gap); } };
+        Speech.speak(t, { lang: lang(), rate: rate(), onend: advance }).then((ok) => { if (!ok) advance(); });
+      };
+      next();
+    }
+    function scrollToSec(id, smooth = true) {
+      const t = $$("[data-sec]", wrap).find((x) => x.dataset.sec === id);
+      if (t) t.scrollIntoView({ behavior: smooth ? "smooth" : "instant", block: "start" });
+    }
+
+    // Reading progress: the section crossing the upper part of the screen is "being read".
+    const countEl = $("#pron-count", wrap);
+    function paintProgress() {
+      const n = sections.filter((s) => ps.read[s.id]).length;
+      countEl.textContent = `${n} of ${sections.length} read`;
+      $$(".pron-toc-item", wrap).forEach((b) => b.classList.toggle("is-read", !!ps.read[b.dataset.jump]));
+    }
+    let saveTimer = null;
+    function markRead(id) {
+      if (ps.last === id && (id === PRON_PRACTICE || ps.read[id])) return;
+      ps.last = id;
+      if (id !== PRON_PRACTICE && !ps.read[id]) ps.read[id] = Date.now();
+      paintProgress();
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(persist, 600);
+    }
+    paintProgress();
+    if ("IntersectionObserver" in window) {
+      const io = new IntersectionObserver((entries) => {
+        if (!wrap.isConnected) { io.disconnect(); return; }
+        entries.forEach((en) => { if (en.isIntersecting) markRead(en.target.dataset.sec); });
+      }, { rootMargin: "-20% 0px -70% 0px" });
+      $$("[data-sec]", wrap).forEach((s) => io.observe(s));
+    }
+
+    wrap.addEventListener("click", (e) => {
+      const b = e.target.closest("[data-say], [data-jump], [data-play-rule]");
+      if (!b) return;
+      if (b.dataset.say) say(b.dataset.say);
+      else if (b.dataset.jump) scrollToSec(b.dataset.jump);
+      else {
+        const [si, ri] = b.dataset.playRule.split(":").map(Number);
+        playSeq(sections[si].rules[ri].examples.map((x) => x.nl), 450);
+      }
+    });
+    $("#back", wrap).addEventListener("click", () => navigate(back));
+    const resumeBtn = $("#pron-resume", wrap);
+    if (resumeBtn) resumeBtn.addEventListener("click", () => scrollToSec(ps.last));
+    const slowBtn = $("#pron-slow", wrap);
+    slowBtn.addEventListener("click", () => {
+      nav.pronSlow = !nav.pronSlow;
+      slowBtn.setAttribute("aria-pressed", nav.pronSlow ? "true" : "false");
+    });
+    const playPractice = $("#pron-play-practice", wrap);
+    if (playPractice) playPractice.addEventListener("click", () => playSeq(practice.map((x) => x.nl), 800));
+    const topBtn = $("#pron-top", wrap);
+    if (topBtn) topBtn.addEventListener("click", () => $(".pron-toc", wrap).scrollIntoView({ behavior: "smooth", block: "start" }));
+
+    // Opened at a section (e.g. from a grammar capsule): jump there once the
+    // view is mounted and navigate() has scrolled to the top.
+    if (nav.pronSection) {
+      const id = nav.pronSection;
+      nav.pronSection = null;
+      setTimeout(() => scrollToSec(id, false), 0);
+    }
     return wrap;
   }
 
@@ -2441,6 +2792,16 @@ const App = (function () {
           <p class="muted" style="font-size:13px; margin-top:14px;">
             <strong>New</strong> = unseen · <strong>Learning</strong> = next review &lt; 7 days · <strong>Young</strong> = &lt; 30 days · <strong>Mature</strong> = ≥ 30 days. Mature cards rarely come back.
           </p>
+        </article>
+
+        <article class="card stats-help">
+          <span class="eyebrow">Help</span>
+          <h3 style="margin: 6px 0 4px">New here, or need a refresher?</h3>
+          <p class="muted" style="margin:0 0 12px">The daily routine, every card type and drill in one line each, and why it all works.</p>
+          <div class="row" style="gap:8px; flex-wrap:wrap">
+            <button class="btn primary" id="stats-how">How it works</button>
+            <button class="btn" id="stats-tour">Replay the tour</button>
+          </div>
         </article>
 
         <article class="card stats-settings">
@@ -2535,6 +2896,8 @@ const App = (function () {
       state.settings.dailyGoal = parseInt(e.target.value, 10);
       persist();
     });
+    $("#stats-how", wrap).addEventListener("click", () => navigate("help"));
+    $("#stats-tour", wrap).addEventListener("click", () => Onboarding.openTour());
     const guideBox = $("#set-guide", wrap);
     if (guideBox) guideBox.addEventListener("change", (e) => {
       state.settings.readingGuide = e.target.checked;
@@ -2752,6 +3115,14 @@ const App = (function () {
   function init() {
     trackVoicePlayback();
     loadLanguage(activeLangId());
+    Onboarding.init({
+      getState: () => state,
+      persist,
+      startFirst: startFirstSession,
+      startSession: () => startSession(),
+      openPronunciation: (id) => openPronunciation(id),
+      pronunciation: () => pronGuide(),
+    });
     applyTheme();
     buildLangSwitcher();
 
@@ -2760,6 +3131,8 @@ const App = (function () {
     });
     const tt = document.getElementById("theme-toggle");
     if (tt) tt.addEventListener("click", cycleTheme);
+    const hb = document.getElementById("help-btn");
+    if (hb) hb.addEventListener("click", () => navigate("help"));
 
     // Streak housekeeping: if last session was more than 1 day ago, break streak
     if (state.lastSessionDate) {
@@ -2771,12 +3144,13 @@ const App = (function () {
     }
 
     render();
+    Onboarding.maybeAutoTour();
   }
 
   // expose for debugging
   window.__app = { state: () => state, store: Store, srs: SRS, lang: Lang };
 
-  return { init, navigate, startSession, arrowFwd, arrowBack };
+  return { init, navigate, startSession, openPronunciation, arrowFwd, arrowBack };
 })();
 
 document.addEventListener("DOMContentLoaded", App.init);

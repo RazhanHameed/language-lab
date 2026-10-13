@@ -104,6 +104,7 @@
       if (ch in VOWELS) { segs.push({ c: VOWELS[ch], v: true }); continue; }
       if (ch === "و") {
         if (next === "و") { segs.push({ c: "û", v: true }); i++; continue; }  // وو = û
+        if (i === 0 && next !== undefined) { segs.push({ c: "w", v: false }); continue; } // word-initial: vowels start with ئ
         if (next in VOWELS || prevV === true) segs.push({ c: "w", v: false });
         else segs.push({ c: "u", v: true });
         continue;
@@ -138,7 +139,12 @@
     let k = s.length;
     while (k > 0 && !s[k - 1].v) k--;
     const tail = s.length - k;
-    if (k > 0 && tail >= 3) s.splice(s.length - 1, 0, I);
+    if (k > 0 && tail >= 3) {
+      // The i goes before the last consonant (xward-i-n), unless the last two
+      // already make a fine word ending — sonorant + obstruent (gir-i-ng).
+      const [a, b] = [s[s.length - 2].c, s[s.length - 1].c];
+      s.splice(SONORANT.has(a) && !SONORANT.has(b) ? s.length - 2 : s.length - 1, 0, I);
+    }
     else if (k > 0 && tail === 2) {
       const [a, b] = [s[s.length - 2].c, s[s.length - 1].c];
       // obstruent + sonorant (hatin, kitêbim), or the -m clitic after anything
@@ -150,6 +156,7 @@
   }
 
   function transliterateWord(word) {
+    if (word === "و") return "û";                  // "and"
     // Compound verbs are written as one word (گەشتکردن = geşt + kirdin): the
     // light verb کرد starts its own syllable chain, so transliterate it apart.
     const m = word.match(/^(.{2,}?)(کرد.*)$/);
@@ -269,6 +276,16 @@
     answerMatches,
     inputHint: "Type in Kurdish script or Latin letters (e.g. siław)…",
     guideKey: "Guide letters: ê = 'ay' · î = 'ee' · û = 'oo' · e as in 'bed' · i as in 'bit' · c = 'j' · ç = 'ch' · ş = 'sh' · j = 'zh' · x = 'kh' · q = deep k · ř = rolled r · ł = dark l · ḧ = breathy h · ẍ = French r. The short i is never written in Sorani script — the guide restores it.",
+    onboarding: {
+      typing: "Kurdish script or Latin letters both work (e.g. siław).",
+      tourNote: "Sorani is written right to left, so the whole app flips to match.",
+      tips: [
+        { icon: "🔤", text: "Under every Kurdish word you'll see a small Latin reading guide. Read it aloud, and tap the speaker to hear how it really sounds." },
+        { icon: "⌨️", text: "Type answers in Latin letters (siław) or in Kurdish script. Both count as correct." },
+        { icon: "⚙️", text: "Want the guide off once you can read? Stats, then Settings, then Reading guide." },
+        { icon: "🎙️", text: "Speaking and Shadowing need speech recognition, which Kurdish doesn't have yet, so they're hidden. Everything else works." },
+      ],
+    },
     diagnoseError,
   });
 })();

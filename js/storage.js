@@ -15,6 +15,8 @@ window.Store = (function () {
       lastExportAt: 0,    // ms epoch — used by the export-reminder banner
       seenScenarios: {},  // sId -> ms epoch last viewed
       seenGrammar: {},    // gId -> ms epoch last viewed
+      coach: { seen: {}, dismissed: {} }, // onboarding tips: key -> times met / dismissed
+      pronunciation: { last: null, read: {} }, // pronunciation guide: last section id, sectionId -> ms epoch first read
       settings: {
         theme: "auto",          // 'auto' | 'light' | 'dark'
         sessionSize: 16,        // cards per session

@@ -156,6 +156,13 @@
     timeToWord,
     conjugationPronouns,
     respellWord,
+    onboarding: {
+      tips: [
+        { icon: "🔤", text: "Kurmanji uses the Latin alphabet plus a few extra letters (ê, î, û, ş, ç). Tap the speaker on any word to hear it." },
+        { icon: "🎧", text: "Listen first, then say it out loud to yourself. Nothing scores your voice, but saying it still helps." },
+        { icon: "🎙️", text: "Speaking and Shadowing need speech recognition, which Kurdish doesn't have yet, so they're hidden. Everything else works." },
+      ],
+    },
     diagnoseError,
   });
 })();
