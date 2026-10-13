@@ -11,14 +11,18 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
-PY=".venv/bin/python"
-[ -x "$PY" ] || { echo "Run ./start-mlx.sh once first to create .venv (needs supertonic)." >&2; exit 1; }
+# Each TTS engine lives in its own venv; an engine whose clips are all cached
+# doesn't need its venv at all (the build only imports engines with new work).
+#   supertonic (nl, de):  .venv            — created by ./start-mlx.sh
+#   omnivoice (ckb, kmr): .venv-omnivoice  — see README "Kurdish voices (OmniVoice)"
+py_for() { [ -x "$1/bin/python" ] && echo "$1/bin/python" || echo python3; }
 
 echo "[1/3] enumerating spoken items…"
 node tools/extract_audio_items.js > /tmp/audio_items.json
 
 echo "[2/3] pre-rendering audio (new content only; existing clips cached)…"
-"$PY" build_static_audio.py /tmp/audio_items.json
+AUDIO_ENGINES=supertonic "$(py_for .venv)" build_static_audio.py /tmp/audio_items.json
+AUDIO_ENGINES=omnivoice "$(py_for .venv-omnivoice)" build_static_audio.py /tmp/audio_items.json
 
 echo "[3/3] committing + pushing (GitHub Pages redeploys from main)…"
 git add -A

@@ -53,4 +53,58 @@ window.__DECK.ckb.CHUNKS = [
   { nl: "تێنەگەیشتم",        en: "I didn't understand",              context: "you missed the meaning" },
   { nl: "دەتوانی دووبارەی بکەیتەوە؟", en: "can you repeat that?",     context: "ask for a repeat" },
   { nl: "ببورە، هێواشتر قسە بکە", en: "sorry, speak a bit slower",    context: "ask them to slow down" },
+  // ---- B1 chunks ----
+
+  // ---- opinions & discussion ----
+  { nl: "پێموایە", en: "I think ...", context: "opening an opinion" },
+  { nl: "بە بڕوای من", en: "in my opinion", context: "formal-ish opinion frame" },
+  { nl: "بەڕای من", en: "in my view", context: "opinion frame in discussion" },
+  { nl: "لای من", en: "as far as I'm concerned / to me", context: "personal stance" },
+  { nl: "لەگەڵ تۆ هاوڕام", en: "I agree with you", context: "agreeing" },
+  { nl: "لەگەڵ ئەوە نیم", en: "I don't agree with that", context: "polite disagreement" },
+  { nl: "ڕاست دەکەیت", en: "you're right", context: "conceding a point" },
+  { nl: "تا ڕادەیەک", en: "to some extent", context: "softening a claim" },
+  { nl: "ڕاستییەکەی", en: "actually / the truth is ...", context: "admitting something frankly" },
+  { nl: "دڵنیا نیم", en: "I'm not sure", context: "hedging" },
+  { nl: "لەوانەیە", en: "perhaps / it may be", context: "hedging a guess" },
+  { nl: "ئەوە دەگەڕێتەوە بۆ", en: "it depends on ...", context: "answering 'it depends'" },
+  { nl: "لەلایەکەوە، لەلایەکی ترەوە", en: "on the one hand ... on the other hand ...", context: "weighing two sides" },
+  { nl: "بۆ ئەوەی ڕاستی بڵێم", en: "to tell the truth", context: "frank admission" },
+
+  // ---- linking & structuring ----
+  { nl: "بۆ نموونە", en: "for example", context: "giving an example" },
+  { nl: "بە کورتی", en: "in short", context: "summing up" },
+  { nl: "بەگشتی", en: "in general", context: "broad statement" },
+  { nl: "لە ڕاستیدا", en: "in fact", context: "correcting or adding emphasis" },
+  { nl: "هەروەها", en: "also / likewise", context: "adding a point" },
+  { nl: "لەگەڵ ئەوەشدا", en: "even so / however", context: "contrast" },
+  { nl: "هەرچۆنێک بێت", en: "in any case", context: "closing a topic" },
+  { nl: "وا دیارە", en: "it seems that", context: "inference" },
+
+  // ---- storytelling ----
+  { nl: "جارێکیان", en: "once ...", context: "opening a past anecdote" },
+  { nl: "لە سەرەتادا", en: "at first", context: "story start" },
+  { nl: "دەرکەوت کە", en: "it turned out that ...", context: "surprising result" },
+  { nl: "لەناکاو", en: "suddenly", context: "story turning point" },
+  { nl: "لە کۆتاییدا", en: "in the end", context: "story ending" },
+  { nl: "لەو کاتەوە", en: "ever since then", context: "time marker" },
+
+  // ---- complaints & services ----
+  { nl: "ببورە، کێشەیەکم هەیە", en: "excuse me, I have a problem", context: "opening a complaint" },
+  { nl: "ئەمە ئەوەی داوام کردبوو نییە", en: "this isn't what I ordered", context: "restaurant or shop" },
+  { nl: "ئەمە کار ناکات", en: "this doesn't work", context: "reporting a fault" },
+  { nl: "دەتوانیت چارەسەری بکەیت؟", en: "can you sort this out?", context: "asking for a fix" },
+  { nl: "دەمەوێت سکاڵا بکەم", en: "I'd like to make a complaint", context: "formal complaint" },
+  { nl: "ئومێد دەکەم چارەسەر بکرێت", en: "I hope it can be fixed", context: "polite closing of a complaint" },
+
+  // ---- phone & appointments ----
+  { nl: "ئەلۆ، کێیە؟", en: "hello, who's this?", context: "answering an unknown number" },
+  { nl: "دەتوانم لەگەڵ ئارام قسە بکەم؟", en: "may I speak to Aram?", context: "asking for someone on the phone" },
+  { nl: "هێڵەکە باش نییە", en: "the line is bad", context: "bad reception" },
+  { nl: "دووبارە پەیوەندیت پێوە دەکەم", en: "I'll call you back", context: "ending a call" },
+  { nl: "دەتوانم پەیامێک بەجێبهێڵم؟", en: "can I leave a message?", context: "nobody is free" },
+  { nl: "کەی کاتت هەیە؟", en: "when do you have time?", context: "making an appointment" },
+  { nl: "دەتوانین ڕۆژێکی تر دیاری بکەین؟", en: "can we fix another day?", context: "rescheduling" },
+  { nl: "با قسەکەم تەواو بکەم", en: "let me finish", context: "politely holding the floor" },
+  { nl: "چۆن بڵێم؟", en: "how shall I put it?", context: "filler while thinking" },
 ];

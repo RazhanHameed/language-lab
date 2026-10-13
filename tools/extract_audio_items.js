@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 /* Enumerate every target-language text the app can speak, per language, with the
- * voice the app would use. Emits a JSON array of {voice, lang, text} to stdout
- * for the audio pre-generation build. Only languages with speech (hasSpeech !==
- * false) are included — Kurdish is skipped. */
+ * voice the app would use. Emits {items: [{voice, lang, engine, text}], voices}
+ * to stdout for the audio pre-generation build. `engine` is the pack's
+ * `ttsEngine` ("supertonic" by default, "omnivoice" for Kurdish). Languages
+ * with hasSpeech === false are skipped. */
+const fs = require("fs");
 const path = require("path");
 const ROOT = path.resolve(__dirname, "..");
 global.window = {};
@@ -10,21 +12,24 @@ global.location = { search: "" };
 
 function load(rel) { require(path.join(ROOT, rel)); }
 
+const LANGS = fs.readdirSync(path.join(ROOT, "js/data"), { withFileTypes: true })
+  .filter((d) => d.isDirectory()).map((d) => d.name);
+
 load("js/data/_boot.js");
-for (const l of ["nl", "de"]) {
+for (const l of LANGS) {
   for (const f of ["vocab", "sentences", "scenarios", "grammar", "conjugations", "minimal_pairs", "chunks", "passages"]) {
     load(`js/data/${l}/${f}.js`);
   }
 }
 load("js/lang.js");
 global.Lang = global.window.Lang;
-load("js/lang/nl.js");
-load("js/lang/de.js");
+for (const l of LANGS) load(`js/lang/${l}.js`);
 
 const Lang = global.window.Lang;
 const DECK = global.window.__DECK;
 const items = [];
 const seen = new Set();
+let engine = "supertonic";   // set per language in the loop below
 function add(voice, lang, text) {
   if (!text) return;
   const t = String(text).trim();
@@ -32,19 +37,20 @@ function add(voice, lang, text) {
   const k = `${voice}|${lang}|${t}`;
   if (seen.has(k)) return;
   seen.add(k);
-  items.push({ voice, lang, text: t });
+  items.push({ voice, lang, engine, text: t });
 }
 
 // Reader tokenisation — mirrors renderPassage() in app.js.
 function readerTokens(para) {
-  return para.split(/(\s+|[.,!?;:"'()])/).filter(
-    (tok) => tok && !/^\s+$/.test(tok) && !/^[.,!?;:"'()]$/.test(tok)
+  return para.split(/(\s+|[.,!?;:"'()«»،؟؛—])/).filter(
+    (tok) => tok && !/^\s+$/.test(tok) && !/^[.,!?;:"'()«»،؟؛—]$/.test(tok)
   );
 }
 
 for (const cfg of Lang.list()) {
-  if (cfg.hasSpeech === false) continue;      // Kurdish: no TTS yet
+  if (cfg.hasSpeech === false) continue;      // no TTS for this language
   const lang = cfg.id;
+  engine = cfg.ttsEngine || "supertonic";
   const V = cfg.defaultVoice;
   const narrow = Array.from(new Set([...(cfg.narrowVoices || []), V]));
   const d = DECK[lang];
@@ -66,7 +72,8 @@ for (const cfg of Lang.list()) {
   (d.PASSAGES || []).forEach((p) => {
     (p.paragraphs || []).forEach((para) => {
       add(V, lang, para);
-      readerTokens(para).forEach((tok) => add(V, lang, tok));
+      // Skip punctuation-only tokens (e.g. Sorani «» or —) — nothing to say.
+      readerTokens(para).filter((tok) => /\p{L}/u.test(tok)).forEach((tok) => add(V, lang, tok));
     });
   });
   // Drill answers that are generated (numbers 0-100, times on 5-min marks).
@@ -79,6 +86,10 @@ for (const cfg of Lang.list()) {
 const voices = {};
 for (const cfg of Lang.list()) {
   if (cfg.hasSpeech !== false) voices[cfg.id] = cfg.defaultVoice;
+}
+for (const it of items) {   // the runtime keys clips by the langCode's primary subtag
+  const code = Lang.list().find((c) => c.id === it.lang).langCode.toLowerCase().split("-")[0];
+  if (code !== it.lang) throw new Error(`lang id ${it.lang} != langCode subtag ${code}`);
 }
 
 process.stdout.write(JSON.stringify({ items, voices }));

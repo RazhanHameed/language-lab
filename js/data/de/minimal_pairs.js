@@ -29,4 +29,12 @@ window.__DECK.de.MINIMAL_PAIRS = [
   // ---- the ei / ie spelling trap and the eu diphthong ----
   { a: { nl: "Wein", en: "wine" },    b: { nl: "Wien", en: "Vienna" },    contrast: "ei (eye) vs ie (ee)" },
   { a: { nl: "Leute", en: "people" }, b: { nl: "Laute", en: "sounds" },   contrast: "eu (oy) vs au (ow)" },
+  // ---- B1: more contrasts ----
+  { a: { nl: "fuhr", en: "drove" },    b: { nl: "für", en: "for" },         contrast: "u vs ü (long)" },
+  { a: { nl: "Höhle", en: "cave" },    b: { nl: "Hölle", en: "hell" },      contrast: "long ö vs short ö" },
+  { a: { nl: "Kiste", en: "crate" },   b: { nl: "Küste", en: "coast" },     contrast: "i vs ü" },
+  { a: { nl: "Wetter", en: "weather" }, b: { nl: "Vetter", en: "cousin" },   contrast: "w (v) vs v (f)" },
+  { a: { nl: "Zahl", en: "number" },   b: { nl: "Saal", en: "hall" },       contrast: "z (ts) vs s (z)" },
+  { a: { nl: "bieten", en: "to offer" }, b: { nl: "bitten", en: "to ask" },  contrast: "long ie vs short i" },
+  { a: { nl: "dich", en: "you (acc.)" }, b: { nl: "Dach", en: "roof" },     contrast: "ich-Laut vs ach-Laut" },
 ];

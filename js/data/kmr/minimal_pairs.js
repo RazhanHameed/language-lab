@@ -38,4 +38,11 @@ window.__DECK.kmr.MINIMAL_PAIRS = [
   // ---- a vs e : the open vs mid short vowel ----
   { a: { nl: "sar", en: "cold" },        b: { nl: "ser", en: "head, top" },   contrast: "a vs e" },
   { a: { nl: "bar", en: "load, burden" }, b: { nl: "ber", en: "front, stone" }, contrast: "a vs e" },
+  // ---- B1 expansion: short vs long i, e vs ê, q vs k ----
+  { a: { nl: "pir", en: "very, many" },     b: { nl: "pîr", en: "old, elder" },      contrast: "i vs î (short vs long)" },
+  { a: { nl: "dil", en: "heart" },          b: { nl: "dîl", en: "captive" },         contrast: "i vs î (short vs long)" },
+  { a: { nl: "din", en: "other" },          b: { nl: "dîn", en: "crazy" },           contrast: "i vs î (short vs long)" },
+  { a: { nl: "hez", en: "liking, love" },   b: { nl: "hêz", en: "strength, force" }, contrast: "e vs ê" },
+  { a: { nl: "ker", en: "donkey" },         b: { nl: "kêr", en: "knife" },           contrast: "e vs ê" },
+  { a: { nl: "qelem", en: "pen" },          b: { nl: "kelem", en: "cabbage" },       contrast: "q (uvular) vs k" },
 ];

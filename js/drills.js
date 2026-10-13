@@ -15,9 +15,12 @@
 window.Drills = (function () {
   function pad2(n) { return n < 10 ? "0" + n : "" + n; }
 
+  // Also folds Sorani punctuation and the Arabic look-alike letters (ي ك) a
+  // non-Kurdish keyboard produces.
   function normalize(s) {
     return String(s || "").toLowerCase()
-      .replace(/[.,!?'"]/g, "")
+      .replace(/[يى]/g, "ی").replace(/ك/g, "ک").replace(/[\u064B-\u0652\u0640\u200C]/g, "")
+      .replace(/[.,!?'"«»،؟؛]/g, "")
       .replace(/\s+/g, " ")
       .trim();
   }
@@ -130,7 +133,8 @@ window.Drills = (function () {
     const q = drill.queue[drill.idx];
     const user = normalize(input);
     const target = normalize(q.answer);
-    const ok = user === target;
+    const latin = Lang.cfg() && Lang.cfg().answerMatches;   // e.g. Sorani typed in Latin
+    const ok = user === target || !!(latin && latin(q.answer, input));
     if (ok) drill.correct += 1;
     else drill.wrongAnswers.push({ q, gave: input.trim() });
     return ok;

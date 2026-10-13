@@ -378,6 +378,7 @@ p { margin: 0 0 .8em; }
 }
 .flashcard {
   position: relative;
+  display: grid;
   width: 100%;
   min-height: 280px;
   border-radius: var(--radius-lg);
@@ -386,8 +387,8 @@ p { margin: 0 0 .8em; }
 }
 .flashcard.is-flipped { transform: rotateY(180deg); }
 .face {
-  position: absolute;
-  inset: 0;
+  position: relative;
+  grid-area: 1 / 1;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
@@ -440,42 +441,82 @@ p { margin: 0 0 .8em; }
   color: var(--text);
 }
 
-.audio-btn {
-  position: absolute;
-  top: 16px;
-  inset-inline-end: 16px;
-  border: 1px solid var(--border);
-  background: var(--surface-2);
-  border-radius: 999px;
-  width: 40px; height: 40px;
-  display: inline-grid; place-items: center;
-  color: var(--text-muted);
-  transition: color 120ms, transform 120ms;
-}
-.audio-btn:hover { color: var(--primary); transform: scale(1.04); }
-.audio-btn.is-playing { color: var(--accent); }
-
-/* Inline speak button (next to a line of text) */
+/* ---------- Voice affordance (one look everywhere) ----------
+   .voice-btn     round icon-only "hear this" (inline, 36px, 44px hit area)
+   .voice-btn--float   same button pinned to a flashcard corner
+   .voice-btn--static  decorative icon inside a row that is itself the button
+   .voice-action  icon + label action (.btn variant): play all, read, slow...
+   Both turn accent-coloured + pulse while .is-playing. */
 .speak-row {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 .speak-row > :first-child { flex: 1; min-width: 0; }
-.speak-inline {
-  border: 0;
-  background: transparent;
-  color: var(--text-subtle);
-  padding: 4px;
-  border-radius: 6px;
-  display: inline-grid;
-  place-items: center;
+.voice-btn {
+  position: relative;
   flex-shrink: 0;
-  transition: background 100ms, color 100ms;
+  width: 36px; height: 36px;
+  padding: 0; margin: 0;
+  display: inline-grid; place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--primary-soft);
+  color: var(--primary);
+  cursor: pointer;
+  transition: background 120ms, color 120ms, border-color 120ms, transform 80ms;
 }
-.speak-inline:hover { color: var(--primary); background: var(--primary-soft); }
+.voice-btn::after { content: ""; position: absolute; inset: -4px; }
+.voice-btn:hover { background: color-mix(in srgb, var(--primary) 16%, transparent); border-color: var(--primary); }
+.voice-btn:active { transform: scale(0.94); }
+.voice-btn:focus-visible, .voice-action:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.voice-btn--float { position: absolute; top: 16px; inset-inline-end: 16px; }
+.voice-btn--static { pointer-events: none; width: 32px; height: 32px; margin-top: -2px; }
+.voice-btn--static::after { display: none; }
+.vocab-example:hover .voice-btn--static { background: color-mix(in srgb, var(--primary) 16%, transparent); border-color: var(--primary); }
+.voice-btn.is-playing, .voice-action.is-playing {
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+.voice-btn.is-playing svg, .voice-action.is-playing .ico-sound { animation: voice-pulse 1s ease-in-out infinite; }
+@keyframes voice-pulse { 50% { opacity: 0.45; } }
+.voice-action {
+  min-height: 44px;
+  background: var(--primary-soft);
+  color: var(--primary);
+  border-color: color-mix(in srgb, var(--primary) 25%, transparent);
+}
+.voice-action:hover { background: color-mix(in srgb, var(--primary) 16%, transparent); border-color: var(--primary); }
+.voice-action.primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+.voice-action.primary:hover { background: var(--primary-hover); border-color: var(--primary-hover); }
+.voice-action.primary.is-playing { background: var(--accent); border-color: var(--accent); color: #fff; }
+.ico-sound { flex-shrink: 0; }
+.voice-action.full { width: 100%; justify-content: center; }
 
 /* English-respelling pronunciation hint */
+/* Reading guide: Latin transliteration under each word of a script the learner
+   can't read yet (Sorani). Added by annotateGuide() in app.js. */
+ruby.guide {
+  ruby-position: under;
+  -webkit-ruby-position: after;
+  ruby-align: center;
+}
+ruby.guide rt {
+  font-family: var(--sans);
+  font-size: max(11px, 0.45em);
+  font-weight: 400;
+  font-style: normal;
+  letter-spacing: 0.01em;
+  color: var(--text-subtle);
+  direction: ltr;
+  unicode-bidi: isolate;
+  user-select: none;
+  -webkit-user-select: none;
+  padding-top: 2px;
+}
+.guide-key { line-height: 1.5; }
+
 .respell {
   font-size: 13px;
   color: var(--text-subtle);
@@ -673,9 +714,8 @@ p { margin: 0 0 .8em; }
 .vocab-copy.copied { color: var(--success); }
 
 /* Languages with no speech model yet: hide audio-only controls */
-[data-no-speech] .audio-btn,
-[data-no-speech] .speak-inline,
-[data-no-speech] .audio-btn-inline,
+[data-no-speech] .voice-btn,
+[data-no-speech] .voice-action,
 [data-no-speech] #play-all,
 [data-no-speech] #narrow-listen,
 [data-no-speech] #play-passage,
@@ -748,13 +788,7 @@ p { margin: 0 0 .8em; }
 .dlg-content { flex: 1; }
 .dlg-nl { font-family: var(--serif); font-size: 18px; font-weight: 500; line-height: 1.35; }
 .dlg-en { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
-.dlg-line .audio-btn-inline {
-  border: 0; background: transparent; color: var(--text-subtle); padding: 0;
-  width: 28px; height: 28px;
-  display: inline-grid; place-items: center;
-  border-radius: 8px;
-}
-.dlg-line .audio-btn-inline:hover { color: var(--primary); background: var(--primary-soft); }
+.dlg-line .voice-btn { align-self: flex-start; }
 
 /* ---------- Grammar capsules ---------- */
 .capsule {
@@ -917,7 +951,8 @@ p { margin: 0 0 .8em; }
   border-radius: 14px;
 }
 #rec-toggle #rec-icon {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
   margin-inline-end: 8px;
   font-size: 14px;
   color: #ff5b5b;
@@ -1082,15 +1117,17 @@ p { margin: 0 0 .8em; }
 
 .lookup-bar {
   position: sticky;
-  bottom: 16px;
+  z-index: 20;
+  bottom: calc(80px + env(safe-area-inset-bottom));
   margin-top: 4px;
   padding: 14px 16px;
   background: var(--surface);
   border: 1px solid var(--border-strong);
   border-radius: 14px;
-  box-shadow: var(--shadow-md);
-  min-height: 56px;
+  box-shadow: var(--shadow-lg);
+  min-height: 64px;
 }
+@media (min-width: 720px) { .lookup-bar { bottom: 16px; } }
 .lookup-empty {
   font-size: 13px;
   color: var(--text-muted);
@@ -1098,6 +1135,7 @@ p { margin: 0 0 .8em; }
   padding: 6px 0;
 }
 .lookup-row { display: flex; align-items: center; gap: 12px; }
+.lookup-row .chip { flex-shrink: 0; }
 .lookup-text { flex: 1; min-width: 0; }
 .lookup-text .nl-text { font-size: 17px; font-weight: 500; }
 .lookup-note { font-size: 12px; color: var(--text-muted); margin-top: 4px; font-style: italic; }
@@ -1240,8 +1278,8 @@ p { margin: 0 0 .8em; }
 
   /* Buttons that ARE pure action (icons, controls) stay non-selectable
    * so accidental drag-over doesn't show the I-beam cursor */
-  .btn, .tab, .bn-tab, .icon-btn, .audio-btn, .speak-inline,
-  .choice-btn, .rate-btn, .audio-btn-inline, .word-chip,
+  .btn, .tab, .bn-tab, .icon-btn, .voice-btn, .voice-action,
+  .choice-btn, .rate-btn, .word-chip,
   .session-cta, .session-cta * {
     -webkit-user-select: none;
     user-select: none;
@@ -1251,3 +1289,35 @@ p { margin: 0 0 .8em; }
    * the .li-main / .dlg-content text should be selectable. The rule
    * above re-enables that via the explicit selector. */
 }
+
+/* =========================================================
+ * Bidi + RTL text. app.js tags text blocks dir="auto" so English
+ * lines read LTR inside the RTL (Sorani) page and Sorani reads RTL.
+ * ========================================================= */
+[dir="rtl"] [dir="auto"] { unicode-bidi: isolate; text-align: start; }
+/* Sorani lines need room for the reading-guide ruby under every word. */
+[dir="rtl"] .nl-text, [dir="rtl"] .prompt-word, [dir="rtl"] .dlg-nl,
+[dir="rtl"] .passage-para, [dir="rtl"] .li-title, [dir="rtl"] .cloze-prompt { line-height: 1.9; }
+ruby.guide { ruby-overhang: none; }
+.choice-btn:has(ruby), .word-chip:has(ruby), .vocab-example:has(ruby) { line-height: 1.9; }
+.choice-btn, .word-chip, .minpair-choice, .list-item, .rate-btn { min-height: 44px; }
+.icon-btn { min-width: 44px; min-height: 44px; }
+.vocab-copy { min-width: 40px; min-height: 40px; }
+.vocab-example, .vocab-word { min-height: 44px; }
+@media (max-width: 719px) {
+  .app-main { padding-left: 16px; padding-right: 16px; }
+  .btn { min-height: 44px; }
+  .dlg-line { flex-wrap: wrap; }
+  .dlg-speaker { width: auto; padding-top: 0; flex-basis: 100%; }
+  .dlg-content { flex: 1 1 0; min-width: 0; }
+}
+/* Short translation lines sit under Kurdish lines: keep them on the same edge. */
+[dir="rtl"] .dlg-en[dir="auto"], [dir="rtl"] .prompt-en[dir="auto"] { text-align: right; }
+.cloze-input, input[type="text"] { text-overflow: ellipsis; }
+.cloze-input::placeholder, input[type="text"]::placeholder { text-overflow: ellipsis; }
+/* Any line that carries reading-guide ruby gets room for the rt row. */
+:has(> ruby.guide) { line-height: 1.9; }
+.prompt-note:has(ruby), .metaling-tip:has(ruby), .feedback:has(ruby) { padding-bottom: 12px; }
+.stats-settings select { min-height: 40px; padding: 4px 10px; border-radius: 8px; }
+/* Keep neighbouring guide words apart when rt is wider than a small base. */
+ruby.guide rt { padding-inline: 0.3em; }

@@ -29,4 +29,12 @@ window.__DECK.nl.MINIMAL_PAIRS = [
   // ---- eu (rounded) vs other vowels ----
   { a: { nl: "neus", en: "nose" },   b: { nl: "nies", en: "(I) sneeze" }, contrast: "eu vs ie" },
   { a: { nl: "leuk", en: "fun" },    b: { nl: "luik", en: "hatch" },    contrast: "eu vs ui" },
+
+  // ---- more vowel and diphthong contrasts ----
+  { a: { nl: "paal", en: "pole" },    b: { nl: "pal", en: "firm, steady" }, contrast: "long aa vs short a" },
+  { a: { nl: "rood", en: "red" },     b: { nl: "rot", en: "rotten" },       contrast: "long oo vs short o" },
+  { a: { nl: "boom", en: "tree" },    b: { nl: "bom", en: "bomb" },         contrast: "long oo vs short o" },
+  { a: { nl: "zijn", en: "to be" },   b: { nl: "zin", en: "sentence / desire" }, contrast: "ij vs short i" },
+  { a: { nl: "vier", en: "four" },    b: { nl: "veer", en: "feather" },     contrast: "ie vs ee" },
+  { a: { nl: "zo", en: "so" },        b: { nl: "zou", en: "would" },        contrast: "o vs ou (grammar-relevant: zou)" },
 ];

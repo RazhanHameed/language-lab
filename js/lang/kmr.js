@@ -3,9 +3,10 @@
 // (Amed/Diyarbakır, Wan, Mêrdîn in Turkey), north-east Syria (Rojava), and
 // parts of Iraq (Duhok) and Iran.
 //
-// NOTE: speech (TTS/STT) is not wired for Kurdish yet. `hasSpeech: false` tells
-// the engine to skip audio for this language until we add a Kurdish speech
-// model. All the text content works today.
+// Speech: TTS is OmniVoice (k2-fsa, language id `kmr`), pre-rendered offline to
+// audio/<hash>.mp3 by build_static_audio.py — there's no live Kurdish server, so
+// `ttsLive: false` keeps the app from falling back to a wrong system voice.
+// Whisper has no Kurdish, so `hasStt: false` hides the Speaking/Shadowing drills.
 (function () {
   function norm(s) {
     return String(s || "").toLowerCase()
@@ -109,12 +110,18 @@
     flag: "🏔️",
     langCode: "kmr",
     rtl: false,
-    hasSpeech: false,
+    hasSpeech: true,
+    hasStt: false,
+    ttsEngine: "omnivoice",
+    ttsLive: false,
     storageKey: "fer-kmr:v1",
     backupPrefix: "fer-kmr",
-    voices: [],
-    defaultVoice: null,
-    narrowVoices: [],
+    voices: [
+      { value: "M1", label: "OmniVoice · Male" },
+      { value: "F1", label: "OmniVoice · Female" },
+    ],
+    defaultVoice: "M1",
+    narrowVoices: ["M1", "F1", "M1"],
     greeting(h) {
       if (h < 12) return { target: "Beyanî baş", en: "Good morning" };
       if (h < 18) return { target: "Roj baş", en: "Good afternoon" };
@@ -125,7 +132,7 @@
       months: ["Rêbendan", "Reşemî", "Adar", "Nîsan", "Gulan", "Hezîran", "Tîrmeh", "Tebax", "Îlon", "Cotmeh", "Mijdar", "Berfanbar"],
     },
     clozeStopwords: new Set(["û", "li", "bo", "ez", "tu", "ew", "bi", "ev", "ji", "di", "ku", "min", "te", "na"]),
-    voiceTest: "",
+    voiceTest: "Silav, ev ceribandinek e.",
     doneHeading: "Aferîn!",
     tips: [
       { title: "Retrieval > rereading", body: "Pulling a word from memory once teaches you more than reading it five times. The discomfort is the learning." },
@@ -140,7 +147,7 @@
       { title: "Hospitality is grammar", body: "Fermo — 'here you go / go ahead / please, come in' — is said constantly. Guests are sacred in Kurdish culture." },
     ],
     drillHints: {
-      minpair: "ç vs c · ear training (coming soon)",
+      minpair: "ç vs c · û vs u · ear training",
       chunk: "'fermo', 'spas'…",
       number: "bîst û yek drill",
       time: "heşt û nîv…",

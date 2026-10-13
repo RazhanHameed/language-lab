@@ -51,4 +51,54 @@ window.__DECK.de.CHUNKS = [
   { nl: "keine Ahnung",          en: "no idea",                           context: "shrug-equivalent" },
   { nl: "kannst du das wiederholen?", en: "can you repeat that?",         context: "you missed it" },
   { nl: "Entschuldigung, ich verstehe dich nicht", en: "sorry, I don't understand you", context: "didn't catch it" },
+
+  // ---- B1: opinions & discussion ----
+  { nl: "meiner Meinung nach",   en: "in my opinion",                     context: "opening a point in a discussion" },
+  { nl: "ehrlich gesagt",        en: "to be honest",                      context: "before an honest opinion" },
+  { nl: "das kommt darauf an",   en: "it depends",                        context: "when there's no simple answer" },
+  { nl: "einerseits … andererseits", en: "on the one hand … on the other", context: "weighing two sides" },
+  { nl: "ich würde sagen",       en: "I would say",                       context: "softening an opinion" },
+  { nl: "ich bin mir nicht sicher", en: "I'm not sure",                   context: "hedging" },
+  { nl: "das sehe ich genauso",  en: "I see it the same way",             context: "agreeing" },
+  { nl: "da stimme ich dir zu",  en: "I agree with you there",            context: "agreeing" },
+  { nl: "da bin ich anderer Meinung", en: "I disagree there",             context: "polite disagreement" },
+  { nl: "was meinst du dazu?",   en: "what do you think about it?",       context: "asking for an opinion" },
+  { nl: "das ist mir egal",      en: "I don't mind / I don't care",       context: "no preference; can sound blunt" },
+  { nl: "im Grunde genommen",    en: "basically",                         context: "summing up" },
+  { nl: "auf jeden Fall",        en: "definitely / in any case",          context: "strong agreement or certainty" },
+  { nl: "auf keinen Fall",       en: "no way / under no circumstances",   context: "firm refusal" },
+  { nl: "wie gesagt",            en: "as I said",                         context: "repeating a point" },
+  { nl: "das heißt",             en: "that means / in other words",       context: "clarifying (abbr. d. h.)" },
+  { nl: "es geht um …",          en: "it's about …",                      context: "stating the topic" },
+  { nl: "ich habe den Eindruck, dass …", en: "I have the impression that …", context: "careful judgement" },
+
+  // ---- B1: storytelling glue ----
+  { nl: "es stellte sich heraus, dass …", en: "it turned out that …",     context: "telling a story, news" },
+  { nl: "auf einmal",            en: "suddenly",                          context: "a surprise in a story" },
+  { nl: "zum Glück",             en: "luckily",                           context: "good luck in a story" },
+  { nl: "nach und nach",         en: "little by little",                  context: "gradual change" },
+  { nl: "vor kurzem",            en: "recently",                          context: "recent past" },
+  { nl: "am Anfang … am Ende",   en: "at first … in the end",             context: "structuring a story" },
+  { nl: "das lohnt sich",        en: "it's worth it",                     context: "recommending something" },
+
+  // ---- B1: phone & appointments ----
+  { nl: "ich rufe wegen … an",   en: "I'm calling about …",               context: "opening a phone call" },
+  { nl: "könnten Sie mich bitte zurückrufen?", en: "could you call me back, please?", context: "leaving a message" },
+  { nl: "kann ich eine Nachricht hinterlassen?", en: "can I leave a message?", context: "person not available" },
+  { nl: "entschuldigen Sie die Störung", en: "sorry to disturb you",      context: "calling or interrupting" },
+  { nl: "ich hätte gern einen Termin", en: "I'd like an appointment",     context: "booking at the doctor, authority" },
+  { nl: "geht es auch später?",  en: "would later work too?",             context: "negotiating a time" },
+
+  // ---- B1: polite complaints & apologies ----
+  { nl: "ich möchte mich beschweren", en: "I'd like to make a complaint", context: "formal complaint" },
+  { nl: "das geht so nicht",     en: "that won't do",                     context: "firm but polite complaint" },
+  { nl: "ich bin damit nicht zufrieden", en: "I'm not satisfied with it", context: "complaint to a shop or landlord" },
+  { nl: "könnten Sie das bitte prüfen?", en: "could you check that, please?", context: "polite request to fix something" },
+  { nl: "tut mir leid, dass ich zu spät bin", en: "sorry I'm late",        context: "arriving late" },
+  { nl: "ich kümmere mich darum", en: "I'll take care of it",             context: "taking responsibility" },
+
+  // ---- B1: suggestions ----
+  { nl: "wie wäre es mit …?",    en: "how about …?",                      context: "making a suggestion" },
+  { nl: "hast du Lust, … zu …?", en: "do you fancy …ing?",                context: "inviting someone" },
+  { nl: "keine Sorge",           en: "don't worry",                       context: "reassuring someone" },
 ];

@@ -130,4 +130,185 @@ window.__DECK.kmr.GRAMMAR = [
     ],
     pitfall: "Unlike Sorani, Kurmanji nouns have GENDER. You rarely see it on the noun itself — it surfaces in the ezafe linker and the oblique — so learn each noun together with its gender.",
   },
+  // ---- B1 expansion ----
+  {
+    id: "g_b1_past_ergative",
+    title: "The simple past and ergativity: Min nan xwar",
+    blurb: "In the past tense, the doer of a transitive verb turns oblique and the verb agrees with the object.",
+    body:
+      "Present tense is straightforward: Ez nan dixwim. But in the PAST tense of transitive verbs, Kurmanji switches: the doer takes the OBLIQUE pronoun (min, te, wî, wê, me, we, wan) and the verb agrees with the OBJECT, not with the doer. So 'I ate bread' is literally 'By-me bread was-eaten': Min nan xwar. No di- prefix; just the past stem. Intransitive verbs (çûn, hatin, ketin, razan) do not switch: the subject stays direct (ez, tu, ew, em, hûn) and the verb ends in -m, -yî, nothing, -n, -n, -n.",
+    examples: [
+      { nl: "Ez çûm bazarê.", en: "I went to the market.", tag: "intransitive: direct subject, ending -m" },
+      { nl: "Min nan xwar.", en: "I ate bread.", tag: "transitive: oblique doer, verb agrees with 'nan'" },
+      { nl: "Wî ez dîtim.", en: "He saw me.", tag: "the verb agrees with the OBJECT: ez -> -im" },
+      { nl: "Me ew dîtin.", en: "We saw them.", tag: "ew = they, so the ending is -in" },
+      { nl: "Te çi kir?", en: "What did you do?", tag: "oblique te + object çi" },
+    ],
+    pitfall: "Never say 'Ez nan xwar' (direct pronoun + transitive past). The doer must be oblique: Min nan xwar. Negation puts ne- before the past stem: Min nan nexwar.",
+  },
+  {
+    id: "g_b1_oblique",
+    title: "Oblique case: -ê, -an and the pronoun set",
+    blurb: "A second form of the noun and pronoun marks the doer in the past, and the noun after prepositions.",
+    body:
+      "Nouns and pronouns have two cases: direct and oblique. The oblique shows up (1) for the doer in the past tense, (2) after prepositions and (3) after demonstratives in the oblique. Feminine singular nouns take -ê (jin -> jinê, mal -> malê). Plural nouns take -an (zarok -> zarokan, pirtûk -> pirtûkan). Masculine singular nouns usually stay bare in speech; careful writing adds -î after a demonstrative (vî zilamî). Pronouns change: ez -> min, tu -> te, ew -> wî (he) / wê (she), em -> me, hûn -> we, ew (they) -> wan. Demonstratives: ev -> vî / vê / van, ew -> wî / wê / wan.",
+    examples: [
+      { nl: "Jinê nan xwar.", en: "The woman ate bread.", tag: "feminine doer in the past takes -ê" },
+      { nl: "Ez li malê me.", en: "I am at home.", tag: "after 'li', mal -> malê" },
+      { nl: "Ez ji van zarokan hez dikim.", en: "I like these children.", tag: "plural oblique -an, demonstrative van" },
+      { nl: "Min ev pirtûk xwend.", en: "I read this book.", tag: "oblique 'min' as the doer" },
+      { nl: "Ew bi wan re dixebite.", en: "He works with them.", tag: "wan = oblique they" },
+    ],
+    pitfall: "Gender decides the oblique: malê (fem) but bajêr (masc, bare). Learn each noun with its gender; the dictionary form alone does not tell you.",
+  },
+  {
+    id: "g_b1_ezafe",
+    title: "Ezafe in detail: -ê / -a / -ên and -yê / -ya / -yên",
+    blurb: "The linker between noun and adjective or owner agrees with the noun and adds -y- after a vowel.",
+    body:
+      "A noun links to what follows (an adjective, an owner, another noun) with the ezafe: -ê for a masculine noun, -a for a feminine one, -ên for any plural. After a noun that already ends in a vowel, a -y- is inserted: -yê, -ya, -yên (bira -> birayê min, dê -> dêya min, xanî -> xaniyê me). You can chain ezafes: mala bavê min = the house of my father. With 'a/an', the ezafe shape moves to the adjective: zilamekî dirêj (a tall man), keçeke ciwan (a young girl). Possession and adjectives use the same linker.",
+    examples: [
+      { nl: "birayê min", en: "my brother", tag: "masculine, vowel-ending noun: -yê" },
+      { nl: "dêya min", en: "my mother", tag: "feminine, vowel-ending noun: -ya" },
+      { nl: "mala bavê min", en: "my father's house", tag: "two ezafes in a chain" },
+      { nl: "pirtûkên nû", en: "new books", tag: "plural -ên" },
+      { nl: "zilamekî dirêj, keçeke ciwan", en: "a tall man, a young girl", tag: "indefinite: -ekî (m) / -eke (f)" },
+    ],
+    pitfall: "The -y- is part of the sound, not an extra word: say 'birayê min', not 'bira ê min'. And an adjective after a noun always needs the linker: 'mala mezin', never 'mal mezin'.",
+  },
+  {
+    id: "g_b1_perfect",
+    title: "The present perfect: çûme, xwariye",
+    blurb: "Past participle + a short form of 'to be' says what has happened and still matters now.",
+    body:
+      "The perfect is made from the past participle (past stem + -î) plus -me, -yî, -ye, -ne, -ne, -ne. With intransitive verbs the subject is direct: Ez çûme (I have gone), Tu çûyî, Ew çûye, Em çûne. With transitive verbs the doer is oblique and the ending agrees with the object: Min nan xwariye (I have eaten bread). Use it for experience (Te qet Wan dîtiye? Have you ever seen Van?), results (Ew hatiye: he is here) and 'not yet' (hîn nehatiye). English 'I have lived here for three years' uses the PRESENT in Kurdish: Ez sê sal in li vir dijîm.",
+    examples: [
+      { nl: "Ez gihîştime Amedê.", en: "I have arrived in Amed.", tag: "intransitive: participle + -me" },
+      { nl: "Min nameyek nivîsiye.", en: "I have written a letter.", tag: "transitive: oblique doer, -ye agrees with 'name'" },
+      { nl: "Te qet Wan dîtiye?", en: "Have you ever seen Van?", tag: "experience, 'qet' = ever" },
+      { nl: "Ew hîn nehatiye.", en: "He hasn't come yet.", tag: "negative: ne- before the participle" },
+      { nl: "Ez sê sal in li Amedê dijîm.", en: "I have been living in Amed for three years.", tag: "duration uses the present tense" },
+    ],
+    pitfall: "Do not translate 'I have lived here for three years' with the perfect. Kurdish says 'three years it-is I live here'. Use the perfect for completed actions with a present result.",
+  },
+  {
+    id: "g_b1_past_progressive",
+    title: "Past progressive and habitual past: di- + past stem",
+    blurb: "Put di- in front of the past stem to say 'was doing' or 'used to do'.",
+    body:
+      "The simple past reports a finished event (Min nan xwar). Add di- to the past stem to describe something that was in progress or repeated: Min nan dixwar (I was eating bread / I used to eat bread). Endings are the same as in the simple past (ergative rules too). Use it for background: Dema ez hatim, wê xwarin çêdikir (When I arrived, she was cooking). Use it for habits, with words like berê, her roj, her sibeh. Negation: ne-di-: nedixwar. Preverbs come first: vedixwar.",
+    examples: [
+      { nl: "Berê em li Qamişloyê dijiyan.", en: "We used to live in Qamishlo.", tag: "habit/state in the past" },
+      { nl: "Her sibeh min çay vedixwar.", en: "Every morning I used to drink tea.", tag: "preverb ve- stays before di-" },
+      { nl: "Dema ez hatim, wê xwarin çêdikir.", en: "When I arrived, she was cooking.", tag: "background action vs. event" },
+      { nl: "Em her havîn diçûn gund.", en: "Every summer we used to go to the village.", tag: "intransitive: diçûn" },
+      { nl: "Wî nan nedixwar.", en: "He wasn't eating bread.", tag: "negative ne-di-" },
+    ],
+    pitfall: "Dixwar (was eating) is not dixwe (eats). Tense lives in the stem: past stem xwar-, present stem xw-. Pair di- with the past stem for 'was/used to', with the present stem for 'now'.",
+  },
+  {
+    id: "g_b1_subjunctive",
+    title: "The subjunctive (bi-) and the imperative",
+    blurb: "After want, must and can, the second verb takes bi- + present stem and a personal ending.",
+    body:
+      "The subjunctive is bi- + present stem + -im, -î, -e, -in: bixwim, bixwî, bixwe, bixwin. It follows dixwazim (I want), divê (must), dikarim (can) and conjunctions like ji bo ku, beriya ku, heta: Ez dixwazim biçim (I want to go; lit. 'I want I-go'). The two verbs have their own personal endings, and Kurmanji uses no 'to'. Verbs with a preverb drop the bi-: radibim -> rabim. Hatin has two regional sets: werim / werî / were / werin (Badini and widely written) and bêm / bêyî / bê / bên. The imperative is bi- + stem (bixwe, bixwin) or just the stem for a few verbs (were/werin = come, rûne/rûnin = sit). Prohibition: me- + stem: Meçe! (don't go), Meke!",
+    examples: [
+      { nl: "Ez dixwazim biçim Wanê.", en: "I want to go to Van.", tag: "dixwazim + bi-çim" },
+      { nl: "Divê tu zû bixwî.", en: "You must eat soon.", tag: "divê + subjunctive" },
+      { nl: "Tu dikarî min bibînî?", en: "Can you see me?", tag: "dikarî + bi-bîn-î" },
+      { nl: "Were vir û bixwe!", en: "Come here and eat!", tag: "imperative" },
+      { nl: "Meçe wir!", en: "Don't go there!", tag: "prohibitive me-" },
+    ],
+    pitfall: "Do not use the infinitive after want. English 'I want to go' is Kurdish 'I want I-go': Ez dixwazim biçim. Forgetting the second personal ending is the classic mistake.",
+  },
+  {
+    id: "g_b1_future",
+    title: "The future: ez ê / tu yê / ew ê + subjunctive",
+    blurb: "A short particle plus the subjunctive makes the future.",
+    body:
+      "Put ê (yê after a vowel) between the subject and a subjunctive verb: Ez ê biçim (I will go), Tu yê biçî, Ew ê biçe, Em ê biçin. Some regions say dê (Ez dê biçim). Negative: Ez ê neçim. The particle is written separately from the pronoun in Hawar spelling. Use it for plans and predictions. The present with di- also works for near plans with a time word: Sibê ez diçim Amedê.",
+    examples: [
+      { nl: "Ez ê sibê biçim Amedê.", en: "I'll go to Amed tomorrow.", tag: "ez ê + subjunctive" },
+      { nl: "Tu yê çi bikî?", en: "What will you do?", tag: "yê after a vowel (tu)" },
+      { nl: "Em ê bi hev re bixwin.", en: "We will eat together.", tag: "em ê + bixwin" },
+      { nl: "Ew ê tiştek nebêje.", en: "She won't say anything.", tag: "negative: ne- + subjunctive" },
+      { nl: "Hûn ê kengî vegerin?", en: "When will you come back?", tag: "question word before the verb" },
+    ],
+    pitfall: "The verb after ê is the SUBJUNCTIVE (with bi-), not the present: 'Ez ê biçim', never 'Ez ê diçim'. And ê is not 'is': it has no stress and no meaning on its own.",
+  },
+  {
+    id: "g_b1_comparison",
+    title: "Comparatives and superlatives: -tir and herî",
+    blurb: "Add -tir to the adjective, and say 'ji' for 'than'; 'herî' makes the superlative.",
+    body:
+      "Comparative: adjective + -tir (mezin -> mezintir, xweş -> xweştir). Than = ji: Ew ji min mezintir e. Superlative: herî + adjective (herî mezin), or add -tirîn (mezintirîn). A few forms are irregular: baş -> çêtir (better), zêde -> zêdetir, hindik -> kêmtir. 'As ... as' is bi qasî: Ew bi qasî min dirêj e. Use 'pir' or 'gelek' for 'much': pir mezintir = much bigger.",
+    examples: [
+      { nl: "Amed ji Wanê germtir e.", en: "Amed is hotter than Van.", tag: "adjective + -tir; ji = than" },
+      { nl: "Ev nan ji ya duh çêtir e.", en: "This bread is better than yesterday's.", tag: "irregular çêtir; 'ya' replaces the noun" },
+      { nl: "Ew herî xweş e.", en: "It is the nicest.", tag: "herî + adjective" },
+      { nl: "Gola Wanê mezintirîn gol e.", en: "Lake Van is the biggest lake.", tag: "-tirîn superlative" },
+      { nl: "Ew bi qasî min dirêj e.", en: "He is as tall as me.", tag: "bi qasî = as ... as" },
+    ],
+    pitfall: "The thing compared goes after ji and in the oblique: ji min, ji wî, ji Wanê. 'Mezintir ji' is not Kurdish word order: put 'ji ...' before the adjective.",
+  },
+  {
+    id: "g_b1_relative_conditional",
+    title: "Linking clauses: ku, eger and dema",
+    blurb: "'Ku' means 'who / which / that'; eger/heke build 'if' sentences.",
+    body:
+      "A relative clause comes straight after the noun with ku, and the noun takes the ezafe: zilamê ku li wir rûniştiye (the man who is sitting there). The same ku means 'that' after verbs of saying and thinking: Ez difikirim ku ew rast e. Conditionals use eger, heke or ger plus the subjunctive for realistic futures: Eger baran bibare, em ê li malê bimînin. For unreal 'if' use the past subjunctive (-a ending): Eger wext hebûya, em ê biçûna Wanê. Time clauses: dema (ku), piştî ku, beriya ku, heta.",
+    examples: [
+      { nl: "Zilamê ku li wir rûniştiye bavê min e.", en: "The man who is sitting there is my father.", tag: "relative clause with ku" },
+      { nl: "Pirtûka ku min duh kirî pir xweş e.", en: "The book that I bought yesterday is very nice.", tag: "ku + ergative past inside" },
+      { nl: "Eger baran bibare, em ê li malê bimînin.", en: "If it rains, we'll stay home.", tag: "eger + subjunctive" },
+      { nl: "Heke tu bixwazî, ez ê alîkariya te bikim.", en: "If you want, I'll help you.", tag: "heke + subjunctive, main clause with ê" },
+      { nl: "Dema ku ez hatim, ew çûbû.", en: "When I arrived, he had left.", tag: "dema ku + pluperfect" },
+    ],
+    pitfall: "Never drop 'ku' like English drops 'that'. Say Ez difikirim ku ew rast e. And after eger use the subjunctive, not 'ê': 'Eger tu werî', not 'Eger tu ê werî'.",
+  },
+  {
+    id: "g_b1_passive",
+    title: "The passive: hatin + infinitive",
+    blurb: "To say something 'is done', use hatin ('to come') in front of the infinitive.",
+    body:
+      "Kurmanji forms the passive with the verb hatin (to come) followed by the infinitive of the main verb: Nan tê pijandin (Bread is baked), Mal hat firotin (The house was sold). Tense lives on hatin: tê / têne (present), hat / hatin (past), nayê (negative present), nehat (negative past). The doer, if needed, goes in ji aliyê ... ve: Ev pirtûk ji aliyê wî ve hat nivîsandin. The infinitive never changes. Many notices use it: Li vir cixare nayê kişandin (smoking is not allowed here).",
+    examples: [
+      { nl: "Ev xwarin bi nan tê xwarin.", en: "This dish is eaten with bread.", tag: "present passive: tê + infinitive" },
+      { nl: "Mala wan hat firotin.", en: "Their house was sold.", tag: "past passive: hat + infinitive" },
+      { nl: "Dikan saet nehan tê vekirin.", en: "The shop is opened at nine.", tag: "regular timetable" },
+      { nl: "Li vir cixare nayê kişandin.", en: "Smoking is not allowed here.", tag: "negative nayê" },
+      { nl: "Ev pirtûk ji aliyê wî ve hat nivîsandin.", en: "This book was written by him.", tag: "agent: ji aliyê ... ve" },
+    ],
+    pitfall: "Do not conjugate the main verb. In 'Nan tê pijandin' the infinitive pijandin stays as it is, and hatin carries the person and tense. Plural subject: Nan têne pijandin.",
+  },
+  {
+    id: "g_b1_modals",
+    title: "Modals: divê, dikarim, lazim e, gerek e",
+    blurb: "Four everyday ways to say must, can and need, all followed by the subjunctive.",
+    body:
+      "Divê (must) takes the subjunctive and an oblique pronoun or a subject: Divê ez biçim / Min divê biçim. Dikarim (I can) is a regular present verb: dikarim, dikarî, dikare. Its negative is nikarim. Lazim e and gerek e (it is necessary) are impersonal: Lazim e ez biçim. 'Must not' is nabe: Nabe tu biçî. 'Don't need to' is ne pêwîst e or hewce nîne. Request politely with dikarî: Tu dikarî alîkariya min bikî? Permission is destûr heye.",
+    examples: [
+      { nl: "Divê ez îro biçim kontrolê.", en: "I have to go for a check-up today.", tag: "divê + subjunctive" },
+      { nl: "Tu dikarî alîkariya min bikî?", en: "Can you help me?", tag: "dikarî + subjunctive" },
+      { nl: "Lazim e em zû derkevin.", en: "We need to leave early.", tag: "impersonal lazim e" },
+      { nl: "Nabe tu li vir cixare bikişînî.", en: "You must not smoke here.", tag: "nabe = must not" },
+      { nl: "Ez nikarim wê bibînim.", en: "I can't see her.", tag: "nikarim, negative of dikarim" },
+    ],
+    pitfall: "Divê does not change for person; the subject is carried by the second verb: divê ez, divê tu, divê em. Do not say 'ez divêm'.",
+  },
+  {
+    id: "g_b1_circumpositions",
+    title: "Circumpositions: li ... de, ji ... re, bi ... re, ji ... ve",
+    blurb: "Many Kurdish prepositions have a second half after the noun, which wraps it like brackets.",
+    body:
+      "A preposition before the noun often pairs with a particle after it. Di ... de = in/inside (di dibistanê de, di mal de). Li alone is used for towns and places (li Amedê), but li ... de adds 'inside'. Ji ... re = to/for (ji min re). Bi ... re = with (bi hevalê min re). Ji ... ve = since/from (ji sê rojan ve). Ji bo = for (the purpose). The noun between them is oblique. With pronouns, the particle fuses: bi min re, ji wî re, di wê de.",
+    examples: [
+      { nl: "Ez bi hevalê xwe re diçim bazarê.", en: "I go to the bazaar with my friend.", tag: "bi ... re = with" },
+      { nl: "Ji min re çayek bîne.", en: "Bring me a tea.", tag: "ji ... re = for/to" },
+      { nl: "Birayê min di nexweşxaneyê de ye.", en: "My brother is in the hospital.", tag: "di ... de = in" },
+      { nl: "Ez ji sê rojan ve li vir im.", en: "I've been here for three days.", tag: "ji ... ve = since" },
+      { nl: "Ew bi wan re axivî.", en: "He spoke with them.", tag: "pronoun in the middle: bi wan re" },
+    ],
+    pitfall: "Don't forget the second half: 'bi min' alone sounds unfinished; say 'bi min re'. And the noun in the middle is oblique: careful speech prefers di malê de (fem).",
+  },
 ];

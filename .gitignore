@@ -19,3 +19,7 @@ leer-nl-backup-*.json
 lern-de-backup-*.json
 fer-ckb-backup-*.json
 fer-kmr-backup-*.json
+
+# OmniVoice (Kurdish TTS) — venv + voice-audition scratch
+.venv-omnivoice/
+tts_voices/candidates/

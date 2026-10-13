@@ -4,7 +4,7 @@ A single-user, local-first language-learning app. Built around scientifically-va
 
 **Four languages, one app.** It ships with full **Dutch** (Amsterdam-flavoured), **German** (Berlin-flavoured), **Central Kurdish / Sorani** (Arabic script, right-to-left), and **Kurmanji** (Latin script) decks — every card, sentence, scenario, grammar capsule, drill, and reading passage exists in each, hand-written and culturally specific. Flip between them with the 🇳🇱 / 🇩🇪 / ☀️ / 🏔️ selector in the top bar; each language keeps its own separate progress, streak, and settings. The engine is language-agnostic — adding another language is a data folder plus a small language pack (see below).
 
-Speech is on-device: **Supertonic-3** for TTS (ONNX Runtime + CoreML, ~99M params, 31 languages) and **Whisper** for STT, wired for Dutch and German. The two Kurdish decks are text-first for now (`hasSpeech: false` — audio-only drills and buttons are hidden) until a Kurdish speech model is added; everything else works today.
+Speech is on-device: **Supertonic-3** for Dutch/German TTS (ONNX Runtime + CoreML, ~99M params, 31 languages), **[OmniVoice](https://github.com/k2-fsa/OmniVoice)** for Sorani and Kurmanji TTS (646 languages incl. `ckb` and `kmr`), and **Whisper** for STT. Whisper has no Kurdish, so the Kurdish decks have every voice feature (audio buttons, listen-and-type, minimal pairs, narrow listening) except the Speaking and Shadowing drills.
 
 ---
 
@@ -51,18 +51,18 @@ Cards mature on FSRS-4.5: stability + difficulty per card, retrievability predic
 | 🎙️ **Speaking** | Record yourself saying a target phrase. Whisper transcribes; word-level edit distance scores. | Pushed output, immediate feedback |
 | 🌓 **Shadowing** | Hear the voice say a phrase, then echo it. Whisper transcribes your echo. | Whitworth 2025 systematic review |
 | 👂 **Minimal pairs** | Hear one of two near-identical Dutch words, pick which. | HVPT (Dherbey Chapuis & Berthele 2024) |
-| 🧩 **Chunks** | Translate 33 high-frequency formulaic sequences as units. | Hou et al. 2018 — chunks are processed holistically |
+| 🧩 **Chunks** | Translate ~75 high-frequency formulaic sequences as units (social formulas → B1 discourse markers). | Hou et al. 2018 — chunks are processed holistically |
 | 🔢 **Numbers** | Type the Dutch for any 0–100 (vierentwintig drill). | Closes the tens/ones-swap blind spot |
 | 🕗 **Times** | "08:30" → "half negen". | Half-hour pivot is a notorious learner trap |
-| 🧬 **Conjugation** | Pronoun + infinitive → form. Top 25 verbs. | Form-focused practice |
+| 🧬 **Conjugation** | Pronoun + infinitive → form. Top 40 verbs. | Form-focused practice |
 
 ### Browse content
 
-- **Vocabulary** — 232 cards across 11 themes (greetings, café, transport, work, daily, numbers, etc.). Each card carries gender (`de`/`het`), part of speech, an example sentence, and a free-form note for cultural details.
-- **Sentence patterns** — Tim Ferriss's 12 diagnostic sentences + V2 rule + ordering + work + negation + daily phrases.
-- **Scenario dialogues** — 10 hand-written Amsterdam scripts (café, AH, tram, standup, borrel, pharmacy, directions, bike, landlord, restaurant). Each has a "Narrow listen · 3×" button that loops the dialogue with alternating voices.
-- **Grammar capsules** — V2, modal verbs, de/het, niet vs geen, separable verbs, pronoun forms, Time-Manner-Place ordering, throaty G + ui/eu/ij sounds, plurals.
-- **Reading** — 6 short Dutch passages at A1–B1 difficulty. Tap any word for an inline gloss.
+- **Vocabulary** — ~500 cards per language across 21 themes, A1 → B1: the survival themes (greetings, café, transport, work, daily, numbers, …) plus B1 themes (health, home, food, people, time, travel, nature, media, opinions, B1 connectors), chosen by frequency. Each card carries part of speech (and gender where relevant), an example sentence, and a note for grammar or cultural details.
+- **Sentence patterns** — Tim Ferriss's 12 diagnostic sentences + V2 rule + ordering + work + negation + daily phrases, plus B1 sets: telling stories in the past, giving opinions, and linking ideas (because / although / if / which).
+- **Scenario dialogues** — 16+ hand-written scripts per language (café, supermarket, tram, standup, pharmacy, directions, landlord, restaurant, … and at B1: the doctor, a job interview, a complaint, booking by phone, a weekend story, a discussion). Each has a "Narrow listen · 3×" button that loops the dialogue with alternating voices.
+- **Grammar capsules** — 21 per language. Dutch, for example: V2, modal verbs, de/het, niet vs geen, separable verbs, pronouns, word order, pronunciation, plurals, then B1: perfect & imperfect, future, subordinate & relative clauses, 'er', reflexives, passive, conditional, adjective endings, comparison, om … te. The Kurdish decks cover their own B1 core (past-tense ergativity, ezafe, clitics, subjunctive, conditionals, passive, …).
+- **Reading** — 12–13 passages per language from A1 to B1 (stories, opinion pieces, news-style reports, how-tos, emails, cultural explainers). Tap any word for an inline gloss.
 
 ### Quality-of-life features
 
@@ -133,13 +133,37 @@ The app can run with **no server at all** by pre-rendering every spoken word/sen
 ./deploy.sh
 ```
 
-This (1) enumerates every spoken item, (2) runs Supertonic-3 locally to render each to `audio/<hash>.mp3` — **caching by content hash, so re-runs only synthesise genuinely new content** — writes `audio/manifest.json`, then (3) commits and pushes; GitHub Pages redeploys from `main`.
+This (1) enumerates every spoken item, (2) runs Supertonic-3 (Dutch/German) and OmniVoice (Kurdish) locally to render each to `audio/<hash>.mp3` — **caching by content hash, so re-runs only synthesise genuinely new content** — writes `audio/manifest.json`, then (3) commits and pushes; GitHub Pages redeploys from `main`.
 
 At runtime the app looks up `audio/<hash>.mp3` (hash = `SHA-256(voice|lang|text)`) and plays it directly — the TTS server is only used in local dev for content not yet pre-rendered. STT is intentionally **not** part of the static build (the speaking/shadowing drills need a live Whisper server; everything else works).
 
 **Live:** <https://razhanhameed.github.io/language-lab/>
 
-Pieces: `tools/extract_audio_items.js` (enumerate), `build_static_audio.py` (render + cache + manifest), `deploy.sh` (build + push), `.nojekyll` (so Pages serves `js/data/_boot.js` and all assets verbatim).
+Pieces: `tools/extract_audio_items.js` (enumerate), `build_static_audio.py` (render + cache + manifest, dispatching each item to its language pack's `ttsEngine`), `omnivoice_tts.py` (OmniVoice loading, Kurdish voices, number normalisation), `deploy.sh` (build + push), `.nojekyll` (so Pages serves `js/data/_boot.js` and all assets verbatim).
+
+### Kurdish voices (OmniVoice)
+
+Kurdish audio exists **only** as pre-rendered clips (`ttsLive: false`): there's no live Kurdish server, and on a cache miss the app stays silent rather than mispronouncing with a system voice. OmniVoice needs PyTorch, and a CUDA GPU is strongly recommended. It lives in its own venv:
+
+```bash
+uv venv --python 3.12 .venv-omnivoice
+# Pascal GPUs (GTX 10xx) need the cu126 wheels; newer GPUs can use cu128.
+uv pip install --python .venv-omnivoice/bin/python torch==2.8.0 torchaudio==2.8.0 --index-url https://download.pytorch.org/whl/cu126
+uv pip install --python .venv-omnivoice/bin/python omnivoice lameenc
+```
+
+Every Kurdish clip is **voice-cloned** from one approved reference per voice (`tts_voices/<lang>/<M1|F1>.{wav,txt}`, committed), so the whole deck sounds like the same speaker. To (re)choose a voice:
+
+```bash
+PY=.venv-omnivoice/bin/python
+$PY tools/omnivoice_voices.py design ckb        # render candidate voices → tts_voices/candidates/index.html
+$PY tools/omnivoice_voices.py pick ckb M1 M-2   # lock a candidate as the male voice (F1 = female)
+$PY tools/omnivoice_voices.py samples ckb       # render a test set (numbers, times, sentences) with the locked voices
+```
+
+Changing a locked reference doesn't change clip hashes: delete that language's clips before re-rendering.
+
+**Numbers must be words.** OmniVoice can't read digits in Kurdish, so the decks write every number out in full (`کاتژمێر دە`, `saet dehan`). `omnivoice_tts.normalize_text()` spells out any digit that slips through (including Arabic-Indic `٠–٩`), but only in the text sent to the model. The displayed text, and so the clip hash, stays unchanged.
 
 ---
 
@@ -249,7 +273,10 @@ The app ships four languages (Dutch, German, Sorani, Kurmanji). To add another �
 
 That's it — the selector, per-language progress, and drills pick it up automatically. Two optional pack flags cover the harder cases:
 
-- **`hasSpeech: false`** — the language has no TTS/STT model yet (like Kurdish today). The engine stays silent instead of mispronouncing with a wrong voice, and hides the audio-only drills (Speaking, Shadowing, Minimal pairs) and buttons. Flip it to `true` and add `voices` once a model exists.
+- **`hasSpeech: false`** — the language has no TTS model. The engine stays silent instead of mispronouncing with a wrong voice, and hides the audio-only drills (Speaking, Shadowing, Minimal pairs) and buttons.
+- **`hasStt: false`** — TTS but no speech recognition (Kurdish: Whisper has no Kurdish). Hides only the Speaking and Shadowing drills.
+- **`ttsEngine: "omnivoice"`** — render this language's clips with OmniVoice instead of Supertonic-3 (the default). Use it for any of OmniVoice's 646 languages that Supertonic lacks. The pack's `id` must equal its `langCode`'s primary subtag (`ckb`, `kmr`), because clips are keyed by it.
+- **`ttsLive: false`** — pre-rendered clips only, with no live-server or Web Speech fallback.
 - **`rtl: true`** — right-to-left script (like Sorani). The whole app flips to right-to-left (`<html dir="rtl">`) while that language is active; Latin-script languages (including Kurmanji) stay left-to-right.
 
 Supertonic-3 supports 31 languages (incl. `nl`, `de`, `en`, `fr`, `es`, `pt`, and more); Whisper handles ~99 languages for STT.
@@ -320,6 +347,7 @@ MIT. Use it, fork it, swap the data files for whatever language you want to lear
 
 - [mlx-audio](https://github.com/Blaizzy/mlx-audio) by Prince Canuma for the on-device MLX speech runtime
 - [Supertonic-3](https://huggingface.co/Supertone/supertonic-3) by Supertone — on-device TTS
+- [OmniVoice](https://github.com/k2-fsa/OmniVoice) by k2-fsa — Kurdish (Sorani + Kurmanji) TTS
 - [whisper-large-v3-turbo](https://huggingface.co/openai/whisper-large-v3-turbo) by OpenAI, MLX port via mlx-community
 - FSRS-4.5 by [open-spaced-repetition](https://github.com/open-spaced-repetition)
 - Tim Ferriss for the diagnostic-dozen sentence-deconstruction approach

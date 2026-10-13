@@ -56,9 +56,99 @@ const App = (function () {
   }
 
   function respellLine(text, override) {
+    if (Lang.cfg().transliterate) return "";   // script languages: the reading guide covers it
     const guide = respell(text, override);
     if (!guide || guide === text) return "";
     return `<div class="respell">${escape(guide)}</div>`;
+  }
+
+  /* ---------- reading guide (transliteration) ----------
+   * For a script the learner can't read yet (Sorani), the language pack
+   * provides transliterate(). Every target-script word the app renders then
+   * gets its Latin reading as ruby text underneath — applied centrally by a
+   * MutationObserver, so no view has to remember it and new views get it for
+   * free. All non-target UI is English, so "contains Arabic script" is exactly
+   * "is target text". Toggle: Stats → Settings → Reading guide.
+   *
+   * Code that needs a word back must use a data-* attribute, never
+   * textContent (which would include the guide). */
+  const SCRIPT_WORD = /[\u0621-\u063A\u0641-\u064A\u0671-\u06D3\u06D5]+/g;
+  const HAS_SCRIPT = /[\u0621-\u063A\u0641-\u064A\u0671-\u06D3\u06D5]/;
+  const NO_GUIDE = "ruby, rt, script, style, textarea, input, select, option, [data-no-guide]";
+
+  function guideActive() {
+    return !!(Lang.cfg() && Lang.cfg().transliterate && state && state.settings.readingGuide !== false);
+  }
+
+  function annotateGuide(root) {
+    if (!root || !guideActive()) return;
+    const tr = Lang.cfg().transliterate;
+    if (root.nodeType === 3) root = root.parentElement;
+    if (!root || root.closest && root.closest(NO_GUIDE)) return;
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode: (n) => HAS_SCRIPT.test(n.nodeValue) && n.parentElement && !n.parentElement.closest(NO_GUIDE)
+        ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT,
+    });
+    const nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    for (const n of nodes) {
+      const text = n.nodeValue;
+      const frag = document.createDocumentFragment();
+      let last = 0;
+      for (const m of text.matchAll(SCRIPT_WORD)) {
+        if (m.index > last) frag.appendChild(document.createTextNode(text.slice(last, m.index)));
+        const ruby = document.createElement("ruby");
+        ruby.className = "guide";
+        ruby.appendChild(document.createTextNode(m[0]));
+        const rt = document.createElement("rt");
+        rt.textContent = tr(m[0]);
+        ruby.appendChild(rt);
+        frag.appendChild(ruby);
+        last = m.index + m[0].length;
+      }
+      if (last < text.length) frag.appendChild(document.createTextNode(text.slice(last)));
+      n.replaceWith(frag);
+    }
+  }
+
+  new MutationObserver((muts) => {
+    if (!guideActive()) return;
+    for (const m of muts) m.addedNodes.forEach((n) => annotateGuide(n));
+  }).observe(document.body, { childList: true, subtree: true });
+
+  /* ---------- bidi: let each text block pick its own direction ----------
+   * Under <html dir="rtl"> (Sorani) English blurbs/notes/feedback would get
+   * their punctuation on the wrong side. dir="auto" resolves direction (and
+   * start-alignment) from the block's own first strong character, so English
+   * reads LTR and Sorani RTL on the same page. */
+  const AUTO_DIR = "p, li, h1, h2, h3, h4, blockquote, .muted, .subtle, .li-title, .li-sub, .nl-text, .prompt-word, .prompt-en, .prompt-note, .prompt-line, .prompt-meta, .prompt-example, .drill-prompt, .drill-chip-sub, .drill-chip-label, .passage-title, .passage-blurb, .passage-meta, .empty-state, .greeting-nl, .pitfall, .session-label, .session-due, .big-mark, .dlg-nl, .dlg-en, .lookup-note, .lookup-empty, .passage-para, .feedback, .eyebrow, .chip, .metaling-tip, .backup-banner-text, .speaking-compare > div, .hint, .stat-label, .stat-sub, .toast, label, input[type=text], textarea, .speak-row > :first-child";
+  function autoDir(root) {
+    if (document.documentElement.dir !== "rtl" || !root || root.nodeType !== 1) return;
+    const set = (e) => {
+      if (e.hasAttribute("dir") || e.closest(".respell, .mono, .drill-big")) return;
+      const d = getComputedStyle(e).display;   // layout rows keep the page direction
+      if (d === "flex" || d === "inline-flex" || d === "grid") return;
+      if (e.querySelector(AUTO_DIR)) return;   // dir=auto ignores dir-tagged children; tag leaves only
+      e.setAttribute("dir", "auto");
+    };
+    if (root.matches(AUTO_DIR)) set(root);
+    root.querySelectorAll(AUTO_DIR).forEach(set);
+  }
+  new MutationObserver((muts) => {
+    for (const m of muts) m.addedNodes.forEach((n) => autoDir(n));
+  }).observe(document.body, { childList: true, subtree: true });
+
+  // Typed answers: one comparison for every exercise. Accepts the target script
+  // and — for script languages — a Latin spelling of it (Lang.cfg().answerMatches).
+  function answerOk(given, target) {
+    if (Drills.normalize(given) === Drills.normalize(target)) return true;
+    const m = Lang.cfg().answerMatches;
+    return !!(m && m(target, given));
+  }
+
+  // Placeholder for answer boxes: tells script-language learners Latin is fine.
+  function typeHint(fallback) {
+    return Lang.cfg().inputHint || fallback;
   }
 
   function todayISO() {
@@ -404,7 +494,7 @@ const App = (function () {
         <h3 style="margin: 6px 0 4px">30-second sprints</h3>
         <p class="muted" style="margin: 0 0 12px; font-size: 13px">Targeted practice — each drill closes a gap flashcards can't catch.</p>
         <div class="drill-chips">
-          ${hasSpeech() ? `
+          ${hasStt() ? `
           <button class="drill-chip" data-drill="speaking">
             <span class="drill-chip-emoji">🎙️</span>
             <span class="drill-chip-label">Speaking</span>
@@ -414,7 +504,8 @@ const App = (function () {
             <span class="drill-chip-emoji">🌓</span>
             <span class="drill-chip-label">Shadowing</span>
             <span class="drill-chip-sub">repeat after the voice · prosody</span>
-          </button>
+          </button>` : ``}
+          ${hasSpeech() ? `
           <button class="drill-chip" data-drill="minpair">
             <span class="drill-chip-emoji">👂</span>
             <span class="drill-chip-label">Minimal pairs</span>
@@ -438,7 +529,7 @@ const App = (function () {
           <button class="drill-chip" data-drill="conjugation">
             <span class="drill-chip-emoji">🧬</span>
             <span class="drill-chip-label">Conjugation</span>
-            <span class="drill-chip-sub">top 25 verbs · present tense</span>
+            <span class="drill-chip-sub">top ${(window.CONJUGATIONS || []).length} verbs · present tense</span>
           </button>
         </div>
       </article>
@@ -576,7 +667,7 @@ const App = (function () {
       <div class="flashcard-wrap">
         <div class="flashcard" id="flash">
           <div class="face front">
-            <button class="audio-btn" id="audio-btn" title="Hear it">
+            <button class="voice-btn voice-btn--float" id="audio-btn" title="Hear it" aria-label="Hear it">
               ${iconSound()}
             </button>
             <span class="prompt-line">${Lang.cfg().name} · what does this mean?</span>
@@ -588,11 +679,11 @@ const App = (function () {
             <span class="prompt-line">English</span>
             <div class="speak-row">
               <div class="prompt-en">${escape(card.en)}</div>
-              <button class="speak-inline" data-speak-en="${escape(card.en)}" aria-label="Hear English">${iconSound()}</button>
+              <button class="voice-btn" data-speak-en="${escape(card.en)}" aria-label="Hear English">${iconSound()}</button>
             </div>
             <div class="speak-row" style="margin-top: 6px;">
               <span class="nl-text" style="font-size: 22px;">${escape(card.nl)}</span>
-              <button class="speak-inline" data-speak-nl="${escape(card.nl)}" aria-label="Hear ${Lang.cfg().name}">${iconSound()}</button>
+              <button class="voice-btn" data-speak-nl="${escape(card.nl)}" aria-label="Hear ${Lang.cfg().name}">${iconSound()}</button>
             </div>
             ${respellLine(card.nl, card.respell)}
             ${exampleBlock(card)}
@@ -642,7 +733,7 @@ const App = (function () {
             <p class="muted" style="margin-top:14px; font-size:14px">Say it aloud first. Then tap to check.</p>
           </div>
           <div class="face back">
-            <button class="audio-btn" id="audio-btn">${iconSound()}</button>
+            <button class="voice-btn voice-btn--float" id="audio-btn" aria-label="Hear it">${iconSound()}</button>
             <span class="prompt-line">${Lang.cfg().name}</span>
             <div class="prompt-word">${escape(card.nl)}</div>
             ${respellLine(card.nl, card.respell)}
@@ -707,14 +798,14 @@ const App = (function () {
 
     const grid = $("#choices", wrap);
     choices.forEach((text) => {
-      const btn = el(`<button class="choice-btn">${escape(text)}</button>`);
+      const btn = el(`<button class="choice-btn" data-val="${escape(text)}">${escape(text)}</button>`);
       btn.addEventListener("click", () => {
         const isCorrect = text === correctAnswer;
         $$(".choice-btn", grid).forEach((b) => {
           b.disabled = true;
           if (b === btn) b.classList.add(isCorrect ? "correct" : "incorrect");
-          if (b.textContent === correctAnswer && !isCorrect) b.classList.add("correct");
-          if (b !== btn && b.textContent !== correctAnswer) b.classList.add("dim");
+          if (b.dataset.val === correctAnswer && !isCorrect) b.classList.add("correct");
+          if (b !== btn && b.dataset.val !== correctAnswer) b.classList.add("dim");
         });
         Speech.speak(card.nl, { lang: Lang.cfg().langCode, rate: state.settings.prefRate });
         showRatingPad(wrap, { auto: isCorrect ? 4 : 0 });
@@ -723,7 +814,7 @@ const App = (function () {
     });
 
     if (askInDutch) {
-      const audioBtn = el(`<button class="btn ghost" style="font-size:13px; padding:6px 12px;">${iconSound()} Hear it</button>`);
+      const audioBtn = el(`<button class="btn voice-action" style="align-self:flex-start">${iconSound()} Hear it</button>`);
       audioBtn.addEventListener("click", () => Speech.speak(card.nl, { rate: state.settings.prefRate }));
       wrap.insertBefore(audioBtn, grid);
     }
@@ -738,10 +829,10 @@ const App = (function () {
         <span class="prompt-line">Listen and type</span>
         <p class="muted" style="margin:0">You'll hear a ${Lang.cfg().name} word — type what you hear.</p>
         <div class="row" style="gap: 10px">
-          <button class="btn primary" id="play-btn">${iconSound()} Play</button>
-          <button class="btn ghost" id="play-slow">Slow</button>
+          <button class="btn primary voice-action" id="play-btn">${iconSound()} Play</button>
+          <button class="btn voice-action" id="play-slow">${iconSound()} Slow</button>
         </div>
-        <input type="text" class="cloze-input" id="answer" placeholder="Type ${Lang.cfg().name} here…" autocomplete="off" autocapitalize="none" />
+        <input type="text" class="cloze-input" id="answer" placeholder="${escape(typeHint(`Type ${Lang.cfg().name} here…`))}" autocomplete="off" autocapitalize="none" />
         <button class="btn primary full" id="check-btn">Check</button>
         <div id="reveal-area"></div>
       </div>
@@ -763,9 +854,7 @@ const App = (function () {
     setTimeout(() => playBtn.click(), 280);
 
     function check() {
-      const got = inp.value.trim().toLowerCase();
-      const want = card.nl.trim().toLowerCase();
-      const ok = got === want;
+      const ok = answerOk(inp.value, card.nl);
       inp.classList.add(ok ? "correct" : "incorrect");
       checkBtn.disabled = true;
       const reveal = $("#reveal-area", wrap);
@@ -789,7 +878,7 @@ const App = (function () {
       <div class="flashcard-wrap">
         <div class="flashcard" id="flash">
           <div class="face front">
-            <button class="audio-btn" id="audio-btn">${iconSound()}</button>
+            <button class="voice-btn voice-btn--float" id="audio-btn" aria-label="Hear it">${iconSound()}</button>
             <span class="prompt-line">Sentence · what does it mean?</span>
             <div class="prompt-word small">${escape(card.nl)}</div>
             ${respellLine(card.nl, card.respell)}
@@ -799,11 +888,11 @@ const App = (function () {
             <span class="prompt-line">English</span>
             <div class="speak-row">
               <div class="prompt-en">${escape(card.en)}</div>
-              <button class="speak-inline" data-speak-en="${escape(card.en)}" aria-label="Hear English">${iconSound()}</button>
+              <button class="voice-btn" data-speak-en="${escape(card.en)}" aria-label="Hear English">${iconSound()}</button>
             </div>
             <div class="speak-row" style="margin-top: 6px;">
               <span class="nl-text" style="font-size: 18px;">${escape(card.nl)}</span>
-              <button class="speak-inline" data-speak-nl="${escape(card.nl)}" aria-label="Hear ${Lang.cfg().name}">${iconSound()}</button>
+              <button class="voice-btn" data-speak-nl="${escape(card.nl)}" aria-label="Hear ${Lang.cfg().name}">${iconSound()}</button>
             </div>
             ${respellLine(card.nl, card.respell)}
             ${revealsBlock(card)}
@@ -855,9 +944,9 @@ const App = (function () {
       <div class="card lg stack-sm">
         <span class="prompt-line">Fill the blank · ${escape(card.en)}</span>
         <div class="cloze-prompt">${promptHtml}</div>
-        <input type="text" class="cloze-input" id="answer" placeholder="…" autocomplete="off" autocapitalize="none" />
+        <input type="text" class="cloze-input" id="answer" placeholder="${escape(typeHint("…"))}" autocomplete="off" autocapitalize="none" />
         <div class="row">
-          <button class="btn ghost" id="hear-btn">${iconSound()} Hear full sentence</button>
+          <button class="btn voice-action" id="hear-btn">${iconSound()} Hear full sentence</button>
           <button class="btn primary" id="check-btn" style="flex:1; justify-content:center">Check</button>
         </div>
         <div id="reveal-area"></div>
@@ -871,9 +960,7 @@ const App = (function () {
     hearBtn.addEventListener("click", () => Speech.speak(card.nl, { rate: state.settings.prefRate }));
 
     function check() {
-      const got = inp.value.trim().toLowerCase().replace(/[.,!?]/g, "");
-      const want = chosen.tok.toLowerCase();
-      const ok = got === want;
+      const ok = answerOk(inp.value, chosen.tok);
       inp.classList.add(ok ? "correct" : "incorrect");
       checkBtn.disabled = true;
       Speech.speak(card.nl, { rate: state.settings.prefRate });
@@ -909,7 +996,7 @@ const App = (function () {
         <div class="reorder-area" id="answer-area" data-empty="Tap words below"></div>
         <div class="reorder-bank" id="bank"></div>
         <div class="row">
-          <button class="btn ghost" id="hear-btn">${iconSound()} Hear it</button>
+          <button class="btn voice-action" id="hear-btn">${iconSound()} Hear it</button>
           <button class="btn primary" id="check-btn" style="flex:1; justify-content:center">Check</button>
         </div>
         <div id="reveal-area"></div>
@@ -921,7 +1008,7 @@ const App = (function () {
     $("#hear-btn", wrap).addEventListener("click", () => Speech.speak(card.nl, { rate: state.settings.prefRate }));
 
     shuffled.forEach((t, i) => {
-      const chip = el(`<button class="word-chip" data-bank-i="${i}">${escape(t)}</button>`);
+      const chip = el(`<button class="word-chip" data-bank-i="${i}" data-word="${escape(t)}">${escape(t)}</button>`);
       chip.addEventListener("click", () => {
         if (chip.classList.contains("placed")) {
           // remove from answer
@@ -936,7 +1023,7 @@ const App = (function () {
     });
 
     function check() {
-      const built = $$(".word-chip.placed", ans).map((c) => c.textContent).join(" ");
+      const built = $$(".word-chip.placed", ans).map((c) => c.dataset.word).join(" ");
       const target = card.nl.replace(/[.!?]$/, "").trim();
       const builtClean = built.replace(/[.!?]$/, "").trim();
       const ok = builtClean.toLowerCase() === target.toLowerCase();
@@ -961,10 +1048,10 @@ const App = (function () {
       <div class="card lg stack-sm">
         <span class="prompt-line">Listen and type the sentence</span>
         <div class="row" style="gap: 10px">
-          <button class="btn primary" id="play-btn">${iconSound()} Play</button>
-          <button class="btn ghost" id="play-slow">Slow</button>
+          <button class="btn primary voice-action" id="play-btn">${iconSound()} Play</button>
+          <button class="btn voice-action" id="play-slow">${iconSound()} Slow</button>
         </div>
-        <textarea class="cloze-input" id="answer" rows="2" placeholder="Type what you hear…" autocomplete="off" autocapitalize="none"></textarea>
+        <textarea class="cloze-input" id="answer" rows="2" placeholder="${escape(typeHint("Type what you hear…"))}" autocomplete="off" autocapitalize="none"></textarea>
         <button class="btn primary full" id="check-btn">Check</button>
         <div id="reveal-area"></div>
       </div>
@@ -980,11 +1067,8 @@ const App = (function () {
 
     setTimeout(() => $("#play-btn", wrap).click(), 300);
 
-    function normalize(s) {
-      return s.toLowerCase().replace(/[.,!?]/g, "").replace(/\s+/g, " ").trim();
-    }
     function check() {
-      const ok = normalize(inp.value) === normalize(card.nl);
+      const ok = answerOk(inp.value, card.nl);
       inp.classList.add(ok ? "correct" : "incorrect");
       checkBtn.disabled = true;
       const reveal = $("#reveal-area", wrap);
@@ -1049,11 +1133,11 @@ const App = (function () {
       <div class="prompt-example">
         <div class="speak-row">
           <span class="nl-text">${escape(card.example.nl)}</span>
-          <button class="speak-inline" data-speak-nl="${escape(card.example.nl)}" aria-label="Hear ${Lang.cfg().name}">${iconSound()}</button>
+          <button class="voice-btn" data-speak-nl="${escape(card.example.nl)}" aria-label="Hear ${Lang.cfg().name}">${iconSound()}</button>
         </div>
         <div class="speak-row muted">
           <span>${escape(card.example.en)}</span>
-          <button class="speak-inline" data-speak-en="${escape(card.example.en)}" aria-label="Hear English">${iconSound()}</button>
+          <button class="voice-btn" data-speak-en="${escape(card.example.en)}" aria-label="Hear English">${iconSound()}</button>
         </div>
       </div>`;
   }
@@ -1072,7 +1156,7 @@ const App = (function () {
   }
 
   function iconSound() {
-    return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>`;
+    return `<svg class="ico-sound" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5L6 9H2v6h4l5 4z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>`;
   }
   function iconCopy() {
     return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
@@ -1144,7 +1228,7 @@ const App = (function () {
         <div class="card lg drill-card">
           <span class="eyebrow">${drillLabel(d.kind)}</span>
           <div class="drill-prompt">${q.prompt}</div>
-          <input type="text" class="cloze-input" id="drill-input" placeholder="type your answer…" autocomplete="off" autocapitalize="none" />
+          <input type="text" class="cloze-input" id="drill-input" placeholder="${escape(typeHint("type your answer…"))}" autocomplete="off" autocapitalize="none" />
           <div class="row" style="gap: 10px">
             <button class="btn ghost" id="drill-skip" style="flex: 0">Skip</button>
             <button class="btn primary" id="drill-check" style="flex: 1; justify-content: center">Check</button>
@@ -1179,7 +1263,7 @@ const App = (function () {
         </div>
         ${diag ? `<div class="metaling-tip"><span class="chip accent">${escape(diag.tag)}</span> ${diag.note}</div>` : ""}
         ${q.kind === "number" || q.kind === "time"
-          ? `<button class="btn ghost full" data-hear style="margin-top:8px">${iconSound()} Hear it</button>`
+          ? `<button class="btn voice-action full" data-hear style="margin-top:8px">${iconSound()} Hear it</button>`
           : ""}
         <div style="margin-top:6px"><button class="btn primary full" id="drill-next">Next ${arrowFwd()}</button></div>
       `;
@@ -1260,7 +1344,7 @@ const App = (function () {
                 <div class="nl-text" style="font-size: 17px;">${escape(w.q.answer)}</div>
                 ${w.gave ? `<div class="muted" style="font-size:13px; margin-top:4px">you said: <s>${escape(w.gave)}</s></div>` : ""}
               </div>
-              <button class="audio-btn-inline" data-speak>${iconSound()}</button>
+              <button class="voice-btn" data-speak aria-label="Hear it">${iconSound()}</button>
             </div>
           </div>
         `);
@@ -1348,7 +1432,7 @@ const App = (function () {
               <span id="rec-icon">●</span>
               <span id="rec-label">Tap to record</span>
             </button>
-            <button class="btn ghost" id="rec-listen">${iconSound()} Hear answer</button>
+            <button class="btn voice-action" id="rec-listen">${iconSound()} Hear answer</button>
           </div>
           <div id="rec-status" class="muted" style="font-size: 13px; min-height: 20px;"></div>
           <div id="rec-feedback"></div>
@@ -1528,10 +1612,10 @@ const App = (function () {
           <div class="muted" style="font-size: 13px;">${escape(q.prompt)}</div>
           <div class="speaking-controls">
             <button class="btn primary lg" id="rec-toggle" aria-label="Listen, then shadow">
-              <span id="rec-icon">▶</span>
+              <span id="rec-icon">${iconSound()}</span>
               <span id="rec-label">Hear it, then shadow</span>
             </button>
-            <button class="btn ghost" id="rec-listen-only">${iconSound()} Hear again</button>
+            <button class="btn voice-action" id="rec-listen-only">${iconSound()} Hear again</button>
           </div>
           <div id="rec-status" class="muted" style="font-size: 13px; min-height: 20px;"></div>
           <div id="rec-feedback"></div>
@@ -1553,7 +1637,7 @@ const App = (function () {
     async function playThenRecord() {
       stage = "playing";
       recBtn.disabled = true;
-      recIcon.textContent = "▶";
+      recIcon.innerHTML = iconSound();
       recLabel.textContent = "Playing target…";
       status.textContent = "Listen carefully — recording starts when audio ends.";
       Speech.speak(q.answer, {
@@ -1603,7 +1687,7 @@ const App = (function () {
       } catch (e) {
         status.textContent = "Transcription failed: " + e.message;
         stage = "ready"; recBtn.disabled = false;
-        recIcon.textContent = "▶"; recLabel.textContent = "Hear it, then shadow";
+        recIcon.innerHTML = iconSound(); recLabel.textContent = "Hear it, then shadow";
       }
     }
     function showFeedback(heard, grade) {
@@ -1674,7 +1758,7 @@ const App = (function () {
         <div class="card lg drill-card">
           <span class="eyebrow">Minimal pairs · which did you hear?</span>
           <div class="muted" style="text-align:center; font-size: 12px;">contrast: <strong>${escape(q.hint)}</strong></div>
-          <button class="btn primary lg" id="play-pair" style="margin: 8px 0">${iconSound()} Play</button>
+          <button class="btn primary lg voice-action" id="play-pair" style="margin: 8px 0">${iconSound()} Play</button>
           <div class="minpair-grid">
             <button class="minpair-choice" data-side="left">
               <span class="nl-text">${escape(left.nl)}</span>
@@ -1924,7 +2008,7 @@ const App = (function () {
               ${v.example ? `
                 <div class="vocab-example-row">
                   <button class="vocab-example" title="Hear the example sentence">
-                    ${iconSound()}<em class="nl-text">${escape(v.example.nl)}</em>
+                    <span class="voice-btn voice-btn--static" aria-hidden="true">${iconSound()}</span><em class="nl-text">${escape(v.example.nl)}</em>
                   </button>
                   <button class="vocab-copy" title="Copy sentence" aria-label="Copy sentence">${iconCopy()}</button>
                 </div>` : ""}
@@ -1979,7 +2063,7 @@ const App = (function () {
                 ${s.pattern ? `<div style="margin-top:8px"><span class="chip">${escape(s.pattern)}</span></div>` : ""}
                 ${s.reveals ? `<ul class="muted" style="font-size:13px; margin:8px 0 0 18px; padding:0">${s.reveals.map((r) => `<li>${escape(r)}</li>`).join("")}</ul>` : ""}
               </div>
-              <button class="audio-btn-inline" data-speak="${escape(s.nl)}" style="margin-top:2px; flex-shrink:0;">${iconSound()}</button>
+              <button class="voice-btn" data-speak="${escape(s.nl)}" aria-label="Hear it">${iconSound()}</button>
             </div>
           </article>
         `);
@@ -2052,8 +2136,8 @@ const App = (function () {
         <h1>${s.icon || "📍"} ${escape(s.title)}</h1>
         <p class="muted">${escape(s.setting)}</p>
         <div class="row" style="flex-wrap: wrap; gap: 8px;">
-          <button class="btn primary" id="play-all">${iconSound()} Play full dialogue</button>
-          <button class="btn" id="narrow-listen" title="Same dialogue, 3 passes, alternating speakers">${iconSound()} Narrow listen · 3×</button>
+          <button class="btn primary voice-action" id="play-all">${iconSound()} Play full dialogue</button>
+          <button class="btn voice-action" id="narrow-listen" title="Same dialogue, 3 passes, alternating speakers">${iconSound()} Narrow listen · 3×</button>
         </div>
         <div id="narrow-status" class="muted" style="font-size: 13px; min-height: 0;"></div>
         <div class="dialogue" id="dlg"></div>
@@ -2077,7 +2161,7 @@ const App = (function () {
             <div class="dlg-nl">${escape(line.nl)}</div>
             <div class="dlg-en">${escape(line.en)}</div>
           </div>
-          <button class="audio-btn-inline" data-line="${i}">${iconSound()}</button>
+          <button class="voice-btn" data-line="${i}" aria-label="Hear this line">${iconSound()}</button>
         </div>
       `);
       lineEl.querySelector("[data-line]").addEventListener("click", () => {
@@ -2111,11 +2195,13 @@ const App = (function () {
         narrowCancel();
         narrowCancel = null;
         Speech.cancel();
-        btn.textContent = "🔁 Narrow listen · 3×";
+        btn.classList.remove("is-playing");
+        btn.innerHTML = `${iconSound()} Narrow listen · 3×`;
         status.textContent = "";
         return;
       }
-      btn.innerHTML = "■ Stop narrow listen";
+      btn.classList.add("is-playing");
+      btn.innerHTML = `${iconStop()} Stop narrow listen`;
       const passes = 3;
       const voiceSeq = Lang.cfg().narrowVoices;
       const altVoice = Lang.cfg().voices[1] ? Lang.cfg().voices[1].value : voiceSeq[0];
@@ -2143,14 +2229,17 @@ const App = (function () {
           status.textContent = "✓ Done. 3 passes complete.";
           setTimeout(() => { status.textContent = ""; }, 4000);
         }
-        btn.innerHTML = `${iconSoundInline()} Narrow listen · 3×`;
+        btn.classList.remove("is-playing");
+        btn.innerHTML = `${iconSound()} Narrow listen · 3×`;
         narrowCancel = null;
       })();
     });
 
     return wrap;
   }
-  function iconSoundInline() { return iconSound(); }
+  function iconStop() {
+    return `<svg class="ico-sound" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>`;
+  }
 
   // ----- Reader view (Extensive Reading) -----
   // Tokenises each paragraph into <span class="readable"> elements. Tapping
@@ -2162,7 +2251,7 @@ const App = (function () {
     if (!p) { navigate("home"); return el(`<div></div>`); }
 
     function lookup(word) {
-      const w = word.toLowerCase().replace(/[.,!?;:"'()]/g, "");
+      const w = word.toLowerCase().replace(/[.,!?;:"'()«»،؟؛—]/g, "");
       if (!w) return null;
       if (p.glosses && p.glosses[w]) return { en: p.glosses[w], source: "passage" };
       const v = window.VOCAB.find((x) => x.nl.toLowerCase() === w);
@@ -2184,7 +2273,7 @@ const App = (function () {
           <p class="muted" style="margin: 0 0 14px">${escape(p.blurb)}</p>
           <div class="passage-body" id="passage-body"></div>
           <div class="row" style="gap: 8px; margin-top: 14px;">
-            <button class="btn" id="play-passage">${iconSound()} Read it to me</button>
+            <button class="btn voice-action" id="play-passage">${iconSound()} Read it to me</button>
           </div>
         </article>
         <div class="lookup-bar" id="lookup-bar">
@@ -2198,9 +2287,9 @@ const App = (function () {
       const pEl = document.createElement("p");
       pEl.className = "passage-para";
       // Tokenise: words + non-word chunks
-      const tokens = para.split(/(\s+|[.,!?;:"'()])/);
+      const tokens = para.split(/(\s+|[.,!?;:"'()«»،؟؛—])/);
       tokens.forEach((tok) => {
-        if (/^\s+$/.test(tok) || /^[.,!?;:"'()]$/.test(tok)) {
+        if (/^\s+$/.test(tok) || /^[.,!?;:"'()«»،؟؛—]$/.test(tok)) {
           pEl.appendChild(document.createTextNode(tok));
         } else if (tok.length === 0) {
           // skip empties
@@ -2224,7 +2313,7 @@ const App = (function () {
       if (r) {
         bar.innerHTML = `
           <div class="lookup-row">
-            <button class="audio-btn-inline" data-speak>${iconSound()}</button>
+            <button class="voice-btn" data-speak aria-label="Hear it">${iconSound()}</button>
             <div class="lookup-text">
               <div class="nl-text">${escape(word)}</div>
               <div class="muted">${escape(r.en)}</div>
@@ -2241,7 +2330,7 @@ const App = (function () {
       } else {
         bar.innerHTML = `
           <div class="lookup-row">
-            <button class="audio-btn-inline" data-speak>${iconSound()}</button>
+            <button class="voice-btn" data-speak aria-label="Hear it">${iconSound()}</button>
             <div class="lookup-text">
               <div class="nl-text">${escape(word)}</div>
               <div class="muted">No gloss yet — try the audio for context.</div>
@@ -2301,7 +2390,7 @@ const App = (function () {
               <div class="muted" style="font-size:14px; margin-top:4px">${escape(ex.en)}</div>
               ${ex.tag ? `<div style="margin-top:8px"><span class="chip">${escape(ex.tag)}</span></div>` : ""}
             </div>
-            <button class="audio-btn-inline" data-speak>${iconSound()}</button>
+            <button class="voice-btn" data-speak aria-label="Hear it">${iconSound()}</button>
           </div>
         </div>
       `);
@@ -2370,6 +2459,12 @@ const App = (function () {
                 ${[10, 20, 30, 50].map((n) => `<option value="${n}" ${n === state.settings.dailyGoal ? "selected" : ""}>${n}</option>`).join("")}
               </select>
             </label>
+            ${Lang.cfg().transliterate ? `
+            <label class="row spread" style="gap:12px">
+              <span>Reading guide <span class="muted" style="font-size:12px">(Latin under every ${escape(Lang.cfg().name)} word)</span></span>
+              <input type="checkbox" id="set-guide" ${state.settings.readingGuide !== false ? "checked" : ""} />
+            </label>
+            <p class="muted guide-key" style="font-size:12px; margin:0">${escape(Lang.cfg().guideKey || "")}</p>` : ""}
             <label class="row spread" style="gap:12px">
               <span>Auto-pronounce on flip</span>
               <input type="checkbox" id="set-autoplay" ${state.settings.autoPlay ? "checked" : ""} />
@@ -2439,6 +2534,12 @@ const App = (function () {
     $("#set-goal", wrap).addEventListener("change", (e) => {
       state.settings.dailyGoal = parseInt(e.target.value, 10);
       persist();
+    });
+    const guideBox = $("#set-guide", wrap);
+    if (guideBox) guideBox.addEventListener("change", (e) => {
+      state.settings.readingGuide = e.target.checked;
+      persist();
+      render();   // re-render so the guide appears / disappears everywhere
     });
     $("#set-autoplay", wrap).addEventListener("change", (e) => {
       state.settings.autoPlay = e.target.checked;
@@ -2548,8 +2649,10 @@ const App = (function () {
     return (id && Lang.has(id)) ? id : Lang.list()[0].id;
   }
 
-  // Does the active language have a wired-up speech (TTS/STT) model?
+  // Does the active language have a voice (TTS)? And speech recognition (STT)
+  // for the Speaking/Shadowing drills? Kurdish has TTS (OmniVoice) but no STT.
   function hasSpeech() { return Lang.cfg().hasSpeech !== false; }
+  function hasStt() { return hasSpeech() && Lang.cfg().hasStt !== false; }
 
   // Load the active language's deck + state and configure the speech backend.
   function loadLanguage(id) {
@@ -2563,6 +2666,7 @@ const App = (function () {
     if (Speech.setTargetVoice)  Speech.setTargetVoice(state.settings.targetVoice);
     if (Speech.setEnglishVoice) Speech.setEnglishVoice(state.settings.englishVoice || "M1");
     if (Speech.setTargetSpeech) Speech.setTargetSpeech(speech);
+    if (Speech.setTargetLive)   Speech.setTargetLive(cfg.ttsLive !== false);
     // Root flags: hide audio-only UI when there's no speech; flip the WHOLE app
     // to right-to-left for scripts like Sorani (Arabic-based). Latin-script
     // languages — including Kurmanji — stay left-to-right (the default).
@@ -2621,8 +2725,32 @@ const App = (function () {
     host.appendChild(sel);
   }
 
+  // Mark the tapped voice button as .is-playing until speech goes quiet.
+  function trackVoicePlayback() {
+    let btn = null, started = 0, idleSince = 0, timer = null;
+    const stop = () => {
+      if (btn) btn.classList.remove("is-playing");
+      btn = null; clearInterval(timer); timer = null;
+    };
+    document.addEventListener("click", (e) => {
+      const b = e.target.closest(".voice-btn:not(.voice-btn--static), .voice-action:not(#narrow-listen)");
+      if (!b || b.disabled) return;
+      if (btn && btn !== b) btn.classList.remove("is-playing");
+      btn = b; started = Date.now(); idleSince = 0;
+      b.classList.add("is-playing");
+      if (!timer) timer = setInterval(() => {
+        if (!btn || !btn.isConnected) return stop();
+        const age = Date.now() - started;
+        if (Speech.isPlaying && Speech.isPlaying()) { idleSince = 0; return; }
+        if (!idleSince) idleSince = Date.now();
+        if (Date.now() - idleSince > (age < 4000 ? 2500 : 1200)) stop();
+      }, 200);
+    }, true);
+  }
+
   /* ============ INIT ============ */
   function init() {
+    trackVoicePlayback();
     loadLanguage(activeLangId());
     applyTheme();
     buildLangSwitcher();

@@ -35,4 +35,12 @@ window.__DECK.ckb.MINIMAL_PAIRS = [
   // ---- ا [a] vs ە [e] : the open vs mid short vowel ----
   { a: { nl: "ماست", en: "yogurt" }, b: { nl: "مەست", en: "drunk" },     contrast: "a vs e" },
   { a: { nl: "بار", en: "load, burden" }, b: { nl: "بەر", en: "front, fruit" }, contrast: "a vs e" },
+
+  // ---- B1 additions ----
+  { a: { nl: "ئیش", en: "work, job" },    b: { nl: "ئێش", en: "pain, ache" },       contrast: "î vs ê" },
+  { a: { nl: "تیر", en: "arrow" },        b: { nl: "تێر", en: "full (of food)" },    contrast: "î vs ê" },
+  { a: { nl: "دۆ", en: "salty yoghurt drink" }, b: { nl: "دوو", en: "two" },          contrast: "o vs û" },
+  { a: { nl: "چۆن", en: "how" },          b: { nl: "چوون", en: "going, to go" },     contrast: "o vs û" },
+  { a: { nl: "دەم", en: "mouth" },        b: { nl: "دێم", en: "I come" },            contrast: "e vs ê" },
+  { a: { nl: "گەل", en: "people, nation" }, b: { nl: "گەڵ", en: "leaf" },            contrast: "light l vs dark ɫ" },
 ];

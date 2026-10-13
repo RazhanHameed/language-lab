@@ -226,11 +226,13 @@ window.Speech = (function () {
   let targetVoice = "M1";
   let defaultEnglishVoice = "M1";
   let defaultLang = "nl-NL";        // BCP-47 code of the target language
-  let targetSpeech = true;          // false for languages with no TTS/STT yet (e.g. Kurdish)
+  let targetSpeech = true;          // false for languages with no TTS at all
+  let targetLive = true;            // false = pre-rendered clips only (e.g. Kurdish via OmniVoice)
   function setTargetVoice(v) { if (v) targetVoice = v; }
   function setEnglishVoice(v) { if (v) defaultEnglishVoice = v; }
   function setTargetLang(code) { if (code) defaultLang = code; }
   function setTargetSpeech(on) { targetSpeech = on !== false; }
+  function setTargetLive(on) { targetLive = on !== false; }
   function voiceForLang(lang, prefVoice) {
     if (prefVoice) return prefVoice;
     const prefix = (lang || defaultLang).toLowerCase().slice(0, 2);
@@ -272,9 +274,11 @@ window.Speech = (function () {
     cancelCurrent();
     const myGen = speakGen;          // capture generation; bail if it changes
     const lang = opts.lang || defaultLang;
-    const lang2 = lang.toLowerCase().slice(0, 2);
-    // Languages without a speech model yet (Kurdish) stay silent for target-
-    // language text rather than mispronouncing it with a wrong system voice.
+    // Primary subtag: "nl-NL" -> "nl", "ckb" -> "ckb". Part of the clip key, so
+    // it must match the `lang` the build script hashed with.
+    const lang2 = lang.toLowerCase().split("-")[0];
+    // Languages without a speech model stay silent for target-language text
+    // rather than mispronouncing it with a wrong system voice.
     if (!targetSpeech && lang2 !== "en") return false;
     const voice = voiceForLang(lang, opts.voice);
     const clean = cleanForTts(text);
@@ -305,6 +309,10 @@ window.Speech = (function () {
         }
       }
     }
+
+    // Pre-rendered-only languages (Kurdish: OmniVoice clips built offline) have
+    // no live server and no usable system voice — stay silent on a cache miss.
+    if (!targetLive && lang2 !== "en") return false;
 
     // 2) Route through the on-device Supertonic TTS server (local dev / new
     // content not yet pre-rendered), then Web Speech.
@@ -345,6 +353,9 @@ window.Speech = (function () {
   }
 
   function cancel() { cancelCurrent(); }
+  function isPlaying() {
+    return activeAudios.size > 0 || (supported && window.speechSynthesis.speaking);
+  }
 
   // Speech-to-text via the mlx-audio server's OpenAI-compatible Whisper endpoint
   // (separate from the Supertonic TTS server).
@@ -391,6 +402,7 @@ window.Speech = (function () {
   return {
     speak,
     cancel,
+    isPlaying,
     transcribe,
     hasTargetVoice,
     hasEnglishVoice,
@@ -403,6 +415,7 @@ window.Speech = (function () {
     setEnglishVoice,
     setTargetLang,
     setTargetSpeech,
+    setTargetLive,
     pregenReady,
     pregenCount: () => (pregen ? pregen.size : 0),
     ttsBase,
