@@ -1,169 +1,194 @@
-# Leer Nederlands / Lern Deutsch
+# Language Lab
 
-A single-user, local-first language-learning app. Built around scientifically-validated SLA techniques (FSRS spaced repetition, retrieval practice, interleaving, shadowing, minimal-pair perception, formulaic chunks, extensive reading) and powered by on-device speech via Apple's MLX framework — no cloud, no accounts, no subscriptions.
+**Learn Dutch, German, Central Kurdish (Sorani) or Northern Kurdish (Kurmanji) from zero to B1.**
 
-**Four languages, one app.** It ships with full **Dutch** (Amsterdam-flavoured), **German** (Berlin-flavoured), **Central Kurdish / Sorani** (Arabic script, right-to-left), and **Kurmanji** (Latin script) decks — every card, sentence, scenario, grammar capsule, drill, and reading passage exists in each, hand-written and culturally specific. Flip between them with the 🇳🇱 / 🇩🇪 / ☀️ / 🏔️ selector in the top bar; each language keeps its own separate progress, streak, and settings. The engine is language-agnostic — adding another language is a data folder plus a small language pack (see below).
+**▶ Try it: <https://razhanhameed.github.io/language-lab/>** (no sign-up, no install; works on phones)
 
-Speech is on-device: **Supertonic-3** for Dutch/German TTS (ONNX Runtime + CoreML, ~99M params, 31 languages), **[OmniVoice](https://github.com/k2-fsa/OmniVoice)** for Sorani and Kurmanji TTS (646 languages incl. `ckb` and `kmr`), and **Whisper** for STT. Whisper has no Kurdish, so the Kurdish decks have every voice feature (audio buttons, listen-and-type, minimal pairs, narrow listening) except the Speaking and Shadowing drills.
+Language Lab is a free, open-source, local-first language-learning web app. It is built around learning techniques with solid research behind them: FSRS spaced repetition, retrieval practice, interleaving, shadowing, minimal-pair listening, formulaic chunks and extensive reading. There are no accounts, no ads and no tracking. Your progress stays in your browser.
+
+| | Language | Script | Voice |
+|---|---|---|---|
+| 🇳🇱 | **Dutch** (Amsterdam-flavoured) | Latin | Supertonic-3 |
+| 🇩🇪 | **German** (Berlin-flavoured) | Latin | Supertonic-3 |
+| ☀️ | **Central Kurdish / Sorani** | Arabic-based, right-to-left | OmniVoice |
+| 🏔️ | **Northern Kurdish / Kurmanji** | Latin (Hawar alphabet) | OmniVoice |
+
+Every card, sentence, dialogue, grammar capsule, drill and reading passage is written separately for each language, not machine-translated from one master deck. Switch languages from the selector in the top bar, or link straight to one with `?lang=nl`, `?lang=de`, `?lang=ckb` or `?lang=kmr`. Each language keeps its own progress, streak and settings.
 
 ---
 
-## Quick start
+## Contents
+
+- [What's inside](#whats-inside)
+- [How to use it](#how-to-use-it)
+- [Running it locally](#running-it-locally)
+- [How the audio works](#how-the-audio-works)
+- [Project structure](#project-structure)
+- [Editing and adding content](#editing-and-adding-content)
+- [Adding a language](#adding-a-language)
+- [The science](#the-science)
+- [Data and privacy](#data-and-privacy)
+- [Contributing](#contributing)
+- [License and credits](#license-and-credits)
+
+---
+
+## What's inside
+
+### Content per language (A1 → B1)
+
+| | Dutch | German | Sorani | Kurmanji |
+|---|---|---|---|---|
+| Vocabulary cards | 508 | 538 | 498 | 499 |
+| Vocabulary themes | 21 | 22 | 21 | 21 |
+| Sentence patterns | 106 | 146 | 106 | 106 |
+| Scenario dialogues | 16 | 23 | 16 | 16 |
+| Grammar capsules | 21 | 21 | 21 | 21 |
+| Reading passages | 12 | 12 | 13 | 13 |
+| Chunks (set phrases) | 76 | 74 | 77 | 77 |
+| Conjugation verbs | 40 | 40 | 40 | 41 |
+| Minimal pairs | 22 | 23 | 22 | 22 |
+| Pronunciation guide | 16 sections | 16 sections | 16 sections | 16 sections |
+
+- **Vocabulary**: survival themes (greetings, café, transport, work, numbers, …) and B1 themes (health, home, food, people, travel, nature, media, opinions, connectors), chosen by frequency. Each card has its part of speech (and gender where relevant), an example sentence and a usage or culture note.
+- **Sentence patterns**: word-order diagnostics, negation and everyday phrases, then B1 sets for telling stories in the past, giving opinions and linking ideas.
+- **Scenario dialogues**: café, supermarket, tram, pharmacy, landlord, … and at B1 a doctor's visit, a job interview, a complaint and a discussion. "Narrow listen · 3×" loops a dialogue with alternating voices.
+- **Grammar capsules**: short, example-led explanations. The Kurdish decks cover their own core, such as past-tense ergativity, ezafe, clitics, the subjunctive, conditionals and the passive.
+- **Reading**: stories, opinion pieces, emails and how-tos from A1 to B1, plus an article on how each Kurdish script is read. Tap any word for a gloss and its pronunciation.
+- **Pronunciation guide**: a long, systematic article per language (for example, how German spelling maps to sound by rule), with about 230 playable examples each and read-aloud practice sentences at the end.
+
+### 8 study card types (interleaved within each session)
+
+| Type | What you do | Why |
+|---|---|---|
+| **Recognise** (target → English) | Tap to flip the card | First-contact retrieval |
+| **Recall** (English → target) | Say it aloud, tap to check | Pushed output (Swain) |
+| **Cloze** | Fill the blank in a sentence | Generation effect |
+| **Reorder** | Tap shuffled words into order | Word-order awareness |
+| **Listen-and-type** (word) | Hear it, type it | Bottom-up listening |
+| **Listen-and-type** (sentence) | Same, for a whole sentence | Dictation-style decoding |
+| **Multiple choice** | Pick the meaning from 4 options | Scaffold for brand-new cards |
+| **Sentence recognise** | Translate a sentence to English | Pattern recognition |
+
+Cards are scheduled with FSRS-4.5 (stability and difficulty per card, targeting 90% retention). New cards lean toward easier card types; mature cards get harder ones.
+
+### 7 standalone drills
+
+| Drill | What you do | Research basis |
+|---|---|---|
+| 🎙️ **Speaking** | Say a target phrase; Whisper transcribes it and scores it word by word | Pushed output, immediate feedback |
+| 🌓 **Shadowing** | Hear a phrase, echo it, get scored | Whitworth 2025 systematic review |
+| 👂 **Minimal pairs** | Hear one of two near-identical words and pick which | HVPT (Dherbey Chapuis & Berthele 2024) |
+| 🧩 **Chunks** | Translate high-frequency set phrases as whole units | Hou et al. 2018 |
+| 🔢 **Numbers** | Type any number 0–100 in words | Closes the tens/ones-order blind spot |
+| 🕗 **Times** | "08:30" → say it the local way | A classic learner trap |
+| 🧬 **Conjugation** | Pronoun + infinitive → the right form, top 40 verbs | Form-focused practice |
+
+Speaking and Shadowing score you with a local Whisper server (see [Running it locally](#running-it-locally)). On the public site they still play the audio but can't score you. Whisper has no Kurdish, so these two drills are not offered for Sorani or Kurmanji.
+
+### Help for beginners
+
+- **First-run walkthrough**: a short, skippable tour explains the daily routine, what each part of the app is for and why it works. Reopen it any time from **How it works**.
+- **In-context coaching**: every card type, drill and view shows a one-line instruction the first few times you meet it, then shrinks to a small "?".
+- **Sorani reading guide**: every Sorani word shows a Latin transliteration above it, including the short *i* vowel that the script doesn't write. Typed answers are accepted in Kurdish script *or* in Latin letters. You can turn the guide off in Settings.
+- **"Say it like" respellings**: small English-style hints under Dutch, German and Kurmanji words.
+- **Feedback that explains the mistake**: wrong answers are classified (for example *niet* vs *geen*, *de*/*het*, verb-second order, a missing *-t*, a typo) with a one-line rule.
+- **Pretest mode**: "Challenge me · 5" on any vocabulary theme quizzes you before you study (the errorful-pretest effect).
+
+Also: light, dark and auto themes; a mobile-first layout with a desktop grid at ≥ 960 px; and a backup reminder when your last export is a week old.
+
+---
+
+## How to use it
+
+1. Open the [live site](https://razhanhameed.github.io/language-lab/) and pick a language. The walkthrough shows you around.
+2. Read the **pronunciation guide** once and play the examples. Come back to it whenever a sound puzzles you.
+3. Do a **study session** most days (10–15 minutes). Rate each card honestly; the scheduler decides when you see it again.
+4. Mix in a **drill**, a **scenario** or a **reading passage** when you have extra time.
+5. **Export a backup** now and then (Stats → Backup & reset). Your progress lives only in this browser.
+
+---
+
+## Running it locally
+
+The app is plain HTML, CSS and JavaScript: no build step, no `package.json`.
 
 ```bash
 git clone https://github.com/RazhanHameed/language-lab.git
 cd language-lab
 
-# Option A — minimal: browser TTS only (Xander/Samantha on macOS)
-./start.sh
+# Option A: static server only. Plays the pre-rendered audio in audio/.
+./start.sh                 # http://localhost:8123/  (./start.sh 9000 for another port)
 
-# Option B — full speech stack: on-device Supertonic-3 TTS + Whisper STT
+# Option B: plus a live speech stack (Apple Silicon recommended).
+# On-device Supertonic-3 TTS + Whisper STT, which enables the Speaking and Shadowing drills.
 ./start-mlx.sh
 ```
 
-`start.sh` opens `http://localhost:8123/` and works on any machine with Python 3.10+. `start-mlx.sh` additionally bootstraps a Python venv (via [uv](https://docs.astral.sh/uv/) when present), installs `supertonic` + `mlx-audio[server,tts]`, downloads the Supertonic-3 and Whisper weights on first run, and runs two small local servers: **Supertonic-3** (`:5510`) for text-to-speech and **mlx-audio/Whisper** (`:5500`) for speech recognition. No cloud calls.
+`start.sh` needs only Python 3.10+. Content that isn't pre-rendered yet falls back to your system's voice for Dutch and German, and stays silent for Kurdish.
 
-Mac with Apple Silicon recommended for the MLX path. The minimal `start.sh` works anywhere.
+`start-mlx.sh` creates a Python venv (using [uv](https://docs.astral.sh/uv/) when present) and installs `supertonic` and `mlx-audio[server,tts]`. On the first run it downloads the model weights. It then runs two local servers next to the app: Supertonic-3 TTS on `:5510` and mlx-audio/Whisper STT on `:5500`. Nothing is sent to the cloud.
+
+- It pins `mlx==0.31.1`, because 0.32.0 made GPU streams thread-local, which breaks Whisper on the server's worker thread.
+- After the first run, startup takes about 30–60 s while the weights load.
+- Stop everything with **Ctrl+C**.
+
+```bash
+WEB_PORT=9000 ./start-mlx.sh       # change the web port
+TTS_PORT=5501 ./start-mlx.sh       # change the TTS port
+PREWARM_STT=0 ./start-mlx.sh       # skip the Whisper download (TTS only)
+```
+
+URL parameters: `?lang=<id>` picks the language, `?tts=<url>` and `?stt=<url>` point at speech servers, and `?audio=<dir>` loads pre-rendered clips from another folder.
 
 ---
 
-## What it does
+## How the audio works
 
-### 8 study card types (all interleaved within sessions)
+The public site has **no backend**. Every word and sentence the app can speak is rendered to an MP3 ahead of time and served by GitHub Pages.
 
-| Type | What you do | Why |
-|---|---|---|
-| **Recognise** (NL → EN) | Tap to flip the card | First-contact retrieval |
-| **Recall** (EN → NL) | Speak it aloud, tap to check | Pushed output (Swain) |
-| **Cloze** | Fill the blank in a Dutch sentence | Generation effect |
-| **Reorder** | Tap shuffled words into the right order | Word-order awareness |
-| **Listen-and-type** (vocab) | Hear it, type what you heard | Bottom-up listening |
-| **Listen-and-type** (sentence) | Same, full sentence | Dictation-style decoding |
-| **Multiple choice** | Pick the meaning from 4 options | Scaffolded for new cards |
-| **Sentence recognise** | Translate a sentence to English | Pattern recognition |
-
-Cards mature on FSRS-4.5: stability + difficulty per card, retrievability prediction, scheduled at 90% retention. New cards bias toward easier modes; mature cards get harder ones.
-
-### 7 standalone drills
-
-| Drill | Mechanic | Research basis |
-|---|---|---|
-| 🎙️ **Speaking** | Record yourself saying a target phrase. Whisper transcribes; word-level edit distance scores. | Pushed output, immediate feedback |
-| 🌓 **Shadowing** | Hear the voice say a phrase, then echo it. Whisper transcribes your echo. | Whitworth 2025 systematic review |
-| 👂 **Minimal pairs** | Hear one of two near-identical Dutch words, pick which. | HVPT (Dherbey Chapuis & Berthele 2024) |
-| 🧩 **Chunks** | Translate ~75 high-frequency formulaic sequences as units (social formulas → B1 discourse markers). | Hou et al. 2018 — chunks are processed holistically |
-| 🔢 **Numbers** | Type the Dutch for any 0–100 (vierentwintig drill). | Closes the tens/ones-swap blind spot |
-| 🕗 **Times** | "08:30" → "half negen". | Half-hour pivot is a notorious learner trap |
-| 🧬 **Conjugation** | Pronoun + infinitive → form. Top 40 verbs. | Form-focused practice |
-
-### Browse content
-
-- **Vocabulary** — ~500 cards per language across 21 themes, A1 → B1: the survival themes (greetings, café, transport, work, daily, numbers, …) plus B1 themes (health, home, food, people, time, travel, nature, media, opinions, B1 connectors), chosen by frequency. Each card carries part of speech (and gender where relevant), an example sentence, and a note for grammar or cultural details.
-- **Sentence patterns** — Tim Ferriss's 12 diagnostic sentences + V2 rule + ordering + work + negation + daily phrases, plus B1 sets: telling stories in the past, giving opinions, and linking ideas (because / although / if / which).
-- **Scenario dialogues** — 16+ hand-written scripts per language (café, supermarket, tram, standup, pharmacy, directions, landlord, restaurant, … and at B1: the doctor, a job interview, a complaint, booking by phone, a weekend story, a discussion). Each has a "Narrow listen · 3×" button that loops the dialogue with alternating voices.
-- **Grammar capsules** — 21 per language. Dutch, for example: V2, modal verbs, de/het, niet vs geen, separable verbs, pronouns, word order, pronunciation, plurals, then B1: perfect & imperfect, future, subordinate & relative clauses, 'er', reflexives, passive, conditional, adjective endings, comparison, om … te. The Kurdish decks cover their own B1 core (past-tense ergativity, ezafe, clitics, subjunctive, conditionals, passive, …).
-- **Reading** — 12–13 passages per language from A1 to B1 (stories, opinion pieces, news-style reports, how-tos, emails, cultural explainers). Tap any word for an inline gloss.
-
-### Quality-of-life features
-
-- **Metalinguistic feedback** — wrong typed answers get classified (niet vs geen, de/het, V2 violation, missing -t, jij vs je, typo, word order) with a one-line rule reminder.
-- **Output-prompted noticing chips** — after a low-accuracy speaking attempt, tap which dimension was hard (word order / pronunciation / vocabulary / verb form / speed). Per Swain & Schmidt: explicit reflection triggers acquisition.
-- **Pretest mode** — "Challenge me · 5" on any vocab theme tests unseen cards before you study them. Errorful pretests boost subsequent retention (Kornell).
-- **Backup banner** — auto-prompts to download a JSON snapshot when the last export is ≥ 7 days old.
-- **English-respelling hints** — small italic guide under each Dutch word ("say it like *kheh-zellikh*"). Algorithmic, approximate, but useful.
-- **Selectable text on desktop** — copy any Dutch word/sentence to clipboard with the I-beam cursor; flashcard click-to-flip is suppressed when text is selected.
-- **Mobile-first responsive** — single-column stack on phones, 2-column dashboard + 4-col vocab grid + 2-col stats on desktop (≥ 960 px).
-- **Light/dark/auto theme** — toggle in the top-right corner.
-
----
-
-## Two run modes
-
-### `start.sh` (no setup, works everywhere)
-
-Bootstrap-free. Just a static-server wrapper.
-
-- Web Speech API (browser TTS) for audio
-- macOS/iOS: ships excellent Dutch (Xander, Claire) and English (Samantha) voices
-- Linux/Windows: voice quality varies by system
-- No speaking-drill scoring (Whisper isn't running)
-- No on-device STT
+- A clip lives at `audio/<key>.mp3`, where `key = SHA-256(voice|lang|text)` (first 20 hex chars). `audio/manifest.json` lists every key.
+- At runtime the app hashes the text it wants to say and plays that clip directly. The live TTS server is only used in local development, for content that hasn't been rendered yet.
+- Rendering is cached by content hash, so a rebuild only synthesises new or changed text.
 
 ```bash
-./start.sh           # default port 8123
-./start.sh 9000      # custom port
+./deploy.sh      # enumerate → render new clips → commit + push (Pages redeploys from main)
 ```
 
-### `start-mlx.sh` (full speech pipeline, Apple Silicon recommended)
-
-Adds on-device speech: **[Supertonic-3](https://huggingface.co/Supertone/supertonic-3)** for TTS (ONNX Runtime + CoreML, runs several × faster than real-time on Apple Silicon) and **Whisper-large-v3-turbo** for STT via [`mlx-audio`](https://github.com/Blaizzy/mlx-audio). Same web app, but:
-
-- Supertonic-3 voices M1/M2 (male) and F1/F2 (female), across 31 languages incl. Dutch, German, and English
-- Speaking + shadowing drills work end-to-end with real transcription scoring
-- Reader auto-pronunciation uses Supertonic instead of system voices
-
-**First run setup** (one-time):
-
-1. The script detects [`uv`](https://docs.astral.sh/uv/) and uses `uv venv` if present (handles standalone Python 3.12 builds without `ensurepip`). Otherwise falls back to `python -m venv`.
-2. Installs `supertonic` (TTS) + `mlx-audio[server,tts]` + `scipy` (Whisper needs it) + `mistral-common[audio]>=1.11`, pinning `mlx==0.31.1` (mlx 0.32.0 made GPU streams thread-local, which breaks Whisper STT on the server's worker thread; 0.31.1 keeps STT working).
-3. Spawns `mlx_audio.server` on `127.0.0.1:5500` (Whisper STT) with permissive CORS.
-4. Starts the on-device Supertonic-3 TTS server (`supertonic_server.py`) on `127.0.0.1:5510` and warms it (its ONNX weights download on first run).
-5. Pre-warms Whisper (`mlx-community/whisper-large-v3-turbo-asr-fp16`) — set `PREWARM_STT=0` to skip.
-6. Starts the static server on `8123` and opens the browser at `http://localhost:8123/?tts=http://127.0.0.1:5510&stt=http://127.0.0.1:5500`.
-
-Subsequent runs take ~30–60 s to load weights into memory.
-
-**Useful env vars:**
-
-```bash
-WEB_PORT=9000 ./start-mlx.sh       # change web port
-TTS_PORT=5501 ./start-mlx.sh       # change TTS port
-PREWARM_STT=0 ./start-mlx.sh       # skip Whisper download (TTS only)
-```
-
-Stop both servers with **Ctrl+C** in the terminal — the trap cleans up the background `mlx_audio.server`.
-
----
-
-## Static deploy (GitHub Pages, no backend)
-
-The app can run with **no server at all** by pre-rendering every spoken word/sentence to audio files at build time:
-
-```bash
-./deploy.sh
-```
-
-This (1) enumerates every spoken item, (2) runs Supertonic-3 (Dutch/German) and OmniVoice (Kurdish) locally to render each to `audio/<hash>.mp3` — **caching by content hash, so re-runs only synthesise genuinely new content** — writes `audio/manifest.json`, then (3) commits and pushes; GitHub Pages redeploys from `main`.
-
-At runtime the app looks up `audio/<hash>.mp3` (hash = `SHA-256(voice|lang|text)`) and plays it directly — the TTS server is only used in local dev for content not yet pre-rendered. STT is intentionally **not** part of the static build (the speaking/shadowing drills need a live Whisper server; everything else works).
-
-**Live:** <https://razhanhameed.github.io/language-lab/>
-
-Pieces: `tools/extract_audio_items.js` (enumerate), `build_static_audio.py` (render + cache + manifest, dispatching each item to its language pack's `ttsEngine`), `omnivoice_tts.py` (OmniVoice loading, Kurdish voices, number normalisation), `deploy.sh` (build + push), `.nojekyll` (so Pages serves `js/data/_boot.js` and all assets verbatim).
+| Piece | Role |
+|---|---|
+| `tools/extract_audio_items.js` | Lists every spoken item in all decks, with the engine for each language |
+| `build_static_audio.py` | Renders missing clips, checks quality, writes the manifest |
+| `supertonic_server.py` | Supertonic-3 TTS (Dutch, German, English), as a local server or in the build |
+| `omnivoice_tts.py` | OmniVoice model loading, Kurdish voices, number spelling, voicing check |
+| `tools/omnivoice_voices.py` | Design, audition and lock the Kurdish voices |
+| `deploy.sh` | The whole pipeline, each engine in its own venv |
 
 ### Kurdish voices (OmniVoice)
 
-Kurdish audio exists **only** as pre-rendered clips (`ttsLive: false`): there's no live Kurdish server, and on a cache miss the app stays silent rather than mispronouncing with a system voice. OmniVoice needs PyTorch, and a CUDA GPU is strongly recommended. It lives in its own venv:
+Kurdish audio comes from [OmniVoice](https://github.com/k2-fsa/OmniVoice), which supports `ckb` and `kmr`. It exists **only** as pre-rendered clips (`ttsLive: false`): if a clip is missing, the app stays silent rather than mispronouncing the word with a system voice. OmniVoice needs PyTorch, and a CUDA GPU is strongly recommended. Install it in its own venv:
 
 ```bash
 uv venv --python 3.12 .venv-omnivoice
 # Pascal GPUs (GTX 10xx) need the cu126 wheels; newer GPUs can use cu128.
 uv pip install --python .venv-omnivoice/bin/python torch==2.8.0 torchaudio==2.8.0 --index-url https://download.pytorch.org/whl/cu126
-uv pip install --python .venv-omnivoice/bin/python omnivoice lameenc
+uv pip install --python .venv-omnivoice/bin/python omnivoice lameenc librosa
 ```
 
-Every Kurdish clip is **voice-cloned** from one approved reference per voice (`tts_voices/<lang>/<M1|F1>.{wav,txt}`, committed), so the whole deck sounds like the same speaker. To (re)choose a voice:
+- **One consistent speaker per voice.** Every clip is voice-cloned from an approved reference (`tts_voices/<lang>/<M1|F1>.{wav,txt}`, committed).
+- **Quality check.** OmniVoice sometimes whispers on very short words. Each take is checked for voicing and re-rendered (up to 4 takes) if it sounds whispered. Rendering uses 32 diffusion steps.
+- **Numbers are words.** OmniVoice can't read digits in Kurdish, so the decks write numbers out (`کاتژمێر دە`, `saet dehan`). `normalize_text()` spells out any digit that slips through, including Arabic-Indic `٠–٩`, but only in the text sent to the model. The displayed text, and so the clip hash, is unchanged.
+
+To choose a different voice:
 
 ```bash
 PY=.venv-omnivoice/bin/python
-$PY tools/omnivoice_voices.py design ckb        # render candidate voices → tts_voices/candidates/index.html
+$PY tools/omnivoice_voices.py design ckb        # render candidates → tts_voices/candidates/index.html
 $PY tools/omnivoice_voices.py pick ckb M1 M-2   # lock a candidate as the male voice (F1 = female)
-$PY tools/omnivoice_voices.py samples ckb       # render a test set (numbers, times, sentences) with the locked voices
+$PY tools/omnivoice_voices.py samples ckb       # render a test set with the locked voices
 ```
 
-Changing a locked reference doesn't change clip hashes: delete that language's clips before re-rendering.
-
-**Numbers must be words.** OmniVoice can't read digits in Kurdish, so the decks write every number out in full (`کاتژمێر دە`, `saet dehan`). `omnivoice_tts.normalize_text()` spells out any digit that slips through (including Arabic-Indic `٠–٩`), but only in the text sent to the model. The displayed text, and so the clip hash, stays unchanged.
+Changing a reference doesn't change clip hashes, so delete that language's clips before re-rendering.
 
 ---
 
@@ -171,184 +196,168 @@ Changing a locked reference doesn't change clip hashes: delete that language's c
 
 ```
 language-lab/
-├── index.html                 # single-page app shell (loads both decks + both language packs)
-├── start.sh                   # minimal launcher (browser TTS only)
-├── start-mlx.sh               # full launcher (uv + Supertonic-3 TTS + mlx-audio/Whisper STT)
-├── supertonic_server.py       # on-device Supertonic-3 TTS server (OpenAI-style /v1/audio/speech)
-├── serve.py                   # no-cache static file server used by the launchers
-├── css/
-│   └── styles.css             # mobile-first; desktop grid at min-width: 960px
-└── js/
-    ├── app.js                 # router, all 4 views, all 8 card types, all 7 drills, language switcher
-    ├── audio.js               # MLX server probe + fetch; Web Speech fallback (target voice is set per language)
-    ├── srs.js                 # FSRS-4.5 with SM-2 backward compat (language-agnostic)
-    ├── storage.js             # localStorage wrapper + backup helpers (one key per language)
-    ├── drills.js              # generic drill controllers; delegates spelling/diagnosis to the active language pack
-    ├── lang.js                # language registry + active-language manager (deck swap)
-    ├── lang/
-    │   ├── nl.js              # Dutch pack: numbers, time, respeller, error diagnosis, tips, calendar, voices
-    │   └── de.js              # German pack: same surface, German rules
-    └── data/
-        ├── _boot.js           # sets up the per-language deck registry (window.__DECK)
-        ├── nl/                # Dutch deck (Amsterdam): vocab, sentences, scenarios, grammar,
-        │                      #   conjugations, chunks, minimal_pairs, passages
-        └── de/                # German deck (Berlin): same eight files, hand-written in German
+├── index.html                  # single-page app shell: loads every deck and language pack
+├── css/styles.css              # mobile-first styles, RTL support, Sorani reading guide
+├── js/
+│   ├── app.js                  # router, all views, the 8 card types, the 7 drills, reader, pronunciation guide
+│   ├── onboarding.js           # first-run tour, in-context coaching, "How it works" page
+│   ├── audio.js                # pre-rendered clips → live TTS server → Web Speech fallback; recording for STT
+│   ├── srs.js                  # FSRS-4.5 scheduler (language-agnostic)
+│   ├── drills.js               # drill controllers; spelling and diagnosis come from the language pack
+│   ├── storage.js              # localStorage state + backup/import (one key per language)
+│   ├── lang.js                 # language registry; swaps the active deck in
+│   ├── lang/{nl,de,ckb,kmr}.js # language packs: numbers, times, respellers, error diagnosis, voices,
+│   │                           #   Sorani→Latin transliteration, onboarding tips
+│   └── data/
+│       ├── _boot.js            # per-language deck registry (window.__DECK)
+│       └── {nl,de,ckb,kmr}/    # vocab, sentences, scenarios, grammar, conjugations, chunks,
+│                               #   minimal_pairs, passages, pronunciation
+├── audio/                      # pre-rendered MP3 clips + manifest.json (generated; committed for Pages)
+├── tts_voices/{ckb,kmr}/       # approved OmniVoice reference voices
+├── tools/                      # audio item extractor, OmniVoice voice tool
+├── build_static_audio.py       # audio build (see "How the audio works")
+├── omnivoice_tts.py            # OmniVoice wrapper for Kurdish
+├── supertonic_server.py        # Supertonic-3 TTS server
+├── serve.py                    # no-cache static file server used by the launchers
+├── start.sh / start-mlx.sh     # local launchers
+└── deploy.sh                   # render audio + push to GitHub Pages
 ```
 
-Each data file registers its arrays under `window.__DECK.<lang>`; `Lang.use(id)` then points the bare globals (`VOCAB`, `SENTENCES`, …) at the active language's deck, so the rest of the engine reads them unchanged.
+Each data file registers its arrays under `window.__DECK.<lang>`. `Lang.use(id)` then points the bare globals (`VOCAB`, `SENTENCES`, …) at the active language's deck, so the engine reads them unchanged.
 
-No build step. No `package.json`. Open `index.html` in a browser and the app runs.
-
----
-
-## Tech stack
-
-- **Frontend:** vanilla HTML/CSS/JS, ~5,800 lines total. No frameworks, no bundler.
-- **State:** `localStorage` (single JSON blob, ~50 KB at full scale)
-- **SRS:** FSRS-4.5 in plain JS, ~220 lines
-- **TTS:** [Supertonic-3](https://huggingface.co/Supertone/supertonic-3) (ONNX Runtime + CoreML, on-device) via a small local server (`supertonic_server.py`), with Web Speech API as fallback
-- **STT:** [whisper-large-v3-turbo-asr-fp16](https://huggingface.co/mlx-community/whisper-large-v3-turbo-asr-fp16) via [mlx-audio](https://github.com/Blaizzy/mlx-audio)
-- **Audio recording:** browser MediaRecorder API + `audio/webm;codecs=opus`
-- **Local speech servers:** Supertonic-3 TTS (`:5510`, stdlib http.server) + mlx-audio/Whisper STT (`:5500`, FastAPI/uvicorn)
-- **Python version manager:** [uv](https://docs.astral.sh/uv/) preferred, system Python fallback
+**Stack:** vanilla HTML, CSS and JS (about 7,000 lines, no framework or bundler), `localStorage` for state, FSRS-4.5 in plain JS, MediaRecorder for speaking drills, Vazirmatn for Arabic-script text and Inter/Fraunces for Latin.
 
 ---
 
-## Customising for your own life
+## Editing and adding content
 
-The data files are intentionally small, hand-readable JS objects. To add your own content:
+The data files are plain, hand-readable JS. Edit one and reload the page; no build or restart is needed. Field names are shared across languages: `nl` always holds the **target-language** text (a historical name) and `en` the English.
 
-### Add a new vocab card
-
-`js/data/vocab.js`:
+**A vocabulary card** (`js/data/<lang>/vocab.js`):
 
 ```js
 { id: "v_x99", nl: "fietsenmaker", en: "bike repair shop", pos: "noun", gender: "de", theme: "transport",
   example: { nl: "De fietsenmaker is om de hoek.", en: "The bike repair shop is around the corner." },
-  note: "Where you'll spend €15 every couple months in Amsterdam." }
+  note: "Where you'll spend €15 every couple of months in Amsterdam." }
 ```
 
-### Add your own scenario
-
-`js/data/scenarios.js` — there's a marked slot at the bottom with the schema:
+**A scenario** (`js/data/<lang>/scenarios.js`):
 
 ```js
 {
-  id: "sc_yours",
-  title: "Your specific Tuesday standup",
-  icon: "🎯",
+  id: "sc_yours", title: "Your Tuesday standup", icon: "🎯",
   setting: "Two-sentence context.",
   dialogue: [
-    { speaker: "Lead", nl: "Hoe ging het sprint review?", en: "How did the sprint review go?" },
+    { speaker: "Lead", nl: "Hoe ging de sprint review?", en: "How did the sprint review go?" },
     { speaker: "You",  nl: "Goed, we hebben de feature flag uitgezet.", en: "Good, we turned the feature flag off." },
   ],
-  notes: ["What's specific to your team that you couldn't get from a generic textbook."],
+  notes: ["What's specific to your situation that a textbook wouldn't cover."],
 }
 ```
 
-### Add a reading passage
-
-`js/data/passages.js` — Dutch text + an English translation paragraph + a `glosses{}` map for words that aren't in `VOCAB`:
+**A reading passage** (`js/data/<lang>/passages.js`): target-language paragraphs, an English translation and a `glosses` map for words that aren't in the vocabulary:
 
 ```js
 {
-  id: "p_my_story",
-  title: "Mijn verhaal",
-  level: "A2",
-  blurb: "Short blurb shown in the passage list.",
-  en: "Same blurb in English.",
+  id: "p_my_story", title: "Mijn verhaal", level: "A2",
+  blurb: "Short blurb shown in the passage list.", en: "The English translation.",
   paragraphs: ["First paragraph.", "Second paragraph."],
   glosses: { "verhaal": "story", "weekendweer": "weekend weather" },
 }
 ```
 
-After editing any data file, just reload the page — no build, no restart needed.
+**Rules for target-language text** (it becomes audio):
 
-### Add another language
+- In Kurdish, write numbers as words, never digits.
+- In Sorani, use the Kurdish letters `ی ک ە`, not Arabic `ي ك`.
 
-The app ships four languages (Dutch, German, Sorani, Kurmanji). To add another — say French:
+New text has no audio until it's rendered with `./deploy.sh` (or `build_static_audio.py`). Locally, Dutch and German fall back to the live TTS server or the system voice in the meantime.
 
-1. **Data:** register the language in `js/data/_boot.js` (`window.__DECK.fr = {}`), create `js/data/fr/` with the eight data files (copy the shape of `js/data/de/*.js`, each registering into `window.__DECK.fr`), and add their `<script>` tags to `index.html`.
-2. **Language pack:** create `js/lang/fr.js` that calls `Lang.register({ id: "fr", name: "French", brand: "Apprends le français", flag: "🇫🇷", langCode: "fr-FR", storageKey: "lern-fr:v1", … })` with the French number/time spelling, respeller, error diagnosis, tips, calendar, and (if speech is available) TTS voices. Add its `<script>` after `js/lang/de.js`.
+---
 
-That's it — the selector, per-language progress, and drills pick it up automatically. Two optional pack flags cover the harder cases:
+## Adding a language
 
-- **`hasSpeech: false`** — the language has no TTS model. The engine stays silent instead of mispronouncing with a wrong voice, and hides the audio-only drills (Speaking, Shadowing, Minimal pairs) and buttons.
-- **`hasStt: false`** — TTS but no speech recognition (Kurdish: Whisper has no Kurdish). Hides only the Speaking and Shadowing drills.
-- **`ttsEngine: "omnivoice"`** — render this language's clips with OmniVoice instead of Supertonic-3 (the default). Use it for any of OmniVoice's 646 languages that Supertonic lacks. The pack's `id` must equal its `langCode`'s primary subtag (`ckb`, `kmr`), because clips are keyed by it.
-- **`ttsLive: false`** — pre-rendered clips only, with no live-server or Web Speech fallback.
-- **`rtl: true`** — right-to-left script (like Sorani). The whole app flips to right-to-left (`<html dir="rtl">`) while that language is active; Latin-script languages (including Kurmanji) stay left-to-right.
+1. **Data:** register it in `js/data/_boot.js` (`window.__DECK.fr = {}`), create `js/data/fr/` with the same files as `js/data/de/` (each registering into `window.__DECK.fr`), and add their `<script>` tags to `index.html`.
+2. **Language pack:** create `js/lang/fr.js` calling `Lang.register({ id: "fr", name: "French", brand: "Apprends le français", flag: "🇫🇷", langCode: "fr-FR", storageKey: "fr:v1", … })`. Fill in number and time spelling, a respeller, error diagnosis, tips and voices, and add the `<script>` after the other packs.
 
-Supertonic-3 supports 31 languages (incl. `nl`, `de`, `en`, `fr`, `es`, `pt`, and more); Whisper handles ~99 languages for STT.
+The selector, per-language progress, drills and onboarding pick it up automatically. Optional pack flags:
+
+| Flag | Effect |
+|---|---|
+| `hasSpeech: false` | No TTS at all: silent instead of a wrong voice; audio-only drills and buttons are hidden |
+| `hasStt: false` | TTS but no speech recognition: hides Speaking and Shadowing |
+| `ttsEngine: "omnivoice"` | Render clips with OmniVoice instead of Supertonic-3. The pack `id` must equal the `langCode` primary subtag (clips are keyed by it) |
+| `ttsLive: false` | Pre-rendered clips only, with no live-server or Web Speech fallback |
+| `rtl: true` | Right-to-left script: the whole UI flips while the language is active |
+| `transliterate`, `guideKey` | A reading guide (Latin letters over each word) and its legend in Settings |
+| `answerMatches` | Extra answer checking, for example accepting Latin-letter answers for a non-Latin script |
+| `onboarding` | Language-specific tips for the tour, the coaching and the help page |
+
+Supertonic-3 covers 31 languages (including `fr`, `es`, `pt`, `it`); OmniVoice covers about 600 more. Whisper handles about 99 for speech recognition.
 
 ---
 
 ## The science
 
-This app exists because most language apps optimise for engagement metrics over learning outcomes. The literature is consistent on what actually works:
+Most language apps optimise for engagement. This one is built on what the research says helps people learn:
 
-| Technique | Where it's wired in | Source |
+| Technique | Where it's used | Source |
 |---|---|---|
-| Spaced repetition with adaptive intervals | `srs.js` (FSRS-4.5) | Cepeda et al. 2008 — optimal gap is 5–20% of retention interval |
-| Retrieval practice (testing effect) | Every card type | Roediger & Karpicke 2006 — 50% recall boost vs re-reading |
-| Interleaving | Random card-type per session, mixed themes | Bjork; Nakata & Suzuki 2019 (L2 grammar) |
-| Desirable difficulty | Mature cards skew toward harder modes | Bjork 1994 |
-| Pushed output | Recall, cloze, reorder, **speaking** | Swain Output Hypothesis 1995 |
-| Comprehensible input | Scenarios + Reading at i+1 | Krashen 1985, 1996 |
-| Errorful learning > errorless | Wrong answers are allowed; correct answer follows | Tandfonline 2020 |
-| Lexical chunks / formulaic processing | **Chunks drill** — 33 multi-word units drilled holistically | Hou et al. 2018; Vilkaitė 2016 |
-| Shadowing | **Shadowing drill** — listen + echo + score | Whitworth 2025 systematic review |
-| Minimal-pair / HVPT phonetic training | **Minimal pairs drill** | Dherbey Chapuis & Berthele 2024 |
-| Errorful pretest effect | **Challenge me** mode on theme pages | Kornell |
-| Metalinguistic feedback > recasts | Diagnoser tags wrong answers with error type + rule | Cambridge Handbook of Corrective Feedback 2024 |
-| Output-prompted noticing | Reflection chips after low-accuracy speaking | Swain & Lapkin 1995; Schmidt 1990 |
-| Narrow listening | Scenario "Narrow listen · 3×" with alternating voices | Krashen 1996 |
-| Extensive reading | **Reader** with tap-to-translate | Liu & Zhang 2018 meta-analysis |
-
-A 2025 meta-analysis ([Lyu, IJAL](https://onlinelibrary.wiley.com/doi/full/10.1111/ijal.12668)) found chatbot-based L2 learning has an effect size of **d = 0.608** (medium-large). The compound effect of stacking the techniques above is the bet behind this app.
+| Spaced repetition with adaptive intervals | `srs.js` (FSRS-4.5) | Cepeda et al. 2008 |
+| Retrieval practice (testing effect) | Every card type | Roediger & Karpicke 2006 |
+| Interleaving | Random card type per session, mixed themes | Bjork; Nakata & Suzuki 2019 |
+| Desirable difficulty | Mature cards skew to harder types | Bjork 1994 |
+| Pushed output | Recall, cloze, reorder, speaking | Swain 1995 |
+| Comprehensible input | Scenarios and graded reading | Krashen 1985, 1996 |
+| Errorful learning, pretesting | Wrong answers allowed; "Challenge me" mode | Kornell et al. 2009 |
+| Formulaic chunks | Chunks drill | Hou et al. 2018; Vilkaitė 2016 |
+| Shadowing | Shadowing drill | Whitworth 2025 |
+| Minimal pairs / HVPT | Minimal pairs drill | Dherbey Chapuis & Berthele 2024 |
+| Metalinguistic feedback | Error diagnosis with a rule reminder | Cambridge Handbook of Corrective Feedback 2024 |
+| Output-prompted noticing | Reflection chips after a weak speaking attempt | Swain & Lapkin 1995; Schmidt 1990 |
+| Narrow listening | "Narrow listen · 3×" on scenarios | Krashen 1996 |
+| Extensive reading | Reader with tap-to-translate | Liu & Zhang 2018 |
 
 ---
 
-## Data + privacy
+## Data and privacy
 
-- Everything is local. The app's state is one JSON blob in your browser's `localStorage`.
-- No analytics. No telemetry. No accounts. No outbound network requests except the optional fonts CDN and (when MLX is enabled) `localhost:5500`.
-- The MLX server runs entirely on your machine — your speech recordings never leave the device.
+- All your progress is stored in your browser's `localStorage`, one entry per language. There is no server-side storage.
+- There are no analytics, telemetry, accounts or cookies.
+- The public site loads the app and its audio from GitHub Pages and fonts from Google Fonts. Nothing else.
+- When you run the local speech stack, recordings for the Speaking and Shadowing drills go only to the Whisper server on your own machine.
 
-**Backup discipline:** browser `localStorage` survives most things but can be cleared by "Clear browsing data" or a browser switch. The app shows a banner when your last export is ≥ 7 days old. Click it. The backup is a single dated `leer-nl-backup-YYYY-MM-DD.json` in your Downloads folder — drag one to Dropbox/iCloud once and forget about it.
-
-To restore: Stats → Backup & reset → Import JSON.
-
----
-
-## Roadmap (ideas, not commitments)
-
-- File System Access API for one-pick auto-backup (Chromium-only, would write silently to a chosen file)
-- Multi-language deck switching (the engine is agnostic; just needs a profile selector)
-- A "review intensity" slider that exposes FSRS's retention target (90% default → 95% for high-stakes prep)
-- WebRTC speaker comparison: side-by-side waveforms of your shadow vs the model's
-- A curated "Day 1–7" guided plan view that walks through everything systematically
+**Back up now and then.** Clearing browsing data deletes your progress. Stats → Backup & reset → **Export JSON** downloads a dated file, and **Import JSON** restores it. The app reminds you when your last backup is more than a week old.
 
 ---
 
 ## Contributing
 
-This is a personal learning tool, but if you find a bug or want to add scenarios from your own city/job, PRs welcome. The data files are designed to be hand-edited, so most contributions don't require touching the JS.
+Bug reports and pull requests are welcome. Most of the content is plain data, so many fixes need no JavaScript.
+
+**Native speakers are especially welcome**, above all for Sorani and Kurmanji. The content is carefully written but not yet fully native-reviewed. Areas that most need a check:
+
+- Kurdish B1 grammar: unreal conditionals, clitic placement, the Kurmanji pluperfect and past-tense agreement.
+- Regional word choices and spellings (for example Kurmanji *firingî* vs *bacanê sor*, Sorani *دەرمانخانە* vs *دەرمانگا*).
+- Idioms and set phrases in the B1 vocabulary and dialogues.
+- The pronunciation guides' stress rules and sound descriptions.
+- Cultural notes.
+
+To fix something, edit the file under `js/data/<lang>/` and open a PR. You don't need to render audio; it's generated when the change is deployed. If you're not comfortable with GitHub, an issue that quotes the wrong text and gives the correction is just as helpful.
+
+Before opening a PR, check that the app loads without console errors in that language. For data files, `node --check js/data/<lang>/<file>.js` catches syntax mistakes.
 
 ---
 
-## License
+## License and credits
 
-MIT. Use it, fork it, swap the data files for whatever language you want to learn.
+[MIT](LICENSE). Use it, fork it, swap in the language you want to learn.
 
----
-
-## Credits
-
-- [mlx-audio](https://github.com/Blaizzy/mlx-audio) by Prince Canuma for the on-device MLX speech runtime
-- [Supertonic-3](https://huggingface.co/Supertone/supertonic-3) by Supertone — on-device TTS
-- [OmniVoice](https://github.com/k2-fsa/OmniVoice) by k2-fsa — Kurdish (Sorani + Kurmanji) TTS
-- [whisper-large-v3-turbo](https://huggingface.co/openai/whisper-large-v3-turbo) by OpenAI, MLX port via mlx-community
-- FSRS-4.5 by [open-spaced-repetition](https://github.com/open-spaced-repetition)
-- Tim Ferriss for the diagnostic-dozen sentence-deconstruction approach
-- The SLA literature compiled by Bjork, Krashen, Swain, Schmidt, Cepeda, Roediger and many others
+- [Supertonic-3](https://huggingface.co/Supertone/supertonic-3) by Supertone: Dutch, German and English TTS
+- [OmniVoice](https://github.com/k2-fsa/OmniVoice) by k2-fsa: Sorani and Kurmanji TTS
+- [mlx-audio](https://github.com/Blaizzy/mlx-audio) by Prince Canuma: the on-device MLX speech runtime
+- [whisper-large-v3-turbo](https://huggingface.co/openai/whisper-large-v3-turbo) by OpenAI (MLX port by mlx-community)
+- [FSRS](https://github.com/open-spaced-repetition) by open-spaced-repetition
+- [Vazirmatn](https://github.com/rastikerdar/vazirmatn) by Saber Rastikerdar: Arabic-script font
+- Tim Ferriss, for the diagnostic-sentence approach
+- The SLA research of Bjork, Krashen, Swain, Schmidt, Cepeda, Roediger and many others
