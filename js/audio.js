@@ -130,7 +130,9 @@ window.Speech = (function () {
   const audioBase = params.get("audio") || "audio";
   let pregen = null;          // Set<key> once loaded
   let pregenVoices = {};      // lang -> the voice the clips were rendered with
-  const pregenReady = fetch(`${audioBase}/manifest.json`, { cache: "force-cache" })
+  // "no-cache" = revalidate every load (a cheap 304 when unchanged). A cached
+  // manifest from an older deploy would hide every clip added since.
+  const pregenReady = fetch(`${audioBase}/manifest.json`, { cache: "no-cache" })
     .then((r) => (r.ok ? r.json() : null))
     .then((m) => {
       if (Array.isArray(m)) pregen = new Set(m);                       // legacy shape
@@ -293,10 +295,13 @@ window.Speech = (function () {
         // choice still plays a pre-generated clip on the static site.
         if (key && !pregen.has(key) && pregenVoices[lang2] && pregenVoices[lang2] !== voice) {
           const alt = await clipKey(pregenVoices[lang2], lang2, clean);
-          if (alt && pregen.has(alt)) key = alt;
+          if (alt && (pregen.has(alt) || !targetLive)) key = alt;
         }
         if (myGen !== speakGen) return false;
-        if (key && pregen.has(key)) {
+        // Pre-rendered-only languages have nothing else to fall back to, so
+        // try the clip even when the manifest doesn't list it (a stale
+        // manifest, or a clip deployed after it) — a miss is just a 404.
+        if (key && (pregen.has(key) || !targetLive)) {
           try {
             const url = await staticFetch(key);
             if (myGen !== speakGen) return false;
