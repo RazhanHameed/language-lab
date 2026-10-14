@@ -476,7 +476,7 @@ const App = (function () {
       $("#home-tour", helpRow).addEventListener("click", () => Onboarding.openTour());
       $("#home-how", helpRow).addEventListener("click", () => navigate("help"));
       wrap.appendChild(helpRow);
-      wrap.appendChild(el(`<div class="section-header" style="margin: 24px 0 0"><h2 style="font-size:18px">Or look around first</h2></div>`));
+      wrap.appendChild(el(`<div class="section-header" style="margin: 24px 0 0"><h2 style="font-size:1.125rem">Or look around first</h2></div>`));
     }
 
     // Hero
@@ -499,16 +499,19 @@ const App = (function () {
       const st = state.cards[id];
       return st && st.reps > 0 && st.due <= nowMs;
     }).length;
-    const dueLabel = reviewDue === 0
-      ? `No reviews waiting. Learn some new cards`
-      : `${reviewDue} card${reviewDue === 1 ? "" : "s"} to review`;
+    const mins = Math.max(2, Math.round(state.settings.sessionSize * 0.6));   // ~35 s a card
+    const caughtUp = reviewDue === 0 && !!todaySession;
+    const dueLabel = caughtUp ? "Study a little more" : "Start today's session";
+    const dueSub = reviewDue === 0
+      ? (caughtUp ? `About ${mins} min · nothing is waiting, so these are new cards` : `About ${mins} min · ${state.settings.sessionSize} new cards to meet`)
+      : `About ${mins} min · ${reviewDue} card${reviewDue === 1 ? " is" : "s are"} ready to review`;
     const cta = el(`
       <button class="session-cta home-cta" id="cta-session">
         <div>
           <div class="session-due">${dueLabel}</div>
-          <div class="session-label">Start a ${state.settings.sessionSize}-card mixed session</div>
+          <div class="session-label">${dueSub}</div>
         </div>
-        <span class="arrow">→</span>
+        <span class="arrow" aria-hidden="true">→</span>
       </button>
     `);
     cta.addEventListener("click", () => startSession());
@@ -537,7 +540,7 @@ const App = (function () {
           <span class="stat-sub">reviews · goal ${state.settings.dailyGoal}</span>
         </div>
         <div class="stat">
-          <span class="stat-label">Mastered</span>
+          <span class="stat-label">Well known</span>
           <span class="stat-value">${counts.mature}</span>
           <span class="stat-sub">of ${counts.total} cards</span>
         </div>
@@ -585,8 +588,8 @@ const App = (function () {
     // Mastery breakdown
     if (!first) wrap.appendChild(el(`
       <article class="card home-maturity">
-        <span class="eyebrow">Card maturity</span>
-        <h3 style="margin: 6px 0 12px">Where your cards are</h3>
+        <span class="eyebrow">Your cards</span>
+        <h3 style="margin: 6px 0 12px">How well you know them</h3>
         ${maturityBars(counts)}
       </article>
     `));
@@ -596,7 +599,7 @@ const App = (function () {
       <article class="card home-drills">
         <span class="eyebrow">Quick drills</span>
         <h3 style="margin: 6px 0 4px">30-second sprints</h3>
-        <p class="muted" style="margin: 0 0 12px; font-size: 13px">${first ? "Try these after your first session. Each one trains a single skill, and has a tip on screen." : "Targeted practice — each drill closes a gap flashcards can't catch."}</p>
+        <p class="muted" style="margin: 0 0 12px; font-size: 0.8125rem">${first ? "Try these after your first session. Each one trains a single skill, and has a tip on screen." : "Targeted practice — each drill closes a gap flashcards can't catch."}</p>
         <div class="drill-chips">
           ${hasStt() ? `
           <button class="drill-chip" data-drill="speaking">
@@ -651,7 +654,7 @@ const App = (function () {
         <article class="card home-read">
           <span class="eyebrow">Read</span>
           <h3 style="margin: 6px 0 4px">Short ${Lang.cfg().name} passages</h3>
-          <p class="muted" style="margin: 0 0 12px; font-size: 13px">Tap any word for the translation. Aim for the gist, not every word.</p>
+          <p class="muted" style="margin: 0 0 12px; font-size: 0.8125rem">Tap any word for the translation. Aim for the gist, not every word.</p>
           <div class="passage-list" id="passage-list"></div>
         </article>
       `);
@@ -692,16 +695,16 @@ const App = (function () {
   function maturityBars(c) {
     const total = Math.max(1, c.total);
     const mk = (label, val, cls) => `
-      <div style="display:grid; grid-template-columns: 90px 1fr 40px; gap:10px; align-items:center; padding:6px 0;">
-        <span class="muted" style="font-size:13px">${label}</span>
+      <div style="display:grid; grid-template-columns: minmax(6.5rem, auto) 1fr 2.5rem; gap:10px; align-items:center; padding:6px 0;">
+        <span class="muted" style="font-size:0.8125rem">${label}</span>
         <div class="progress-track"><div class="progress-fill" style="width:${(val/total)*100}%; background: ${cls}"></div></div>
-        <span class="mono" style="font-size:13px; text-align:end">${val}</span>
+        <span class="mono" style="font-size:0.8125rem; text-align:end">${val}</span>
       </div>
     `;
-    return mk("Mature",   c.mature,   "var(--success)") +
-           mk("Young",    c.young,    "var(--primary)") +
-           mk("Learning", c.learning, "var(--accent)")  +
-           mk("New",      c.new,      "var(--text-subtle)");
+    return mk("Well known",    c.mature,   "var(--success)") +
+           mk("Getting there", c.young,    "var(--primary)") +
+           mk("Learning",      c.learning, "var(--accent)")  +
+           mk("Not seen yet",  c.new,      "var(--text-subtle)");
   }
 
   /* ============ STUDY ============ */
@@ -729,8 +732,8 @@ const App = (function () {
 
     wrap.appendChild(el(`
       <div class="row spread" style="margin-bottom: 4px">
-        <span class="muted" style="font-size:13px">${idx} / ${total}</span>
-        <button class="btn ghost" id="quit-session" style="font-size:13px; padding:4px 10px">Quit</button>
+        <span class="muted" style="font-size:0.8125rem">${idx} / ${total}</span>
+        <button class="btn ghost" id="quit-session" style="font-size:0.8125rem; padding:4px 10px">Quit</button>
       </div>
     `));
     wrap.appendChild(el(`<div class="progress-track" style="margin-bottom: 16px"><div class="progress-fill" style="width:${pct}%"></div></div>`));
@@ -786,7 +789,7 @@ const App = (function () {
               <button class="voice-btn" data-speak-en="${escape(card.en)}" aria-label="Hear English">${iconSound()}</button>
             </div>
             <div class="speak-row" style="margin-top: 6px;">
-              <span class="nl-text" style="font-size: 22px;">${escape(card.nl)}</span>
+              <span class="nl-text" style="font-size: 1.375rem;">${escape(card.nl)}</span>
               <button class="voice-btn" data-speak-nl="${escape(card.nl)}" aria-label="Hear ${Lang.cfg().name}">${iconSound()}</button>
             </div>
             ${respellLine(card.nl, card.respell)}
@@ -834,7 +837,7 @@ const App = (function () {
               ${card.gender ? `<span class="chip primary">${card.gender}</span>` : ""}
               <span class="chip">${card.pos || ""}</span>
             </div>
-            <p class="muted" style="margin-top:14px; font-size:14px">Say it aloud first. Then tap to check.</p>
+            <p class="muted" style="margin-top:14px; font-size:0.875rem">Say it aloud first. Then tap to check.</p>
           </div>
           <div class="face back">
             <button class="voice-btn voice-btn--float" id="audio-btn" aria-label="Hear it">${iconSound()}</button>
@@ -995,7 +998,7 @@ const App = (function () {
               <button class="voice-btn" data-speak-en="${escape(card.en)}" aria-label="Hear English">${iconSound()}</button>
             </div>
             <div class="speak-row" style="margin-top: 6px;">
-              <span class="nl-text" style="font-size: 18px;">${escape(card.nl)}</span>
+              <span class="nl-text" style="font-size: 1.125rem;">${escape(card.nl)}</span>
               <button class="voice-btn" data-speak-nl="${escape(card.nl)}" aria-label="Hear ${Lang.cfg().name}">${iconSound()}</button>
             </div>
             ${respellLine(card.nl, card.respell)}
@@ -1180,7 +1183,7 @@ const App = (function () {
         <div class="feedback ${ok ? "correct" : "incorrect"}">
           ${ok ? "Bullseye." : `Correct: <strong>${escape(card.nl)}</strong>`}
         </div>
-        <div class="muted" style="margin-top:8px; font-size:14px">${escape(card.en)}</div>
+        <div class="muted" style="margin-top:8px; font-size:0.875rem">${escape(card.en)}</div>
       `;
       showRatingPad(wrap, { auto: ok ? 4 : 0 });
     }
@@ -1221,7 +1224,7 @@ const App = (function () {
   function showHintBeforeReveal(wrap, msg) {
     const reveal = $("#reveal-area", wrap);
     if (!reveal) return;
-    reveal.innerHTML = `<p class="muted" style="text-align:center; margin-top:18px; font-size:14px">${escape(msg)}</p>`;
+    reveal.innerHTML = `<p class="muted" style="text-align:center; margin-top:18px; font-size:0.875rem">${escape(msg)}</p>`;
   }
 
   /* ===== card content blocks ===== */
@@ -1229,7 +1232,7 @@ const App = (function () {
     if (card.gender) {
       // Trailing space INSIDE the span keeps copy/paste readable: "de tram"
       // not "detram", while CSS margin-right gives the visual gap.
-      return `<span style="color:var(--text-subtle); font-size:24px; font-family:var(--sans); font-weight:400; margin-inline-end:6px">${card.gender} </span>${escape(card.nl)}`;
+      return `<span style="color:var(--text-subtle); font-size:1.5rem; font-family:var(--sans); font-weight:400; margin-inline-end:6px">${card.gender} </span>${escape(card.nl)}`;
     }
     return escape(card.nl);
   }
@@ -1254,8 +1257,8 @@ const App = (function () {
   function revealsBlock(card) {
     if (!card.reveals || !card.reveals.length) return "";
     return `<div class="prompt-example">
-      <span class="muted" style="font-size:13px">This sentence shows:</span>
-      <ul style="margin:6px 0 0 18px; padding:0; font-size:14px">
+      <span class="muted" style="font-size:0.8125rem">This sentence shows:</span>
+      <ul style="margin:6px 0 0 18px; padding:0; font-size:0.875rem">
         ${card.reveals.map((r) => `<li>${escape(r)}</li>`).join("")}
       </ul>
     </div>`;
@@ -1327,8 +1330,8 @@ const App = (function () {
     const wrap = el(`
       <div class="view view-drill">
         <div class="row spread" style="margin-bottom: 4px">
-          <span class="muted" style="font-size:13px">${d.idx + 1} / ${d.total}</span>
-          <button class="btn ghost" id="quit-drill" style="font-size:13px; padding:4px 10px">Quit</button>
+          <span class="muted" style="font-size:0.8125rem">${d.idx + 1} / ${d.total}</span>
+          <button class="btn ghost" id="quit-drill" style="font-size:0.8125rem; padding:4px 10px">Quit</button>
         </div>
         <div class="progress-track" style="margin-bottom: 16px"><div class="progress-fill" style="width:${pct}%"></div></div>
         <div class="card lg drill-card">
@@ -1422,7 +1425,7 @@ const App = (function () {
     const wrap = el(`
       <div class="view stack">
         <div class="hero" style="text-align:center">
-          <div style="font-size:48px; margin-bottom:8px;">${pct >= 80 ? "🔥" : pct >= 50 ? "👍" : "💪"}</div>
+          <div style="font-size:3rem; margin-bottom:8px;">${pct >= 80 ? "🔥" : pct >= 50 ? "👍" : "💪"}</div>
           <h1 style="margin-bottom:4px">${d.correct}/${d.total} · ${pct}%</h1>
           <p class="muted">${drillLabel(d.kind)}</p>
         </div>
@@ -1446,9 +1449,9 @@ const App = (function () {
           <div class="card" style="background: var(--surface-2); padding: 12px 14px;">
             <div class="row spread" style="align-items: flex-start; gap: 10px;">
               <div style="flex:1; min-width:0">
-                <div class="muted" style="font-size:12px">${w.q.hint || ""}</div>
-                <div class="nl-text" style="font-size: 17px;">${escape(w.q.answer)}</div>
-                ${w.gave ? `<div class="muted" style="font-size:13px; margin-top:4px">you said: <s>${escape(w.gave)}</s></div>` : ""}
+                <div class="muted" style="font-size:0.75rem">${w.q.hint || ""}</div>
+                <div class="nl-text" style="font-size: 1.0625rem;">${escape(w.q.answer)}</div>
+                ${w.gave ? `<div class="muted" style="font-size:0.8125rem; margin-top:4px">you said: <s>${escape(w.gave)}</s></div>` : ""}
               </div>
               <button class="voice-btn" data-speak aria-label="Hear it">${iconSound()}</button>
             </div>
@@ -1525,14 +1528,14 @@ const App = (function () {
     const wrap = el(`
       <div class="view view-drill">
         <div class="row spread" style="margin-bottom: 4px">
-          <span class="muted" style="font-size:13px">${d.idx + 1} / ${d.total}</span>
-          <button class="btn ghost" id="quit-drill" style="font-size:13px; padding:4px 10px">Quit</button>
+          <span class="muted" style="font-size:0.8125rem">${d.idx + 1} / ${d.total}</span>
+          <button class="btn ghost" id="quit-drill" style="font-size:0.8125rem; padding:4px 10px">Quit</button>
         </div>
         <div class="progress-track" style="margin-bottom: 16px"><div class="progress-fill" style="width:${pct}%"></div></div>
         <div class="card lg drill-card">
           <span class="eyebrow">Speaking · say it in ${Lang.cfg().name}</span>
           <div class="speaking-prompt">${escape(q.prompt)}</div>
-          <div class="muted" style="font-size: 13px;">Tap the mic, say it aloud, then stop.</div>
+          <div class="muted" style="font-size: 0.8125rem;">Tap the mic, say it aloud, then stop.</div>
           <div class="speaking-controls">
             <button class="btn primary lg" id="rec-toggle" aria-label="Record">
               <span id="rec-icon">●</span>
@@ -1540,7 +1543,7 @@ const App = (function () {
             </button>
             <button class="btn voice-action" id="rec-listen">${iconSound()} Hear answer</button>
           </div>
-          <div id="rec-status" class="muted" style="font-size: 13px; min-height: 20px;"></div>
+          <div id="rec-status" class="muted" style="font-size: 0.8125rem; min-height: 20px;"></div>
           <div id="rec-feedback"></div>
         </div>
       </div>
@@ -1557,7 +1560,7 @@ const App = (function () {
     });
 
     async function startRecording() {
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      if (!Speech.recordingSupported()) {
         toast("This browser doesn't support audio recording.");
         return;
       }
@@ -1567,10 +1570,8 @@ const App = (function () {
         toast("Microphone permission denied.");
         return;
       }
-      // Pick a supported mime type
-      const candidates = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg"];
-      const mime = candidates.find((c) => MediaRecorder.isTypeSupported(c)) || "audio/webm";
-      mediaRecorder = new MediaRecorder(stream, { mimeType: mime });
+      // Pick a supported mime type (Safari: mp4, not webm)
+      mediaRecorder = new MediaRecorder(stream, Speech.recorderOptions());
       chunks = [];
       mediaRecorder.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
       mediaRecorder.onstop = onRecordingDone;
@@ -1594,7 +1595,7 @@ const App = (function () {
       status.textContent = "First speaking question downloads Whisper (~1 min). Subsequent ones are fast.";
     }
     async function onRecordingDone() {
-      const blob = new Blob(chunks, { type: chunks[0]?.type || "audio/webm" });
+      const blob = new Blob(chunks, { type: chunks[0]?.type || (mediaRecorder && mediaRecorder.mimeType) || "audio/webm" });
       try {
         const heard = await Speech.transcribe(blob, { lang: Lang.active() });
         const grade = gradeSpeaking(q.answer, heard);
@@ -1627,7 +1628,7 @@ const App = (function () {
         </div>
         ${showNoticing ? `
           <div class="noticing-box">
-            <div class="muted" style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600;">What felt hard?</div>
+            <div class="muted" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600;">What felt hard?</div>
             <div class="noticing-chips">
               <button class="chip noticing-chip" data-tag="word-order">word order</button>
               <button class="chip noticing-chip" data-tag="pronunciation">pronunciation</button>
@@ -1708,14 +1709,14 @@ const App = (function () {
     const wrap = el(`
       <div class="view view-drill">
         <div class="row spread" style="margin-bottom: 4px">
-          <span class="muted" style="font-size:13px">${d.idx + 1} / ${d.total}</span>
-          <button class="btn ghost" id="quit-drill" style="font-size:13px; padding:4px 10px">Quit</button>
+          <span class="muted" style="font-size:0.8125rem">${d.idx + 1} / ${d.total}</span>
+          <button class="btn ghost" id="quit-drill" style="font-size:0.8125rem; padding:4px 10px">Quit</button>
         </div>
         <div class="progress-track" style="margin-bottom: 16px"><div class="progress-fill" style="width:${pct}%"></div></div>
         <div class="card lg drill-card">
           <span class="eyebrow">Shadowing · listen, then echo it back</span>
           <div class="speaking-prompt nl-text">${escape(q.answer)}</div>
-          <div class="muted" style="font-size: 13px;">${escape(q.prompt)}</div>
+          <div class="muted" style="font-size: 0.8125rem;">${escape(q.prompt)}</div>
           <div class="speaking-controls">
             <button class="btn primary lg" id="rec-toggle" aria-label="Listen, then shadow">
               <span id="rec-icon">${iconSound()}</span>
@@ -1723,7 +1724,7 @@ const App = (function () {
             </button>
             <button class="btn voice-action" id="rec-listen-only">${iconSound()} Hear again</button>
           </div>
-          <div id="rec-status" class="muted" style="font-size: 13px; min-height: 20px;"></div>
+          <div id="rec-status" class="muted" style="font-size: 0.8125rem; min-height: 20px;"></div>
           <div id="rec-feedback"></div>
         </div>
       </div>
@@ -1751,14 +1752,13 @@ const App = (function () {
         rate: state.settings.prefRate,
         onend: async () => {
           // Then record
-          if (!navigator.mediaDevices?.getUserMedia) {
+          if (!Speech.recordingSupported()) {
             toast("This browser doesn't support audio recording.");
             stage = "ready"; recBtn.disabled = false; return;
           }
           try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); }
           catch { toast("Microphone permission denied."); stage = "ready"; recBtn.disabled = false; return; }
-          const mime = ["audio/webm;codecs=opus","audio/webm","audio/mp4"].find((m) => MediaRecorder.isTypeSupported(m)) || "audio/webm";
-          mediaRecorder = new MediaRecorder(stream, { mimeType: mime });
+          mediaRecorder = new MediaRecorder(stream, Speech.recorderOptions());
           chunks = [];
           mediaRecorder.ondataavailable = (e) => { if (e.data?.size) chunks.push(e.data); };
           mediaRecorder.onstop = onDone;
@@ -1785,7 +1785,7 @@ const App = (function () {
       status.textContent = "";
     }
     async function onDone() {
-      const blob = new Blob(chunks, { type: chunks[0]?.type || "audio/webm" });
+      const blob = new Blob(chunks, { type: chunks[0]?.type || (mediaRecorder && mediaRecorder.mimeType) || "audio/webm" });
       try {
         const heard = await Speech.transcribe(blob, { lang: Lang.active() });
         const grade = gradeSpeaking(q.answer, heard);
@@ -1857,22 +1857,22 @@ const App = (function () {
     const wrap = el(`
       <div class="view view-drill">
         <div class="row spread" style="margin-bottom: 4px">
-          <span class="muted" style="font-size:13px">${d.idx + 1} / ${d.total}</span>
-          <button class="btn ghost" id="quit-drill" style="font-size:13px; padding:4px 10px">Quit</button>
+          <span class="muted" style="font-size:0.8125rem">${d.idx + 1} / ${d.total}</span>
+          <button class="btn ghost" id="quit-drill" style="font-size:0.8125rem; padding:4px 10px">Quit</button>
         </div>
         <div class="progress-track" style="margin-bottom: 16px"><div class="progress-fill" style="width:${pct}%"></div></div>
         <div class="card lg drill-card">
           <span class="eyebrow">Minimal pairs · which did you hear?</span>
-          <div class="muted" style="text-align:center; font-size: 12px;">contrast: <strong>${escape(q.hint)}</strong></div>
+          <div class="muted" style="text-align:center; font-size: 0.75rem;">contrast: <strong>${escape(q.hint)}</strong></div>
           <button class="btn primary lg voice-action" id="play-pair" style="margin: 8px 0">${iconSound()} Play</button>
           <div class="minpair-grid">
             <button class="minpair-choice" data-side="left">
               <span class="nl-text">${escape(left.nl)}</span>
-              <span class="muted" style="font-size: 13px;">${escape(left.en)}</span>
+              <span class="muted" style="font-size: 0.8125rem;">${escape(left.en)}</span>
             </button>
             <button class="minpair-choice" data-side="right">
               <span class="nl-text">${escape(right.nl)}</span>
-              <span class="muted" style="font-size: 13px;">${escape(right.en)}</span>
+              <span class="muted" style="font-size: 0.8125rem;">${escape(right.en)}</span>
             </button>
           </div>
           <div id="minpair-feedback"></div>
@@ -1932,7 +1932,7 @@ const App = (function () {
     const wrap = el(`
       <div class="view stack">
         <div class="hero" style="text-align:center">
-          <div style="font-size:48px; margin-bottom:8px;">🎉</div>
+          <div style="font-size:3rem; margin-bottom:8px;">🎉</div>
           <h1 style="margin-bottom:4px;">${Lang.cfg().doneHeading}</h1>
           <p class="muted">You finished the session. Streak: ${state.streak} day${state.streak === 1 ? "" : "s"}.</p>
         </div>
@@ -2022,7 +2022,7 @@ const App = (function () {
       const learned = counts.young + counts.mature;
       const btn = el(`
         <button class="list-item">
-          <span style="font-size:24px">${t.icon}</span>
+          <span style="font-size:1.5rem">${t.icon}</span>
           <div class="li-main">
             <div class="li-title">${escape(t.name)}</div>
             <div class="li-sub">${learned}/${items.length} learned</div>
@@ -2043,7 +2043,7 @@ const App = (function () {
       const items = SENTENCES.filter((s) => s.theme === t.id);
       const btn = el(`
         <button class="list-item">
-          <span style="font-size:22px">${t.icon}</span>
+          <span style="font-size:1.375rem">${t.icon}</span>
           <div class="li-main">
             <div class="li-title">${escape(t.name)}</div>
             <div class="li-sub">${escape(t.blurb)}</div>
@@ -2063,7 +2063,7 @@ const App = (function () {
     SCENARIOS.forEach((s) => {
       const btn = el(`
         <button class="list-item">
-          <span style="font-size:22px">${s.icon || "📍"}</span>
+          <span style="font-size:1.375rem">${s.icon || "📍"}</span>
           <div class="li-main">
             <div class="li-title">${escape(s.title)}</div>
             <div class="li-sub">${s.dialogue.length} lines</div>
@@ -2110,7 +2110,7 @@ const App = (function () {
       if (!t || items.length === 0) { navigate("browse"); return el(`<div></div>`); }
       const wrap = el(`
         <div class="view stack">
-          <button class="btn ghost" id="back" style="align-self:flex-start; padding:6px 12px; font-size:13px">${arrowBack()} Back</button>
+          <button class="btn ghost" id="back" style="align-self:flex-start; padding:6px 12px; font-size:0.8125rem">${arrowBack()} Back</button>
           <h1>${t.icon} ${escape(t.name)}</h1>
           <p class="muted">${items.length} cards. Tap a card to hear it.</p>
           <div class="row" style="gap: 8px; flex-wrap: wrap;">
@@ -2128,7 +2128,7 @@ const App = (function () {
           <div class="list-item vocab-item">
             <div class="li-main">
               <button class="vocab-word" title="Hear the word">
-                <span class="li-title nl-text" style="font-size:18px">${v.gender ? `<span class="muted" style="font-weight:400">${v.gender}</span> ` : ""}${escape(v.nl)}</span>
+                <span class="li-title nl-text" style="font-size:1.125rem">${v.gender ? `<span class="muted" style="font-weight:400">${v.gender}</span> ` : ""}${escape(v.nl)}</span>
                 <span class="li-sub">${escape(v.en)}</span>
               </button>
               ${v.example ? `
@@ -2139,7 +2139,7 @@ const App = (function () {
                   <button class="vocab-copy" title="Copy sentence" aria-label="Copy sentence">${iconCopy()}</button>
                 </div>` : ""}
             </div>
-            <span class="chip ${m === "mature" ? "success" : m === "young" ? "primary" : ""}">${m}</span>
+            <span class="chip ${m === "mature" ? "success" : m === "young" ? "primary" : ""}">${({ mature: "well known", young: "getting there", learning: "learning", new: "new" })[m] || m}</span>
           </div>
         `);
         // Clicking anywhere on the card → word pronunciation; the example
@@ -2171,7 +2171,7 @@ const App = (function () {
       if (!t || items.length === 0) { navigate("browse"); return el(`<div></div>`); }
       const wrap = el(`
         <div class="view stack">
-          <button class="btn ghost" id="back" style="align-self:flex-start; padding:6px 12px; font-size:13px">${arrowBack()} Back</button>
+          <button class="btn ghost" id="back" style="align-self:flex-start; padding:6px 12px; font-size:0.8125rem">${arrowBack()} Back</button>
           <h1>${t.icon} ${escape(t.name)}</h1>
           <p class="muted">${escape(t.blurb)}</p>
           <button class="btn primary lg full" id="study-theme">Drill these patterns</button>
@@ -2184,10 +2184,10 @@ const App = (function () {
           <article class="card">
             <div class="row spread" style="align-items:flex-start">
               <div style="flex:1">
-                <div class="nl-text" style="font-size:19px">${escape(s.nl)}</div>
-                <div class="muted" style="margin-top:4px; font-size:14px">${escape(s.en)}</div>
+                <div class="nl-text" style="font-size:1.1875rem">${escape(s.nl)}</div>
+                <div class="muted" style="margin-top:4px; font-size:0.875rem">${escape(s.en)}</div>
                 ${s.pattern ? `<div style="margin-top:8px"><span class="chip">${escape(s.pattern)}</span></div>` : ""}
-                ${s.reveals ? `<ul class="muted" style="font-size:13px; margin:8px 0 0 18px; padding:0">${s.reveals.map((r) => `<li>${escape(r)}</li>`).join("")}</ul>` : ""}
+                ${s.reveals ? `<ul class="muted" style="font-size:0.8125rem; margin:8px 0 0 18px; padding:0">${s.reveals.map((r) => `<li>${escape(r)}</li>`).join("")}</ul>` : ""}
               </div>
               <button class="voice-btn" data-speak="${escape(s.nl)}" aria-label="Hear it">${iconSound()}</button>
             </div>
@@ -2258,14 +2258,14 @@ const App = (function () {
 
     const wrap = el(`
       <div class="view stack">
-        <button class="btn ghost" id="back" style="align-self:flex-start; padding:6px 12px; font-size:13px">${arrowBack()} Back</button>
+        <button class="btn ghost" id="back" style="align-self:flex-start; padding:6px 12px; font-size:0.8125rem">${arrowBack()} Back</button>
         <h1>${s.icon || "📍"} ${escape(s.title)}</h1>
         <p class="muted">${escape(s.setting)}</p>
         <div class="row" style="flex-wrap: wrap; gap: 8px;">
           <button class="btn primary voice-action" id="play-all">${iconSound()} Play full dialogue</button>
           <button class="btn voice-action" id="narrow-listen" title="Same dialogue, 3 passes, alternating speakers">${iconSound()} Narrow listen · 3×</button>
         </div>
-        <div id="narrow-status" class="muted" style="font-size: 13px; min-height: 0;"></div>
+        <div id="narrow-status" class="muted" style="font-size: 0.8125rem; min-height: 0;"></div>
         <div class="dialogue" id="dlg"></div>
         ${s.notes && s.notes.length ? `
           <div class="card" style="background: var(--accent-soft); border-color: transparent">
@@ -2392,7 +2392,7 @@ const App = (function () {
 
     const wrap = el(`
       <div class="view stack">
-        <button class="btn ghost" id="back" style="align-self:flex-start; padding:6px 12px; font-size:13px">${arrowBack()} Back</button>
+        <button class="btn ghost" id="back" style="align-self:flex-start; padding:6px 12px; font-size:0.8125rem">${arrowBack()} Back</button>
         <article class="card lg passage-card">
           <span class="eyebrow">${escape(p.level)} · Reading</span>
           <h1 style="margin: 8px 0 6px">${escape(p.title)}</h1>
@@ -2495,7 +2495,7 @@ const App = (function () {
 
     const wrap = el(`
       <div class="view stack">
-        <button class="btn ghost" id="back" style="align-self:flex-start; padding:6px 12px; font-size:13px">${arrowBack()} Back</button>
+        <button class="btn ghost" id="back" style="align-self:flex-start; padding:6px 12px; font-size:0.8125rem">${arrowBack()} Back</button>
         <article class="capsule">
           <span class="eyebrow">Grammar capsule</span>
           <h1 style="margin: 6px 0 8px">${escape(g.title)}</h1>
@@ -2515,8 +2515,8 @@ const App = (function () {
         <div class="card" style="background: var(--surface-2); padding: 14px 16px;">
           <div class="row spread" style="align-items: flex-start">
             <div style="flex:1">
-              <div class="nl-text" style="font-size:18px">${escape(ex.nl)}</div>
-              <div class="muted" style="font-size:14px; margin-top:4px">${escape(ex.en)}</div>
+              <div class="nl-text" style="font-size:1.125rem">${escape(ex.nl)}</div>
+              <div class="muted" style="font-size:0.875rem; margin-top:4px">${escape(ex.en)}</div>
               ${ex.tag ? `<div style="margin-top:8px"><span class="chip">${escape(ex.tag)}</span></div>` : ""}
             </div>
             <button class="voice-btn" data-speak aria-label="Hear it">${iconSound()}</button>
@@ -2594,7 +2594,7 @@ const App = (function () {
     if (!P) {
       const empty = el(`
         <div class="view stack">
-          <button class="btn ghost" id="back" style="align-self:flex-start; padding:6px 12px; font-size:13px">${arrowBack()} Back</button>
+          <button class="btn ghost" id="back" style="align-self:flex-start; padding:6px 12px; font-size:0.8125rem">${arrowBack()} Back</button>
           <div class="empty-state">The ${escape(Lang.cfg().name)} pronunciation guide isn't available yet.</div>
         </div>
       `);
@@ -2621,7 +2621,7 @@ const App = (function () {
 
     const wrap = el(`
       <div class="view stack pron-view">
-        <button class="btn ghost" id="back" style="align-self:flex-start; padding:6px 12px; font-size:13px">${arrowBack()} Back</button>
+        <button class="btn ghost" id="back" style="align-self:flex-start; padding:6px 12px; font-size:0.8125rem">${arrowBack()} Back</button>
         <header class="pron-head" dir="ltr">
           <span class="eyebrow">Pronunciation guide · ${Number(P.minutes) || 15} min read</span>
           <h1>${escape(P.title)}</h1>
@@ -2763,7 +2763,7 @@ const App = (function () {
     const wrap = el(`
       <div class="view view-stats">
         <h1 style="margin-bottom:0">Stats</h1>
-        <p class="muted" style="margin-top:0">Your learning protocol, in numbers.</p>
+        <p class="muted" style="margin-top:0">Your progress, in numbers.</p>
 
         <div class="grid-2 stats-tiles">
           <div class="stat">
@@ -2782,16 +2782,15 @@ const App = (function () {
           <span class="eyebrow">Last 12 weeks</span>
           <h3 style="margin: 6px 0 14px">Activity heatmap</h3>
           <div id="heatmap" class="heatmap"></div>
-          <p class="muted" style="font-size:12px; margin-top:10px">Each cell is a day. Darker = more reviews. Aim for any colour every day — even 5 minutes counts.</p>
+          <p class="muted" style="font-size:0.75rem; margin-top:10px">Each cell is a day. Darker = more reviews. Aim for any colour every day — even 5 minutes counts.</p>
         </article>
 
         <article class="card stats-maturity">
-          <span class="eyebrow">Maturity breakdown</span>
-          <h3 style="margin: 6px 0 12px">Card progression</h3>
+          <span class="eyebrow">Your cards</span>
+          <h3 style="margin: 6px 0 12px">How well you know them</h3>
           ${maturityBars(counts)}
-          <p class="muted" style="font-size:13px; margin-top:14px;">
-            <strong>New</strong> = unseen · <strong>Learning</strong> = next review &lt; 7 days · <strong>Young</strong> = &lt; 30 days · <strong>Mature</strong> = ≥ 30 days. Mature cards rarely come back.
-          </p>
+          <p class="muted" style="font-size:0.8125rem; margin-top:14px;">
+            <strong>Not seen yet</strong> = new to you · <strong>Learning</strong> = coming back within a week · <strong>Getting there</strong> = coming back within a month · <strong>Well known</strong> = you can leave it for a month or more, and it will only return now and then.</p>
         </article>
 
         <article class="card stats-help">
@@ -2804,9 +2803,15 @@ const App = (function () {
           </div>
         </article>
 
+        <article class="card stats-display">
+          <span class="eyebrow">Display</span>
+          <h3 style="margin: 6px 0 10px">Make it comfortable to read</h3>
+          <div id="display-slot"></div>
+        </article>
+
         <article class="card stats-settings">
           <span class="eyebrow">Settings</span>
-          <h3 style="margin: 6px 0 14px">Tune your protocol</h3>
+          <h3 style="margin: 6px 0 14px">Make it yours</h3>
           <div class="stack-sm">
             <label class="row spread" style="gap:12px">
               <span>Cards per session</span>
@@ -2822,10 +2827,10 @@ const App = (function () {
             </label>
             ${Lang.cfg().transliterate ? `
             <label class="row spread" style="gap:12px">
-              <span>Reading guide <span class="muted" style="font-size:12px">(Latin under every ${escape(Lang.cfg().name)} word)</span></span>
+              <span>Reading guide <span class="muted" style="font-size:0.75rem">(Latin under every ${escape(Lang.cfg().name)} word)</span></span>
               <input type="checkbox" id="set-guide" ${state.settings.readingGuide !== false ? "checked" : ""} />
             </label>
-            <p class="muted guide-key" style="font-size:12px; margin:0">${escape(Lang.cfg().guideKey || "")}</p>` : ""}
+            <p class="muted guide-key" style="font-size:0.75rem; margin:0">${escape(Lang.cfg().guideKey || "")}</p>` : ""}
             <label class="row spread" style="gap:12px">
               <span>Auto-pronounce on flip</span>
               <input type="checkbox" id="set-autoplay" ${state.settings.autoPlay ? "checked" : ""} />
@@ -2852,7 +2857,7 @@ const App = (function () {
                   .map(([v,l]) => `<option value="${v}" ${state.settings.englishVoice === v ? "selected" : ""}>Supertonic · ${l}</option>`).join("")}
               </select>
             </label>
-            <div id="tts-status" class="muted" style="font-size:12px;"></div>
+            <div id="tts-status" class="muted" style="font-size:0.75rem;"></div>
           </div>
         </article>
 
@@ -2864,7 +2869,7 @@ const App = (function () {
             <button class="btn" id="import-btn">Import JSON</button>
             <button class="btn" id="reset-btn" style="color: var(--error); border-color: var(--error)">Reset everything</button>
           </div>
-          <p class="muted" style="font-size:12px; margin-top:10px">Your progress lives only in this browser's localStorage. Export to back it up.</p>
+          <p class="muted" style="font-size:0.75rem; margin-top:10px">Your progress lives only in this browser's localStorage. Export to back it up.</p>
         </article>
       </div>
     `);
@@ -2886,6 +2891,8 @@ const App = (function () {
       const cell = el(`<div class="heat-cell ${cls}" title="${iso} · ${r} reviews"></div>`);
       heat.appendChild(cell);
     }
+
+    $("#display-slot", wrap).appendChild(buildDisplayPanel("st"));
 
     // Settings
     $("#set-size", wrap).addEventListener("change", (e) => {
@@ -2987,18 +2994,189 @@ const App = (function () {
     return wrap;
   }
 
-  /* ============ THEME TOGGLE ============ */
-  function applyTheme() {
-    const t = state.settings.theme;
-    document.documentElement.setAttribute("data-theme", t);
+  /* ============ DISPLAY: THEME + TEXT SIZE ============
+     Global (not per language), kept in localStorage so the inline script in
+     index.html can apply it before first paint. */
+  const THEME_KEY = "learn:theme";
+  const TEXTSIZE_KEY = "learn:textsize";
+  const THEMES = [
+    { id: "auto",     name: "Auto",          hint: "Matches your device: light by day, dark at night." },
+    { id: "light",    name: "Light",         hint: "Warm paper, soft blue." },
+    { id: "dark",     name: "Dark",          hint: "Easy on the eyes in a dim room." },
+    { id: "easy",     name: "Easy read",     hint: "Cream paper, bigger and roomier text, a font made to be easy to tell apart." },
+    { id: "contrast", name: "High contrast", hint: "Black on white with bold outlines, for the clearest possible text." },
+  ];
+  const TEXT_SIZES = ["Normal", "Large", "Larger", "Largest"];
+  const THEME_COLORS = { light: "#faf7f2", dark: "#0f1216", easy: "#f6efdf", contrast: "#ffffff" };
+
+  function storedTheme() {
+    let t = null;
+    try { t = localStorage.getItem(THEME_KEY); } catch (_) {}
+    return THEMES.some((x) => x.id === t) ? t : "auto";
   }
-  function cycleTheme() {
-    const order = ["auto", "light", "dark"];
-    const i = order.indexOf(state.settings.theme);
-    state.settings.theme = order[(i + 1) % order.length];
-    persist();
+  function storedTextSize() {
+    let n = 0;
+    try { n = parseInt(localStorage.getItem(TEXTSIZE_KEY), 10); } catch (_) {}
+    return n >= 0 && n < TEXT_SIZES.length ? n : 0;
+  }
+  function applyTheme() {
+    const t = storedTheme();
+    const root = document.documentElement;
+    root.setAttribute("data-theme", t);
+    root.setAttribute("data-textsize", String(storedTextSize()));
+    // Browser chrome colour: follow the device only in Auto.
+    const dark = window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches;
+    const color = THEME_COLORS[t === "auto" ? (dark ? "dark" : "light") : t];
+    $$('meta[name="theme-color"]').forEach((m) => { m.removeAttribute("media"); m.setAttribute("content", color); });
+    const btn = document.getElementById("theme-toggle");
+    if (btn) btn.setAttribute("aria-label", `Display: theme and text size. Now ${THEMES.find((x) => x.id === t).name}, ${TEXT_SIZES[storedTextSize()].toLowerCase()} text`);
+  }
+  function setTheme(id) {
+    try { localStorage.setItem(THEME_KEY, id); } catch (_) {}
     applyTheme();
-    toast(`Theme: ${state.settings.theme}`);
+  }
+  function setTextSize(n) {
+    n = Math.max(0, Math.min(TEXT_SIZES.length - 1, n));
+    try { localStorage.setItem(TEXTSIZE_KEY, String(n)); } catch (_) {}
+    applyTheme();
+  }
+
+  /** The picker itself: used in the header popover and on the Stats page. */
+  function buildDisplayPanel(idp) {
+    const sw = (id) => `<span class="sw-chip sw-${id}" aria-hidden="true"><b>Aa</b><i></i></span>`;
+    const panel = el(`
+      <div class="display-panel">
+        <fieldset class="display-group">
+          <legend id="${idp}-th">Theme</legend>
+          <div class="theme-swatches" role="radiogroup" aria-labelledby="${idp}-th">
+            ${THEMES.map((t) => `
+              <button type="button" class="theme-swatch" role="radio" data-theme-id="${t.id}">
+                ${sw(t.id)}<span class="sw-name">${t.name}</span>
+              </button>`).join("")}
+          </div>
+          <p class="display-note" id="${idp}-hint" aria-live="polite"></p>
+        </fieldset>
+        <fieldset class="display-group">
+          <legend id="${idp}-sz">Text size</legend>
+          <div class="size-row" role="group" aria-labelledby="${idp}-sz">
+            <button type="button" class="size-btn minus" data-size="-1" aria-label="Smaller text">A&minus;</button>
+            <button type="button" class="size-btn reset" data-size="0" aria-label="Normal text size">A</button>
+            <button type="button" class="size-btn plus" data-size="1" aria-label="Larger text">A+</button>
+            <span class="size-readout" aria-live="polite"></span>
+          </div>
+        </fieldset>
+      </div>
+    `);
+    const swatches = $$(".theme-swatch", panel);
+    const hint = $(".display-note", panel);
+    const readout = $(".size-readout", panel);
+    const sizeBtns = $$(".size-btn", panel);
+    function sync() {
+      const cur = storedTheme();
+      swatches.forEach((b) => {
+        const on = b.dataset.themeId === cur;
+        b.setAttribute("aria-checked", on ? "true" : "false");
+        b.tabIndex = on ? 0 : -1;
+      });
+      hint.textContent = THEMES.find((t) => t.id === cur).hint;
+      const s = storedTextSize();
+      readout.textContent = TEXT_SIZES[s];
+      sizeBtns.find((b) => b.dataset.size === "-1").disabled = s === 0;
+      sizeBtns.find((b) => b.dataset.size === "1").disabled = s === TEXT_SIZES.length - 1;
+    }
+    swatches.forEach((b, i) => {
+      b.addEventListener("click", () => { setTheme(b.dataset.themeId); sync(); });
+      b.addEventListener("keydown", (e) => {
+        const k = e.key;
+        if (!["ArrowRight", "ArrowLeft", "ArrowDown", "ArrowUp", "Home", "End"].includes(k)) return;
+        e.preventDefault();
+        const n = swatches.length;
+        const next = k === "Home" ? 0 : k === "End" ? n - 1
+          : (k === "ArrowRight" || k === "ArrowDown") ? (i + 1) % n : (i - 1 + n) % n;
+        swatches[next].focus();
+        setTheme(swatches[next].dataset.themeId);
+        sync();
+      });
+    });
+    sizeBtns.forEach((b) => b.addEventListener("click", () => {
+      const d = parseInt(b.dataset.size, 10);
+      setTextSize(d === 0 ? 0 : storedTextSize() + d);
+      sync();
+    }));
+    sync();
+    return panel;
+  }
+
+  let displayPop = null;
+  function closeDisplay(restoreFocus = true) {
+    if (!displayPop) return;
+    displayPop.remove();
+    displayPop = null;
+    document.removeEventListener("pointerdown", onDisplayOutside, true);
+    document.removeEventListener("keydown", onDisplayKey, true);
+    window.removeEventListener("resize", placeDisplay);
+    const btn = document.getElementById("theme-toggle");
+    if (btn) { btn.setAttribute("aria-expanded", "false"); if (restoreFocus) btn.focus(); }
+  }
+  function onDisplayOutside(e) {
+    const btn = document.getElementById("theme-toggle");
+    if (displayPop && !displayPop.contains(e.target) && !(btn && btn.contains(e.target))) closeDisplay(false);
+  }
+  function onDisplayKey(e) {
+    if (e.key === "Escape") { e.stopPropagation(); closeDisplay(true); return; }
+    if (e.key !== "Tab" || !displayPop) return;
+    // Focus trap: Tab and Shift+Tab cycle through the popover's enabled controls.
+    const f = $$("button:not(:disabled)", displayPop).filter((x) => x.tabIndex >= 0);
+    if (!f.length) return;
+    const first = f[0], last = f[f.length - 1];
+    if (!displayPop.contains(document.activeElement)) { e.preventDefault(); first.focus(); }
+    else if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  }
+  function placeDisplay() {
+    const hdr = document.querySelector(".app-header");
+    if (!displayPop || !hdr) return;
+    const top = Math.round(hdr.getBoundingClientRect().bottom + 6);
+    displayPop.style.top = top + "px";
+    displayPop.style.maxHeight = `calc(100dvh - ${top + 12}px)`;
+  }
+  function toggleDisplay() {
+    if (displayPop) { closeDisplay(true); return; }
+    const btn = document.getElementById("theme-toggle");
+    displayPop = el(`
+      <div class="display-pop" role="dialog" aria-modal="true" aria-labelledby="display-pop-h">
+        <h2 id="display-pop-h">Make it comfortable to read</h2>
+      </div>
+    `);
+    displayPop.appendChild(buildDisplayPanel("dp"));
+    const done = el(`<button type="button" class="btn primary display-close">Done</button>`);
+    done.addEventListener("click", () => closeDisplay(true));
+    displayPop.appendChild(done);
+    document.body.appendChild(displayPop);
+    placeDisplay();
+    if (btn) btn.setAttribute("aria-expanded", "true");
+    document.addEventListener("pointerdown", onDisplayOutside, true);
+    document.addEventListener("keydown", onDisplayKey, true);
+    window.addEventListener("resize", placeDisplay);
+    const cur = displayPop.querySelector('.theme-swatch[aria-checked="true"]');
+    if (cur) cur.focus();
+  }
+
+  /* Gentle offline notice: lessons and text work offline, new audio may not. */
+  function initOfflineNotice() {
+    let bar = null;
+    function update() {
+      if (navigator.onLine === false) {
+        if (!bar) {
+          bar = el(`<div class="offline-bar" role="status">You're offline. Cards and reading still work; audio you haven't played before may be missing until you reconnect.</div>`);
+          const hdr = document.querySelector(".app-header");
+          hdr.parentNode.insertBefore(bar, hdr.nextSibling);
+        }
+      } else if (bar) { bar.remove(); bar = null; }
+    }
+    window.addEventListener("online", update);
+    window.addEventListener("offline", update);
+    update();
   }
 
   /* ============ LANGUAGE SWITCHING ============ */
@@ -3130,7 +3308,8 @@ const App = (function () {
       b.addEventListener("click", () => navigate(b.dataset.view));
     });
     const tt = document.getElementById("theme-toggle");
-    if (tt) tt.addEventListener("click", cycleTheme);
+    if (tt) tt.addEventListener("click", toggleDisplay);
+    initOfflineNotice();
     const hb = document.getElementById("help-btn");
     if (hb) hb.addEventListener("click", () => navigate("help"));
 

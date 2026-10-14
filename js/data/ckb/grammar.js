@@ -268,7 +268,7 @@ window.__DECK.ckb.GRAMMAR = [
     title: "Conditionals with ئەگەر: real and unreal",
     blurb: "ئەگەر + subjunctive for possible conditions; ئەگەر + -ایە for imaginary ones.",
     body:
-      "REAL (possible) condition: ئەگەر + subjunctive in the if-part, present or imperative in the result: ئەگەر باران ببارێت، لە ماڵەوە دەمێنمەوە. UNREAL (imaginary) condition: ئەگەر + a past form with -ایە (هەبوایە 'had', بوایە 'were'), and the result clause uses دە- + past (the imperfect): ئەگەر کاتم هەبوایە، دەهاتم 'if I had time, I would come / if I had had time, I would have come'. The same pattern covers present and past unreal conditions; context decides. مەگەر means 'unless / only if'.",
+      "REAL (possible) condition: ئەگەر + subjunctive in the if-part, present or imperative in the result: ئەگەر باران ببارێت، لە ماڵەوە دەمێنمەوە. UNREAL (imaginary) condition: ئەگەر + a past form with -ایە (هەبوایە 'had', بوایە 'were'), and the result clause uses دە- + past (the imperfect): ئەگەر کاتم هەبوایە، دەهاتم 'if I had time, I would come / if I had had time, I would have come'. The same pattern covers present and past unreal conditions; context decides. Spelling varies: you will see both هەبوایە and هەبووایە, بوایە and بووایە. مەگەر means 'unless / only if'.",
     examples: [
       { nl: "ئەگەر باران ببارێت، لە ماڵەوە دەمێنمەوە.", en: "If it rains, I'll stay at home.", tag: "real: subjunctive" },
       { nl: "ئەگەر پێویستت بە یارمەتی بێت، پێم بڵێ.", en: "If you need help, tell me.", tag: "real + imperative" },

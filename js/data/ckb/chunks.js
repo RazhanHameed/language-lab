@@ -16,7 +16,7 @@ window.__DECK.ckb.CHUNKS = [
   { nl: "باشم، سوپاس",       en: "I'm fine, thanks",                 context: "standard reply to 'how are you'" },
   { nl: "سوپاس",             en: "thanks",                           context: "everyday thank you" },
   { nl: "زۆر سوپاس",         en: "thank you very much",              context: "emphatic thanks" },
-  { nl: "شتی نیە",           en: "you're welcome (it's nothing)",    context: "warm reply after being thanked" },
+  { nl: "شتی نییە",           en: "you're welcome (it's nothing)",    context: "warm reply after being thanked" },
   { nl: "چی خەبەر؟",         en: "what's up? / any news?",           context: "casual opener with friends" },
   { nl: "سەرچاو",            en: "gladly / with pleasure",           context: "warm 'sure, of course' (lit. 'on my eye')" },
   { nl: "ماندوو نەبی",       en: "may you not tire",                 context: "blessing to someone working or busy" },
@@ -39,10 +39,10 @@ window.__DECK.ckb.CHUNKS = [
   { nl: "ئاگادارت دەکەمەوە",  en: "I'll let you know",                context: "friendly non-committal close" },
   { nl: "دەستخۆش",           en: "well done / nice work",            context: "thanking someone for their effort" },
   { nl: "خەریکە تەواو دەبێت", en: "it's almost done",                 context: "status update" },
-  { nl: "هیچ کێشەیەک نیە",    en: "no problem / all clear",           context: "reassuring, 'no blockers'" },
+  { nl: "هیچ کێشەیەک نییە",    en: "no problem / all clear",           context: "reassuring, 'no blockers'" },
 
   // ---- everyday observations / weather ----
-  { nl: "هەوا خۆشە، وا نیە؟",  en: "nice weather, isn't it?",          context: "small-talk opener" },
+  { nl: "هەوا خۆشە، وا نییە؟",  en: "nice weather, isn't it?",          context: "small-talk opener" },
   { nl: "برسیمە",            en: "I'm hungry",                       context: "everyday need" },
   { nl: "تینوومە",           en: "I'm thirsty",                      context: "everyday need" },
   { nl: "زۆر سەرقاڵم",       en: "I'm very busy",                    context: "common 'I've got a lot on'" },
@@ -67,7 +67,7 @@ window.__DECK.ckb.CHUNKS = [
   { nl: "ڕاستییەکەی", en: "actually / the truth is ...", context: "admitting something frankly" },
   { nl: "دڵنیا نیم", en: "I'm not sure", context: "hedging" },
   { nl: "لەوانەیە", en: "perhaps / it may be", context: "hedging a guess" },
-  { nl: "ئەوە دەگەڕێتەوە بۆ", en: "it depends on ...", context: "answering 'it depends'" },
+  { nl: "ئەوە دەگەڕێتەوە بۆ", en: "it depends on ...", context: "answering 'it depends' (lit. 'that goes back to'; بەندە بە … is a common everyday alternative)" },
   { nl: "لەلایەکەوە، لەلایەکی ترەوە", en: "on the one hand ... on the other hand ...", context: "weighing two sides" },
   { nl: "بۆ ئەوەی ڕاستی بڵێم", en: "to tell the truth", context: "frank admission" },
 

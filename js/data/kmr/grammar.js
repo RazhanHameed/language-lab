@@ -151,7 +151,7 @@ window.__DECK.kmr.GRAMMAR = [
     title: "Oblique case: -ê, -an and the pronoun set",
     blurb: "A second form of the noun and pronoun marks the doer in the past, and the noun after prepositions.",
     body:
-      "Nouns and pronouns have two cases: direct and oblique. The oblique shows up (1) for the doer in the past tense, (2) after prepositions and (3) after demonstratives in the oblique. Feminine singular nouns take -ê (jin -> jinê, mal -> malê). Plural nouns take -an (zarok -> zarokan, pirtûk -> pirtûkan). Masculine singular nouns usually stay bare in speech; careful writing adds -î after a demonstrative (vî zilamî). Pronouns change: ez -> min, tu -> te, ew -> wî (he) / wê (she), em -> me, hûn -> we, ew (they) -> wan. Demonstratives: ev -> vî / vê / van, ew -> wî / wê / wan.",
+      "Nouns and pronouns have two cases: direct and oblique. The oblique shows up (1) for the doer in the past tense, (2) after prepositions and (3) after the oblique demonstratives vî, vê and van. Feminine singular nouns take -ê (jin -> jinê, mal -> malê). Plural nouns take -an (zarok -> zarokan, pirtûk -> pirtûkan). Masculine singular nouns take no -ê ending (li bajêr 'in the city' only changes a vowel), but after vî or wî they take -î: vî zilamî 'this man'. Place names such as Wan and Amed do take -ê after li: li Wanê, li Amedê. Pronouns change: ez -> min, tu -> te, ew -> wî (he) / wê (she), em -> me, hûn -> we, ew (they) -> wan. Demonstratives: ev -> vî / vê / van, ew -> wî / wê / wan.",
     examples: [
       { nl: "Jinê nan xwar.", en: "The woman ate bread.", tag: "feminine doer in the past takes -ê" },
       { nl: "Ez li malê me.", en: "I am at home.", tag: "after 'li', mal -> malê" },
@@ -159,7 +159,7 @@ window.__DECK.kmr.GRAMMAR = [
       { nl: "Min ev pirtûk xwend.", en: "I read this book.", tag: "oblique 'min' as the doer" },
       { nl: "Ew bi wan re dixebite.", en: "He works with them.", tag: "wan = oblique they" },
     ],
-    pitfall: "Gender decides the oblique: malê (fem) but bajêr (masc, bare). Learn each noun with its gender; the dictionary form alone does not tell you.",
+    pitfall: "Gender decides the oblique: malê (fem, takes -ê) but bajêr (masc, no -ê ending; only the vowel changes). Learn each noun with its gender; the dictionary form alone does not tell you.",
   },
   {
     id: "g_b1_ezafe",
@@ -211,7 +211,7 @@ window.__DECK.kmr.GRAMMAR = [
     title: "The subjunctive (bi-) and the imperative",
     blurb: "After want, must and can, the second verb takes bi- + present stem and a personal ending.",
     body:
-      "The subjunctive is bi- + present stem + -im, -î, -e, -in: bixwim, bixwî, bixwe, bixwin. It follows dixwazim (I want), divê (must), dikarim (can) and conjunctions like ji bo ku, beriya ku, heta: Ez dixwazim biçim (I want to go; lit. 'I want I-go'). The two verbs have their own personal endings, and Kurmanji uses no 'to'. Verbs with a preverb drop the bi-: radibim -> rabim. Hatin has two regional sets: werim / werî / were / werin (Badini and widely written) and bêm / bêyî / bê / bên. The imperative is bi- + stem (bixwe, bixwin) or just the stem for a few verbs (were/werin = come, rûne/rûnin = sit). Prohibition: me- + stem: Meçe! (don't go), Meke!",
+      "The subjunctive is bi- + present stem + -im, -î, -e, -in: bixwim, bixwî, bixwe, bixwin. It follows dixwazim (I want), divê (must), dikarim (can) and conjunctions like ji bo ku, beriya ku, heta: Ez dixwazim biçim (I want to go; lit. 'I want I-go'). The two verbs have their own personal endings, and Kurmanji uses no 'to'. Verbs with a preverb drop the bi-: radibim -> rabim. Hatin has two regional sets: werim / werî / were / werin (used in Badini, the Kurmanji of Duhok, and some other areas) and bêm / bêyî / bê / bên (the usual set in Turkey and Syria). Were / werin 'come!' as an imperative is understood everywhere. The imperative is bi- + stem (bixwe, bixwin) or just the stem for a few verbs (were/werin = come, rûne/rûnin = sit). Prohibition: me- + stem: Meçe! (don't go), Meke!",
     examples: [
       { nl: "Ez dixwazim biçim Wanê.", en: "I want to go to Van.", tag: "dixwazim + bi-çim" },
       { nl: "Divê tu zû bixwî.", en: "You must eat soon.", tag: "divê + subjunctive" },
@@ -256,7 +256,7 @@ window.__DECK.kmr.GRAMMAR = [
     title: "Linking clauses: ku, eger and dema",
     blurb: "'Ku' means 'who / which / that'; eger/heke build 'if' sentences.",
     body:
-      "A relative clause comes straight after the noun with ku, and the noun takes the ezafe: zilamê ku li wir rûniştiye (the man who is sitting there). The same ku means 'that' after verbs of saying and thinking: Ez difikirim ku ew rast e. Conditionals use eger, heke or ger plus the subjunctive for realistic futures: Eger baran bibare, em ê li malê bimînin. For unreal 'if' use the past subjunctive (-a ending): Eger wext hebûya, em ê biçûna Wanê. Time clauses: dema (ku), piştî ku, beriya ku, heta.",
+      "A relative clause comes straight after the noun with ku, and the noun takes the ezafe: zilamê ku li wir rûniştiye (the man who is sitting there). The same ku means 'that' after verbs of saying and thinking: Ez difikirim ku ew rast e. Conditionals use eger, heke or ger plus the subjunctive for realistic futures: Eger baran bibare, em ê li malê bimînin. For unreal 'if' use the past subjunctive (-ya / -a ending): Eger wext hebûya, em ê biçûna Wanê. Time clauses: dema (ku), piştî ku, beriya ku, heta.",
     examples: [
       { nl: "Zilamê ku li wir rûniştiye bavê min e.", en: "The man who is sitting there is my father.", tag: "relative clause with ku" },
       { nl: "Pirtûka ku min duh kirî pir xweş e.", en: "The book that I bought yesterday is very nice.", tag: "ku + ergative past inside" },

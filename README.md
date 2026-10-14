@@ -95,7 +95,21 @@ Speaking and Shadowing score you with a local Whisper server (see [Running it lo
 - **Feedback that explains the mistake**: wrong answers are classified (for example *niet* vs *geen*, *de*/*het*, verb-second order, a missing *-t*, a typo) with a one-line rule.
 - **Pretest mode**: "Challenge me · 5" on any vocabulary theme quizzes you before you study (the errorful-pretest effect).
 
-Also: light, dark and auto themes; a mobile-first layout with a desktop grid at ≥ 960 px; and a backup reminder when your last export is a week old.
+Also: a mobile-first layout with a desktop grid at ≥ 960 px, an offline notice, and a backup reminder when your last export is a week old.
+
+### Comfortable to read, for everyone
+
+- **Five themes** (Display button in the top bar, or Stats → Display):
+  - **Auto** follows your device.
+  - **Light** and **Dark**.
+  - **Easy read**: a cream background with brown-black text, the [Atkinson Hyperlegible](https://www.brailleinstitute.org/freefont/) font, larger and more generously spaced text, no italics. It follows dyslexia-friendly style guidance.
+  - **High contrast**: black on white with bold outlines; text contrast is at least 7:1 (WCAG AAA).
+- **Text size**: four steps (Normal → Largest) that scale the whole app and work with every theme.
+- **Accessibility**:
+  - **Contrast and reading:** text in every theme meets WCAG 2.2 AA contrast. Pages zoom and reflow down to 320 px wide, and animations are reduced when your device asks for it.
+  - **Screen readers:** target-language text is tagged with its language, so screen readers switch voice. Speaker buttons say what they play ("Play pronunciation of …"), and answers are announced.
+  - **Keyboard:** works throughout. Enter or Space flips a card, 1–4 rates it, Esc closes dialogs, and a skip link jumps to the content.
+- **Phones and Safari**: audio plays on iPhone and iPad. Safari only allows audio started by a tap, so the app unlocks its audio on your first tap. It also handles safe areas on notched screens and avoids the iOS input zoom.
 
 ---
 
@@ -201,6 +215,7 @@ language-lab/
 ├── js/
 │   ├── app.js                  # router, all views, the 8 card types, the 7 drills, reader, pronunciation guide
 │   ├── onboarding.js           # first-run tour, in-context coaching, "How it works" page
+│   ├── a11y.js                 # language tags, accessible names, keyboard flips/ratings, live announcements
 │   ├── audio.js                # pre-rendered clips → live TTS server → Web Speech fallback; recording for STT
 │   ├── srs.js                  # FSRS-4.5 scheduler (language-agnostic)
 │   ├── drills.js               # drill controllers; spelling and diagnosis come from the language pack
@@ -225,7 +240,7 @@ language-lab/
 
 Each data file registers its arrays under `window.__DECK.<lang>`. `Lang.use(id)` then points the bare globals (`VOCAB`, `SENTENCES`, …) at the active language's deck, so the engine reads them unchanged.
 
-**Stack:** vanilla HTML, CSS and JS (about 7,000 lines, no framework or bundler), `localStorage` for state, FSRS-4.5 in plain JS, MediaRecorder for speaking drills, Vazirmatn for Arabic-script text and Inter/Fraunces for Latin.
+**Stack:** vanilla HTML, CSS and JS (about 7,000 lines, no framework or bundler), `localStorage` for state, FSRS-4.5 in plain JS, MediaRecorder for speaking drills, Vazirmatn for Arabic-script text, Inter/Fraunces for Latin, and Atkinson Hyperlegible in the Easy read theme.
 
 ---
 
@@ -359,5 +374,6 @@ Before opening a PR, check that the app loads without console errors in that lan
 - [whisper-large-v3-turbo](https://huggingface.co/openai/whisper-large-v3-turbo) by OpenAI (MLX port by mlx-community)
 - [FSRS](https://github.com/open-spaced-repetition) by open-spaced-repetition
 - [Vazirmatn](https://github.com/rastikerdar/vazirmatn) by Saber Rastikerdar: Arabic-script font
+- [Atkinson Hyperlegible](https://www.brailleinstitute.org/freefont/) by the Braille Institute: Easy read font
 - Tim Ferriss, for the diagnostic-sentence approach
 - The SLA research of Bjork, Krashen, Swain, Schmidt, Cepeda, Roediger and many others

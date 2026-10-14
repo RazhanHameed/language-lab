@@ -309,7 +309,7 @@ window.__DECK.ckb.SCENARIOS = [
       { speaker: "Seller", nl: "ببورە بۆ ئەو کێشەیە.", en: "Sorry for that problem." },
     ],
     notes: [
-      "Start politely with 'ببورە، کێشەیەکم هەیە' and describe the fault with a simple present: کار ناکات (it doesn't work). Stay calm: shouting rarely helps and you will be taken seriously if you keep the receipt (وەسڵ).",
+      "Start politely with 'ببورە، کێشەیەکم هەیە' and describe the fault with a simple present: کار ناکات (it doesn't work). شەحن کردن 'to charge (a battery)' is a loan from Arabic and is the usual everyday word. Stay calm: shouting rarely helps and you will be taken seriously if you keep the receipt (وەسڵ).",
       "هەرچەندە ... هەر ... = 'although ... still'. چونکە gives the reason. 'قبووڵ نییە' = it's not acceptable — firm but not rude.",
       "Reported speech keeps the original tense: بەڕێوەبەر دەڵێت ... دەدەین. 'ئومێد دەکەم' + subjunctive = 'I hope that ...'.",
     ],
@@ -337,7 +337,7 @@ window.__DECK.ckb.SCENARIOS = [
       { speaker: "You",          nl: "بێگومان. زۆر سوپاس.", en: "Of course. Thank you very much." },
     ],
     notes: [
-      "'کات وەرگرتن' = to take an appointment. Answer the phone with ئەلۆ; to ask for repetition when the line is bad: هێڵەکە باش نییە, دەتوانیت دووبارەی بکەیتەوە؟",
+      "'کات وەرگرتن' = to take an appointment (the Arabic loan مەوعید is also heard in everyday speech). Answer the phone with ئەلۆ; to ask for repetition when the line is bad: هێڵەکە باش نییە, دەتوانیت دووبارەی بکەیتەوە؟",
       "Times and days are all words: کاتژمێر سێ, پێنجشەممە. Suggest alternatives with a question: ... دەگونجێت؟ ('does it suit?').",
       "'ئەگەر + subjunctive' (ئەگەر بکرێت 'if it's possible') and 'ئەگەر نەتوانیت بێیت' (if you can't come) are the typical real conditions. Cancelling in advance is polite.",
     ],

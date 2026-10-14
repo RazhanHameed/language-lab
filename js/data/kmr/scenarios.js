@@ -284,7 +284,7 @@ window.__DECK.kmr.SCENARIOS = [
     notes: [
       "'Hûn xwe bi kurtî bidin nasîn' (introduce yourself briefly) uses the polite plural subjunctive; 'xwe dan nasîn' = to introduce oneself.",
       "'Du sal in ez ... dixebitim' is the Kurdish present perfect-continuous: 'it is two years that I work'. Do not use the perfect for durations.",
-      "Salary questions come late. 'Mûçe' is the salary, 'dema xebatê' the working hours; asking them at the end of the interview is the usual order.",
+      "Salary questions come late. 'Mûçe' is the salary ('meaş', from Turkish, is also common), 'dema xebatê' the working hours; asking them at the end of the interview is the usual order.",
     ],
   },
   {

@@ -477,7 +477,7 @@ window.__DECK.ckb.PRONUNCIATION = {
             { nl: "ماڵ", en: "house, home", note: "dark ł: 'mahł'." },
             { nl: "مال", en: "property, belongings", note: "light l: 'mahl'." },
             { nl: "گەل", en: "people, nation", note: "light l: 'gel'." },
-            { nl: "گەڵ", en: "leaf", note: "dark ł: 'geł'." },
+            { nl: "گەڵ", en: "with (as in لەگەڵ)", note: "dark ł: 'geł'." },
           ],
         },
       ],
@@ -600,9 +600,9 @@ window.__DECK.ckb.PRONUNCIATION = {
     {
       id: "stress",
       title: "Stress: lean on the end of the word",
-      summary: "Nouns and adjectives are stressed on the last syllable; verbs on their first prefix (دە-, نا-, نە-, ب-).",
+      summary: "Nouns and adjectives lean on the last syllable; verbs on their first prefix (دە-, نا-, نە-, ب-). Treat this as a tendency, not a strict law.",
       body: [
-        "Kurdish stress is much more regular than English. Most nouns, adjectives and names are stressed on the LAST syllable: kur-dis-TAN, ba-RAN, ki-TÊB. Endings like -eke ('the') pull the stress along with them.",
+        "Kurdish stress is much more regular than English. Most nouns, adjectives and names are stressed on the LAST syllable: kur-dis-TAN, ba-RAN, ki-TÊB. Endings like -eke ('the') pull the stress along with them. Descriptions of Kurdish stress differ a little between books and between speakers, so treat this as a good habit rather than a strict law.",
         "Verbs are different: the stress falls on the little prefix at the front. دەچم is DE-çim ('I go'), نازانم is NA-zanim ('I don't know'). Stressing the prefix is one of the clearest signs of a natural Kurdish accent.",
         "Kurdish syllables are fairly even. Don't swallow the unstressed vowels the way English does (say 'ba-RAN', not 'b'RAN').",
       ],
@@ -623,7 +623,7 @@ window.__DECK.ckb.PRONUNCIATION = {
             { nl: "کتێبەکە", en: "the book", note: "ki-tê-be-KE." },
             { nl: "کچ", en: "girl", note: "KIÇ." },
             { nl: "کچەکە", en: "the girl", note: "ki-çe-KE." },
-            { nl: "کچێک", en: "a girl", note: "-êk ('a') is unstressed: KI-çêk." },
+            { nl: "کچێک", en: "a girl", note: "With -êk ('a') speakers differ on where the weight falls; KI-çêk with a light ending is common." },
           ],
         },
         {

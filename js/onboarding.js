@@ -430,6 +430,16 @@ window.Onboarding = (function () {
         </article>
 
         <article class="card">
+          <span class="eyebrow">Using a keyboard</span>
+          <ul class="help-list">
+            <li><strong>Tab</strong><span>Moves between buttons. The first stop is "Skip to main content".</span></li>
+            <li><strong>Enter or Space</strong><span>Flips the card or presses the focused button.</span></li>
+            <li><strong>1 2 3 4</strong><span>Rate a flipped card: Again, Hard, Good, Easy.</span></li>
+            <li><strong>Esc</strong><span>Closes the tour and pop-up panels.</span></li>
+          </ul>
+        </article>
+
+        <article class="card">
           <span class="eyebrow">The cards you'll meet</span>
           <ul class="help-list">${rows(cardTypes)}</ul>
           <p class="muted" style="margin:10px 0 0">They're mixed on purpose, and harder formats show up as a card matures.</p>

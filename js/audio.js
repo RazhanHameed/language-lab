@@ -23,9 +23,10 @@ window.Speech = (function () {
   }
   if (supported) {
     refreshVoices();
-    if (typeof window.speechSynthesis.onvoiceschanged !== "undefined") {
-      window.speechSynthesis.onvoiceschanged = refreshVoices;
-    }
+    // Safari/iOS (and Chrome) load voices asynchronously: getVoices() is []
+    // until "voiceschanged" fires. pickVoice() also re-reads when the cache is empty.
+    try { window.speechSynthesis.addEventListener("voiceschanged", refreshVoices); }
+    catch (_) { window.speechSynthesis.onvoiceschanged = refreshVoices; }
   }
 
   function pickVoice(lang) {
@@ -117,10 +118,77 @@ window.Speech = (function () {
       try { ctrl.abort(); } catch (_) {}
     }
     activeFetches.clear();
-    for (const el of activeAudios) {               // stop EVERY <audio> still playing
-      try { el.pause(); el.src = ""; el.load(); } catch (_) {}
+    for (const el of activeAudios) {               // stop the playing <audio>
+      try {
+        el.onended = el.onerror = null;
+        el.pause();
+        el.removeAttribute("src");                 // not src="" (fires a spurious error event)
+        el.load();
+      } catch (_) {}
     }
     activeAudios.clear();
+  }
+
+  // ---------- one persistent <audio> element + gesture unlock ----------
+  // iOS Safari only lets an <audio> element play() if that element was started
+  // inside a user gesture; speak() awaits fetches first, so a fresh
+  // `new Audio(url).play()` there is rejected (NotAllowedError) and nothing
+  // plays. Instead ONE element is created up front and "unlocked" on the first
+  // tap/key press by playing a tiny silent clip; every later playback just
+  // swaps its .src, which iOS then allows outside a gesture.
+  const sharedEl = new window.Audio();
+  sharedEl.preload = "auto";
+  sharedEl.setAttribute("playsinline", "");
+  let audioUnlocked = false;
+  let unlocking = false;
+  const SILENT_WAV = (function () {
+    // 0.05 s of 8 kHz mono 8-bit silence
+    const n = 400, b = new Uint8Array(44 + n);
+    const dv = new DataView(b.buffer);
+    const tag = (o, t) => { for (let i = 0; i < 4; i++) b[o + i] = t.charCodeAt(i); };
+    tag(0, "RIFF"); dv.setUint32(4, 36 + n, true); tag(8, "WAVE"); tag(12, "fmt ");
+    dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 1, true);
+    dv.setUint32(24, 8000, true); dv.setUint32(28, 8000, true); dv.setUint16(32, 1, true);
+    dv.setUint16(34, 8, true); tag(36, "data"); dv.setUint32(40, n, true);
+    b.fill(128, 44);
+    let bin = ""; for (let i = 0; i < b.length; i++) bin += String.fromCharCode(b[i]);
+    return "data:audio/wav;base64," + btoa(bin);
+  })();
+  const UNLOCK_EVENTS = ["touchend", "pointerup", "click", "keydown"];
+  function removeUnlockListeners() {
+    UNLOCK_EVENTS.forEach((t) => document.removeEventListener(t, unlockAudio, true));
+  }
+  function unlockAudio() {
+    if (audioUnlocked) { removeUnlockListeners(); return; }
+    // Web Speech on iOS also needs a gesture-started first utterance.
+    if (supported && !unlockAudio.spoke) {
+      unlockAudio.spoke = true;
+      try {
+        const u = new SpeechSynthesisUtterance(" ");
+        u.volume = 0;
+        window.speechSynthesis.speak(u);
+      } catch (_) {}
+    }
+    if (unlocking) return;
+    if (activeAudios.size) return;               // real playback in flight; it unlocks on success
+    unlocking = true;
+    try {
+      sharedEl.src = SILENT_WAV;
+      const p = sharedEl.play();
+      const done = (ok) => {
+        unlocking = false;
+        if (ok) {
+          audioUnlocked = true;
+          removeUnlockListeners();
+          if (!activeAudios.size) { try { sharedEl.pause(); } catch (_) {} }
+        }
+      };
+      if (p && p.then) p.then(() => done(true), () => done(false));
+      else done(true);
+    } catch (_) { unlocking = false; }
+  }
+  if (typeof document !== "undefined") {
+    UNLOCK_EVENTS.forEach((t) => document.addEventListener(t, unlockAudio, { capture: true, passive: true }));
   }
 
   // --- pre-generated static audio (backendless deploy) ---
@@ -202,20 +270,35 @@ window.Speech = (function () {
   function playUrl(url, opts, gen) {
     return new Promise((resolve, reject) => {
       if (gen !== speakGen) { resolve(); return; }
-      const el = new window.Audio(url);
+      const el = sharedEl;
+      el.onended = el.onerror = null;
       activeAudios.add(el);
-      el.playbackRate = opts.rate != null ? opts.rate : 1;
+      const rate = opts.rate != null ? opts.rate : 1;
+      el.src = url;                                   // setting src resets playbackRate...
+      el.defaultPlaybackRate = rate;
+      el.playbackRate = rate;                         // ...so set it after
+      el.preservesPitch = true;
+      el.webkitPreservesPitch = true;
       el.volume = opts.volume != null ? opts.volume : 1;
       el.onended = () => {
+        el.onended = el.onerror = null;
         activeAudios.delete(el);
         if (opts.onend) opts.onend();
         resolve();
       };
       el.onerror = () => {
+        el.onended = el.onerror = null;
         activeAudios.delete(el);
         reject(new Error("playback failed"));
       };
-      el.play().catch((e) => {
+      let p;
+      try { p = el.play(); } catch (e) { p = Promise.reject(e); }
+      Promise.resolve(p).then(() => {
+        audioUnlocked = true;
+        if (el.playbackRate !== rate) el.playbackRate = rate;   // Safari can reset it on start
+      }, (e) => {
+        if (gen !== speakGen) { resolve(); return; }  // superseded; not an error
+        el.onended = el.onerror = null;
         activeAudios.delete(el);
         reject(e);
       });
@@ -309,6 +392,8 @@ window.Speech = (function () {
             return true;
           } catch (e) {
             if (e.name === "AbortError") return false;
+            // Autoplay blocked (no gesture yet): stay quiet, don't fall back to a system voice.
+            if (e.name === "NotAllowedError") return false;
             // fall through to the live server / Web Speech
           }
         }
@@ -346,7 +431,7 @@ window.Speech = (function () {
             await playUrl(url, opts, myGen);
             return true;
           } catch (e) {
-            if (e.name === "AbortError") return false;
+            if (e.name === "AbortError" || e.name === "NotAllowedError") return false;
             console.warn("TTS audio playback failed:", e);
             return false;
           }
@@ -368,7 +453,8 @@ window.Speech = (function () {
   async function transcribe(blob, opts = {}) {
     if (!blob || !blob.size) throw new Error("empty audio");
     const fd = new FormData();
-    fd.append("file", blob, opts.filename || "speech.webm");
+    const ext = /mp4|aac|m4a/.test(blob.type) ? "m4a" : /ogg/.test(blob.type) ? "ogg" : /wav/.test(blob.type) ? "wav" : "webm";
+    fd.append("file", blob, opts.filename || "speech." + ext);
     fd.append("model", opts.model || STT_MODEL);
     const lang = opts.lang || defaultLang.slice(0, 2);
     if (lang) fd.append("language", lang);
@@ -385,6 +471,19 @@ window.Speech = (function () {
       return (data.text || "").trim();
     }
     return (await res.text()).trim();
+  }
+
+  // MediaRecorder: Safari has no audio/webm;codecs=opus, so pick the first
+  // type the browser says it can record (webm/opus, then mp4), else its default.
+  function recorderOptions() {
+    try {
+      const t = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg;codecs=opus"]
+        .find((m) => window.MediaRecorder && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(m));
+      return t ? { mimeType: t } : {};
+    } catch (_) { return {}; }
+  }
+  function recordingSupported() {
+    return !!(window.MediaRecorder && navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
   }
 
   function hasTargetVoice() { return !!pickVoice(defaultLang); }
@@ -409,6 +508,8 @@ window.Speech = (function () {
     cancel,
     isPlaying,
     transcribe,
+    recorderOptions,
+    recordingSupported,
     hasTargetVoice,
     hasEnglishVoice,
     supported,
