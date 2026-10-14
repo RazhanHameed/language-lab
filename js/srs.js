@@ -160,10 +160,10 @@ window.SRS = (function () {
   }
 
   function pickBatch(allIds, cardStates, opts = {}) {
-    const { size = 16, newRatio = 0.4 } = opts;
+    const { size = 16, newRatio = 0.4, newLimit = null, preferIds = null } = opts;
     const now = Date.now();
     const due = [];
-    const fresh = [];
+    let fresh = [];
     for (const id of allIds) {
       const st = cardStates[id];
       if (!st || st.due === 0) fresh.push(id);
@@ -174,7 +174,12 @@ window.SRS = (function () {
       const j = Math.floor(Math.random() * (i + 1));
       [fresh[i], fresh[j]] = [fresh[j], fresh[i]];
     }
-    const targetNew = Math.round(size * newRatio);
+    // A goal may prefer certain cards (its scope) and cap new cards for the day.
+    if (preferIds) {
+      fresh = [...fresh.filter((id) => preferIds.has(id)), ...fresh.filter((id) => !preferIds.has(id))];
+    }
+    if (newLimit !== null) fresh = fresh.slice(0, Math.max(0, newLimit));
+    const targetNew = newLimit !== null ? Math.min(newLimit, size) : Math.round(size * newRatio);
     const selectedDue = due.slice(0, size - Math.min(targetNew, fresh.length));
     const selectedNew = fresh.slice(0, size - selectedDue.length);
     const all = [...selectedDue, ...selectedNew];

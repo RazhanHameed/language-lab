@@ -12,6 +12,9 @@ window.Store = (function () {
       sessions: [],       // [{ date: 'YYYY-MM-DD', reviewed, correct }]
       streak: 0,
       lastSessionDate: null,
+      goals: [],          // Plan goals (see js/goals.js)
+      newByDate: {},      // 'YYYY-MM-DD' -> number of cards met for the first time that day
+      passagesRead: {},   // passage id -> ms epoch first opened
       lastExportAt: 0,    // ms epoch — used by the export-reminder banner
       seenScenarios: {},  // sId -> ms epoch last viewed
       seenGrammar: {},    // gId -> ms epoch last viewed

@@ -111,32 +111,91 @@ const App = (function () {
     }
   }
 
+  // One observer, fixed order: direction first (wraps Kurdish runs in <bdi>),
+  // then the reading guide (adds ruby to the words inside those runs).
   new MutationObserver((muts) => {
-    if (!guideActive()) return;
-    for (const m of muts) m.addedNodes.forEach((n) => annotateGuide(n));
+    for (const m of muts) m.addedNodes.forEach((n) => {
+      rtlFix(n);
+      if (guideActive()) annotateGuide(n);
+    });
   }).observe(document.body, { childList: true, subtree: true });
 
-  /* ---------- bidi: let each text block pick its own direction ----------
-   * Under <html dir="rtl"> (Sorani) English blurbs/notes/feedback would get
-   * their punctuation on the wrong side. dir="auto" resolves direction (and
-   * start-alignment) from the block's own first strong character, so English
-   * reads LTR and Sorani RTL on the same page. */
-  const AUTO_DIR = "p, li, h1, h2, h3, h4, blockquote, .muted, .subtle, .li-title, .li-sub, .nl-text, .prompt-word, .prompt-en, .prompt-note, .prompt-line, .prompt-meta, .prompt-example, .drill-prompt, .drill-chip-sub, .drill-chip-label, .passage-title, .passage-blurb, .passage-meta, .empty-state, .greeting-nl, .pitfall, .session-label, .session-due, .big-mark, .dlg-nl, .dlg-en, .lookup-note, .lookup-empty, .passage-para, .feedback, .eyebrow, .chip, .metaling-tip, .backup-banner-text, .speaking-compare > div, .hint, .stat-label, .stat-sub, .toast, label, input[type=text], textarea, .speak-row > :first-child";
-  function autoDir(root) {
-    if (document.documentElement.dir !== "rtl" || !root || root.nodeType !== 1) return;
-    const set = (e) => {
-      if (e.hasAttribute("dir") || e.closest(".respell, .mono, .drill-big")) return;
-      const d = getComputedStyle(e).display;   // layout rows keep the page direction
-      if (d === "flex" || d === "inline-flex" || d === "grid") return;
-      if (e.querySelector(AUTO_DIR)) return;   // dir=auto ignores dir-tagged children; tag leaves only
-      e.setAttribute("dir", "auto");
-    };
-    if (root.matches(AUTO_DIR)) set(root);
-    root.querySelectorAll(AUTO_DIR).forEach(set);
+  /* ---------- direction: English UI, Kurdish content ----------
+   * The interface is English, so <html dir> is always "ltr", whatever the
+   * learning language. Only Kurdish CONTENT is right-to-left (Sorani):
+   *   - blocks that hold target text get dir="rtl" (alignment, punctuation);
+   *   - Kurdish inside English prose (notes, tips, feedback, chips) is wrapped
+   *     in <bdi dir="rtl" lang="ckb"> so it keeps its own order and never
+   *     scrambles the neighbouring English.
+   * Applied centrally by the same observer as the reading guide, so no view
+   * has to remember it. Kurmanji (Latin script) never reaches this code. */
+  const AR_CLS = "\\u0600-\\u06FF\\u0750-\\u077F\\uFB50-\\uFDFF\\uFE70-\\uFEFF";
+  const HAS_ARABIC = new RegExp(`[${AR_CLS}]`);
+  const RTL_RUN = new RegExp(`[${AR_CLS}\\u200C\\u200D]+(?:[\\s\\u00A0.,:;!?'"()\\-\\u2013\\u2014\\u2026\\u00AB\\u00BB0-9]+[${AR_CLS}\\u200C\\u200D]+)*`, "g");
+  const RTL_ALWAYS = ".word-chip, .reorder-area, .reorder-bank";
+  const RTL_IF_ARABIC = ".nl-text, .prompt-word, .dlg-nl, .passage-para, .cloze-prompt, .greeting-nl, .drill-verb, .choice-btn, .speaking-prompt, .lookup-text > .nl-text";
+  const NO_ISOLATE = "script, style, textarea, input, select, option, rt, bdi[dir]";
+
+  function isRtlLang() { const c = Lang.cfg(); return !!(c && c.rtl); }
+
+  // Does this element's text start (first letter) in Arabic script?
+  function startsRtl(e) {
+    const m = /\p{L}/u.exec(e.textContent || "");
+    return !!m && HAS_ARABIC.test(m[0]);
   }
-  new MutationObserver((muts) => {
-    for (const m of muts) m.addedNodes.forEach((n) => autoDir(n));
-  }).observe(document.body, { childList: true, subtree: true });
+
+  // Wrap each Arabic-script run in a text node in <bdi dir="rtl" lang="..">.
+  function isolateText(n) {
+    const text = n.nodeValue;
+    if (!HAS_ARABIC.test(text)) return;
+    const p = n.parentElement;
+    if (!p || p.closest(NO_ISOLATE)) return;
+    const d = p.closest("[dir]");
+    if (d && d.getAttribute("dir") === "rtl") return;     // already a Kurdish block
+    const code = String(Lang.cfg().langCode || "ckb").toLowerCase().split("-")[0];
+    const frag = document.createDocumentFragment();
+    let last = 0;
+    for (const m of text.matchAll(RTL_RUN)) {
+      if (!HAS_ARABIC.test(m[0])) continue;
+      if (m.index > last) frag.appendChild(document.createTextNode(text.slice(last, m.index)));
+      const b = document.createElement("bdi");
+      b.setAttribute("dir", "rtl");
+      b.setAttribute("lang", code);
+      b.textContent = m[0];
+      frag.appendChild(b);
+      last = m.index + m[0].length;
+    }
+    if (last === 0) return;
+    if (last < text.length) frag.appendChild(document.createTextNode(text.slice(last)));
+    n.replaceWith(frag);
+  }
+
+  function rtlFix(root) {
+    if (!root || !isRtlLang()) return;
+    if (root.nodeType === 3) root = root.parentElement;
+    if (!root || root.nodeType !== 1) return;
+    const tag = (e) => { if (!e.hasAttribute("dir")) e.setAttribute("dir", "rtl"); };
+    const all = (sel, fn) => { if (root.matches(sel)) fn(root); root.querySelectorAll(sel).forEach(fn); };
+    all(RTL_ALWAYS, tag);
+    all(RTL_IF_ARABIC, (e) => { if (!e.hasAttribute("dir") && startsRtl(e)) tag(e); });
+    all("input[type=text], textarea", (e) => { if (!e.hasAttribute("dir")) e.setAttribute("dir", "auto"); });
+    if (!HAS_ARABIC.test(root.textContent || "")) return;
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode: (n) => HAS_ARABIC.test(n.nodeValue) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT,
+    });
+    const nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    nodes.forEach(isolateText);
+  }
+
+  // For code that assembles English HTML containing Kurdish: wraps Kurdish runs
+  // in <bdi>. Pass already-escaped HTML; tags are left alone.
+  function isolateRtl(html) {
+    if (!isRtlLang() || !HAS_ARABIC.test(html)) return html;
+    const code = String(Lang.cfg().langCode || "ckb").toLowerCase().split("-")[0];
+    return String(html).split(/(<[^>]*>)/).map((part) => part.startsWith("<") ? part
+      : part.replace(RTL_RUN, (run) => HAS_ARABIC.test(run) ? `<bdi dir="rtl" lang="${code}">${run}</bdi>` : run)).join("");
+  }
 
   // Typed answers: one comparison for every exercise. Accepts the target script
   // and — for script languages — a Latin spelling of it (Lang.cfg().answerMatches).
@@ -165,6 +224,11 @@ const App = (function () {
 
   function persist() { Store.save(state); }
 
+  // Context handed to the Plan feature (js/goals.js).
+  function goalsCtx() {
+    return { state, persist, navigate, toast, todayISO, startSession: () => startSession() };
+  }
+
   function toast(msg) {
     let host = $(".toast-host");
     if (!host) {
@@ -174,6 +238,67 @@ const App = (function () {
     const t = el(`<div class="toast">${escape(msg)}</div>`);
     host.appendChild(t);
     setTimeout(() => t.remove(), 2400);
+  }
+
+  /* ---------- small in-page dialog (never window.confirm) ----------
+   * Focus goes to the safe choice; Escape cancels; the page behind is inert. */
+  function confirmDialog({ title, body = "", confirmLabel = "Confirm", cancelLabel = "Keep going", onConfirm }) {
+    const opener = document.activeElement;
+    const back = el(`
+      <div class="confirm-backdrop">
+        <div class="confirm-box" role="alertdialog" aria-modal="true" aria-labelledby="confirm-t" aria-describedby="confirm-b">
+          <h2 id="confirm-t">${escape(title)}</h2>
+          <p id="confirm-b" class="muted">${escape(body)}</p>
+          <div class="confirm-actions">
+            <button class="btn primary lg" type="button" data-act="cancel">${escape(cancelLabel)}</button>
+            <button class="btn lg danger" type="button" data-act="ok">${escape(confirmLabel)}</button>
+          </div>
+        </div>
+      </div>`);
+    const parts = ["header.app-header", "#app", "nav.bottom-nav"].map((q) => document.querySelector(q)).filter(Boolean);
+    function close(ok) {
+      document.removeEventListener("keydown", onKey, true);
+      parts.forEach((x) => x.removeAttribute("inert"));
+      back.remove();
+      if (opener && opener.focus && document.contains(opener)) opener.focus();
+      if (ok && onConfirm) onConfirm();
+    }
+    function onKey(e) {
+      if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); close(false); return; }
+      if (e.key !== "Tab") return;
+      const f = Array.from(back.querySelectorAll("button"));
+      const first = f[0], last = f[f.length - 1];
+      if (!back.contains(document.activeElement)) { e.preventDefault(); first.focus(); }
+      else if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    }
+    back.querySelector('[data-act="cancel"]').addEventListener("click", () => close(false));
+    back.querySelector('[data-act="ok"]').addEventListener("click", () => close(true));
+    back.addEventListener("mousedown", (e) => { if (e.target === back) close(false); });
+    document.body.appendChild(back);
+    parts.forEach((x) => x.setAttribute("inert", ""));
+    document.addEventListener("keydown", onKey, true);
+    back.querySelector('[data-act="cancel"]').focus();
+  }
+
+  // Ending a session/drill: confirm only if something was already answered.
+  function confirmEnd(answered, noun, body, doEnd) {
+    if (answered < 1) { doEnd(); return; }
+    confirmDialog({ title: `End this ${noun}?`, body, confirmLabel: `End ${noun}`, onConfirm: doEnd });
+  }
+
+  // Top bar of a session or drill: a clear End button and a labelled progress bar.
+  function focusBar(idx, total, quitId, noun) {
+    const n = Math.min(idx + 1, total);
+    const label = `${noun === "drill" ? "Question" : "Card"} ${n} of ${total}`;
+    return `
+      <div class="session-bar">
+        <button class="end-btn" id="${quitId}" type="button" aria-label="End ${noun}"><span aria-hidden="true">✕</span><span>End ${noun}</span></button>
+        <div class="session-progress">
+          <span class="session-count">${label}</span>
+          <div class="progress-track" role="progressbar" aria-label="${noun === "drill" ? "Drill" : "Session"} progress" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="${idx}" aria-valuetext="${label}"><div class="progress-fill" style="width:${(idx / total) * 100}%"></div></div>
+        </div>
+      </div>`;
   }
 
   /* ---------- learning-science tips (rotated daily, per language) ---------- */
@@ -200,8 +325,11 @@ const App = (function () {
   function startSession(opts = {}) {
     const size = opts.size || state.settings.sessionSize;
     const ids = allCardIds();
-    const batch = SRS.pickBatch(ids, state.cards, { size });
+    const goalOpts = window.Goals ? Goals.sessionOpts(state, todayISO()) : null;   // new-card quota from an active Words goal
+    const capped = goalOpts && !opts.extra;
+    const batch = SRS.pickBatch(ids, state.cards, goalOpts ? { size, newLimit: capped ? goalOpts.newLimit : undefined, preferIds: goalOpts.preferIds } : { size });
     if (batch.length === 0) {
+      if (capped && goalOpts.quotaReached) { toast("You've done today's new words. Tap “Study a little more” on Home for extra."); navigate("home"); return; }
       toast("All caught up. Try a drill or read something while you wait.");
       navigate("home");
       return;
@@ -281,6 +409,7 @@ const App = (function () {
     if (!currentSession) return;
     const id = currentSession.queue[currentSession.index];
     const prev = state.cards[id];
+    if (window.Goals) Goals.onReview(state, id, prev, todayISO());   // counts first-time cards for the daily new-word quota
     const next = SRS.review(prev, quality);
     state.cards[id] = next;
     currentSession.reviewed += 1;
@@ -326,6 +455,7 @@ const App = (function () {
   /* ---------- routing ---------- */
   let coachSig = null;       // last (view, object, index) the coaching counter ran for
   function navigate(view) {
+    if (view === "help" && currentView !== "help") nav.helpBack = currentView;   // for the Back button on Help
     currentView = view;
     coachSig = null;
     // Sync top tabs
@@ -353,13 +483,27 @@ const App = (function () {
       case "passage": viewEl = renderPassage(nav.passageId); break;
       case "help":    viewEl = Onboarding.renderHelp(); break;
       case "pronunciation": viewEl = renderPronunciation(); break;
+      case "plan":    viewEl = Goals.renderPlan(goalsCtx()); break;
       default:       viewEl = renderHome();
     }
     if (viewEl) {
       mountCoach(viewEl);
       main.appendChild(viewEl);
     }
+    // Focus mode: no bottom nav while a session or drill is running.
+    document.body.classList.toggle("is-focus",
+      (currentView === "study" && !!currentSession) || (currentView === "drill" && !!currentDrill));
+    syncHeaderHeight();
   }
+
+  // Sticky bars (Browse jump chips) sit just under the header: expose its height.
+  function reducedMotion() { return !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches); }
+
+  function syncHeaderHeight() {
+    const h = document.querySelector(".app-header");
+    if (h) document.documentElement.style.setProperty("--header-h", h.offsetHeight + "px");
+  }
+  window.addEventListener("resize", syncHeaderHeight);
 
   /* ---------- in-context coaching (see js/onboarding.js) ---------- */
   function coachKey() {
@@ -388,7 +532,9 @@ const App = (function () {
     if (!coach) return;
     const anchor = viewEl.querySelector(".flashcard-wrap, .drill-card");
     const back = viewEl.querySelector("#back");
-    if (anchor) anchor.parentNode.insertBefore(coach, anchor);
+    const bar = viewEl.querySelector(".session-bar");
+    if (bar) bar.after(coach);                 // focus bar first, then the tip, then the card
+    else if (anchor) anchor.parentNode.insertBefore(coach, anchor);
     else if (back) back.after(coach);
     else viewEl.prepend(coach);
   }
@@ -483,7 +629,7 @@ const App = (function () {
     const heroEl = first ? null : el(`
       <section class="hero home-hero">
         <div class="row spread" style="margin-bottom: 14px;">
-          <span class="streak-badge">🔥 ${state.streak} day streak</span>
+          ${Goals.consistencyBadgeHtml(state, today)}
           <span class="chip">${todayLabel()}</span>
         </div>
         <h1><span class="greeting-nl">${greeting.target}!</span></h1>
@@ -499,12 +645,20 @@ const App = (function () {
       const st = state.cards[id];
       return st && st.reps > 0 && st.due <= nowMs;
     }).length;
-    const mins = Math.max(2, Math.round(state.settings.sessionSize * 0.6));   // ~35 s a card
-    const caughtUp = reviewDue === 0 && !!todaySession;
+    // An active Words goal caps today's new cards; the label must match what the session will hold.
+    const goalCap = window.Goals ? Goals.sessionOpts(state, todayISO()) : null;
+    const size = state.settings.sessionSize;
+    const newToday = goalCap ? Math.min(goalCap.newLimit, size) : size;
+    const planned = Math.min(size, reviewDue + newToday);
+    const mins = Math.max(2, Math.round(Math.max(planned, 1) * 0.6));   // ~35 s a card
+    const caughtUp = reviewDue === 0 && (!!todaySession || (goalCap && goalCap.quotaReached));
     const dueLabel = caughtUp ? "Study a little more" : "Start today's session";
+    const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
     const dueSub = reviewDue === 0
-      ? (caughtUp ? `About ${mins} min · nothing is waiting, so these are new cards` : `About ${mins} min · ${state.settings.sessionSize} new cards to meet`)
-      : `About ${mins} min · ${reviewDue} card${reviewDue === 1 ? " is" : "s are"} ready to review`;
+      ? (caughtUp
+          ? (goalCap && goalCap.quotaReached ? `Today's new words are done · extra practice is optional` : `About ${mins} min · nothing is waiting, so these are new cards`)
+          : `About ${mins} min · ${plural(newToday, "new card")} to meet`)
+      : `About ${mins} min · ${reviewDue} card${reviewDue === 1 ? " is" : "s are"} ready to review${goalCap && newToday > 0 ? ` + ${plural(Math.min(newToday, Math.max(0, size - reviewDue)), "new word")}` : ""}`;
     const cta = el(`
       <button class="session-cta home-cta" id="cta-session">
         <div>
@@ -514,17 +668,22 @@ const App = (function () {
         <span class="arrow" aria-hidden="true">→</span>
       </button>
     `);
-    cta.addEventListener("click", () => startSession());
+    // Past today's goal quota the learner chose to keep going: let new cards through.
+    cta.addEventListener("click", () => startSession(caughtUp && goalCap && goalCap.quotaReached ? { extra: true } : {}));
     if (!first) wrap.appendChild(cta);
+    if (!first) wrap.appendChild(Goals.homeCard(goalsCtx()));
 
     // Caught up for today: say what to do instead of leaving a dead end.
     if (!first && reviewDue === 0 && todaySession) {
-      wrap.appendChild(el(`
+      const done = el(`
         <article class="card home-done">
           <span class="eyebrow">All done for today</span>
-          <p style="margin:6px 0 0">Nothing is due, so you're caught up. Want a bit more? Try one quick drill below or read a short passage. Otherwise, come back tomorrow and your next cards will be waiting.</p>
+          <p style="margin:6px 0 10px">Nothing is due, so you're caught up. Want a bit more? Learn a few new words, try a quick drill below or read a short passage. Otherwise, come back tomorrow and your next cards will be waiting.</p>
+          <button class="btn" id="more-new" type="button">Learn 5 new words</button>
         </article>
-      `));
+      `);
+      $("#more-new", done).addEventListener("click", () => startNewWords(5));
+      wrap.appendChild(done);
     }
 
     // Quick stats
@@ -647,39 +806,48 @@ const App = (function () {
     wrap.appendChild(drillCard);
 
     // Extensive reading (Liu & Zhang 2018: small-medium effect across all
-    // language domains). 6 short Dutch passages, hand-tuned to ~95-98%
-    // comprehensible relative to the existing vocab.
+    // language domains). Home offers just the next unread passage; the full
+    // list lives in Browse → Reading.
     if ((window.PASSAGES || []).length) {
+      const nextP = nextPassage();
       const readCard = el(`
         <article class="card home-read">
           <span class="eyebrow">Read</span>
-          <h3 style="margin: 6px 0 4px">Short ${Lang.cfg().name} passages</h3>
-          <p class="muted" style="margin: 0 0 12px; font-size: 0.8125rem">Tap any word for the translation. Aim for the gist, not every word.</p>
-          <div class="passage-list" id="passage-list"></div>
+          <h3 style="margin: 6px 0 4px">Read a short passage</h3>
+          <p class="muted" style="margin: 0 0 12px">Tap any word for its translation. Aim for the gist, not every word.</p>
+          <button class="passage-item" id="read-next" type="button">
+            <span class="passage-level">${escape(nextP.level)}</span>
+            <div class="passage-meta">
+              <div class="passage-title">${escape(nextP.title)}</div>
+              <div class="passage-blurb">${escape(nextP.blurb)}</div>
+            </div>
+            <span class="li-arrow" aria-hidden="true">→</span>
+          </button>
+          <button class="btn ghost" id="read-all" type="button" style="margin-top:10px">All ${window.PASSAGES.length} passages ${arrowFwd()}</button>
         </article>
       `);
-      const list = $("#passage-list", readCard);
-      window.PASSAGES.forEach((p) => {
-        const item = el(`
-          <button class="passage-item" data-pid="${p.id}">
-            <span class="passage-level">${escape(p.level)}</span>
-            <div class="passage-meta">
-              <div class="passage-title">${escape(p.title)}</div>
-              <div class="passage-blurb">${escape(p.blurb)}</div>
-            </div>
-            <span class="li-arrow">→</span>
-          </button>
-        `);
-        item.addEventListener("click", () => {
-          nav.passageId = p.id;
-          navigate("passage");
-        });
-        list.appendChild(item);
-      });
+      $("#read-next", readCard).addEventListener("click", () => openPassage(nextP.id));
+      $("#read-all", readCard).addEventListener("click", () => { nav.browseJump = "reading"; navigate("browse"); });
       wrap.appendChild(readCard);
     }
 
     return wrap;
+  }
+
+  // The first passage not read yet; once all are read, the one read longest ago.
+  function nextPassage() {
+    const list = window.PASSAGES || [];
+    const read = state.passagesRead || {};
+    const unread = list.find((p) => !read[p.id]);
+    if (unread) return unread;
+    return list.slice().sort((a, b) => (read[a.id] || 0) - (read[b.id] || 0))[0];
+  }
+
+  // Remember where the reader was opened from, so Back returns there.
+  function openPassage(id) {
+    nav.passageId = id;
+    nav.passageBack = currentView === "home" ? "home" : "browse";
+    navigate("passage");
   }
 
   function targetGreeting() {
@@ -730,13 +898,7 @@ const App = (function () {
     const idx = currentSession.index;
     const pct = (idx / total) * 100;
 
-    wrap.appendChild(el(`
-      <div class="row spread" style="margin-bottom: 4px">
-        <span class="muted" style="font-size:0.8125rem">${idx} / ${total}</span>
-        <button class="btn ghost" id="quit-session" style="font-size:0.8125rem; padding:4px 10px">Quit</button>
-      </div>
-    `));
-    wrap.appendChild(el(`<div class="progress-track" style="margin-bottom: 16px"><div class="progress-fill" style="width:${pct}%"></div></div>`));
+    wrap.appendChild(el(focusBar(idx, total, "quit-session", "session")));
 
     const id = currentSession.queue[idx];
     const mode = currentSession.modes[idx];
@@ -747,10 +909,10 @@ const App = (function () {
 
     const quitBtn = $("#quit-session", wrap);
     if (quitBtn) quitBtn.addEventListener("click", () => {
-      if (confirm("Quit this session? Progress so far is saved.")) {
+      confirmEnd(currentSession.reviewed, "session", "Cards you have already rated are saved.", () => {
         currentSession = null;
         navigate("home");
-      }
+      });
     });
 
     return wrap;
@@ -1201,13 +1363,17 @@ const App = (function () {
     if (!reveal) return;
     const auto = opts.auto;
     const pad = el(`
-      <div class="rating-row" id="rating-pad">
-        <button class="rate-btn" data-q="0">Again<small>< 1 day</small></button>
-        <button class="rate-btn" data-q="3">Hard<small>1–2 days</small></button>
-        <button class="rate-btn" data-q="4">Good<small>days+</small></button>
-        <button class="rate-btn" data-q="5">Easy<small>weeks</small></button>
+      <div class="rating-bar">
+        <div class="rating-row" id="rating-pad">
+          <button class="rate-btn" data-q="0">Again<small>&lt; 1 day</small></button>
+          <button class="rate-btn" data-q="3">Hard<small>1–2 days</small></button>
+          <button class="rate-btn" data-q="4">Good<small>days+</small></button>
+          <button class="rate-btn" data-q="5">Easy<small>weeks</small></button>
+        </div>
+        <p class="kbd-hint">Keys: <kbd>1</kbd> Again · <kbd>2</kbd> Hard · <kbd>3</kbd> Good · <kbd>4</kbd> Easy</p>
       </div>
     `);
+    $$(".reveal-hint", reveal).forEach((h) => h.remove());   // "tap to reveal" is done
     const hint = Onboarding.ratingHint();
     if (hint) reveal.appendChild(el(hint));
     reveal.appendChild(pad);
@@ -1217,14 +1383,14 @@ const App = (function () {
     if (auto != null) {
       // Pre-highlight the suggested rating, but let the user override.
       const suggested = pad.querySelector(`.rate-btn[data-q="${auto}"]`);
-      if (suggested) suggested.style.borderColor = "var(--primary)";
+      if (suggested) { suggested.classList.add("is-suggested"); suggested.style.borderColor = "var(--primary)"; }
     }
   }
 
   function showHintBeforeReveal(wrap, msg) {
     const reveal = $("#reveal-area", wrap);
     if (!reveal) return;
-    reveal.innerHTML = `<p class="muted" style="text-align:center; margin-top:18px; font-size:0.875rem">${escape(msg)}</p>`;
+    reveal.innerHTML = `<p class="muted reveal-hint">${escape(msg)}<span class="kbd-hint-inline"> (or press <kbd>Space</kbd>)</span></p>`;
   }
 
   /* ===== card content blocks ===== */
@@ -1283,10 +1449,10 @@ const App = (function () {
       return Promise.resolve();
     } catch (e) { return Promise.reject(e); }
   }
-  // Directional arrows that mirror automatically under <html dir="rtl">.
-  // Use these instead of a bare "→"/"←" glyph so RTL languages flip correctly.
-  function arrowFwd()  { return `<span class="icon-arrow">→</span>`; }      // → (LTR) / ← (RTL)
-  function arrowBack() { return `<span class="icon-arrow-back">→</span>`; } // ← (LTR) / → (RTL)
+  // Arrows. The interface is always left-to-right (only Kurdish content is
+  // RTL), so these are plain glyphs: forward points right, back points left.
+  function arrowFwd()  { return `<span class="icon-arrow" aria-hidden="true">→</span>`; }
+  function arrowBack() { return `<span class="icon-arrow-back" aria-hidden="true">←</span>`; }
 
   // Delegated handler that wires every [data-speak-nl] / [data-speak-en] button
   // inside `root`. Buttons stop event propagation so they don't flip the card.
@@ -1329,11 +1495,7 @@ const App = (function () {
 
     const wrap = el(`
       <div class="view view-drill">
-        <div class="row spread" style="margin-bottom: 4px">
-          <span class="muted" style="font-size:0.8125rem">${d.idx + 1} / ${d.total}</span>
-          <button class="btn ghost" id="quit-drill" style="font-size:0.8125rem; padding:4px 10px">Quit</button>
-        </div>
-        <div class="progress-track" style="margin-bottom: 16px"><div class="progress-fill" style="width:${pct}%"></div></div>
+        ${focusBar(d.idx, d.total, "quit-drill", "drill")}
         <div class="card lg drill-card">
           <span class="eyebrow">${drillLabel(d.kind)}</span>
           <div class="drill-prompt">${q.prompt}</div>
@@ -1396,7 +1558,7 @@ const App = (function () {
       if (e.key === "Enter") { e.preventDefault(); submit(false); }
     });
     $("#quit-drill", wrap).addEventListener("click", () => {
-      if (confirm("Quit this drill?")) { currentDrill = null; navigate("home"); }
+      endDrill();
     });
     return wrap;
   }
@@ -1412,6 +1574,11 @@ const App = (function () {
       shadow: "Shadowing · repeat after the voice",
       minpair: "Minimal pairs · which did you hear?",
     })[kind] || kind;
+  }
+
+  function endDrill() {
+    const d = currentDrill;
+    confirmEnd(d ? d.idx : 0, "drill", "Your score for this drill won't be kept.", () => { currentDrill = null; navigate("home"); });
   }
 
   function finishDrill() {
@@ -1527,11 +1694,7 @@ const App = (function () {
 
     const wrap = el(`
       <div class="view view-drill">
-        <div class="row spread" style="margin-bottom: 4px">
-          <span class="muted" style="font-size:0.8125rem">${d.idx + 1} / ${d.total}</span>
-          <button class="btn ghost" id="quit-drill" style="font-size:0.8125rem; padding:4px 10px">Quit</button>
-        </div>
-        <div class="progress-track" style="margin-bottom: 16px"><div class="progress-fill" style="width:${pct}%"></div></div>
+        ${focusBar(d.idx, d.total, "quit-drill", "drill")}
         <div class="card lg drill-card">
           <span class="eyebrow">Speaking · say it in ${Lang.cfg().name}</span>
           <div class="speaking-prompt">${escape(q.prompt)}</div>
@@ -1673,7 +1836,7 @@ const App = (function () {
     });
     $("#quit-drill", wrap).addEventListener("click", () => {
       if (recording && stream) stream.getTracks().forEach((t) => t.stop());
-      if (confirm("Quit this drill?")) { currentDrill = null; navigate("home"); }
+      endDrill();
     });
 
     // Probe: warn if MLX server isn't running
@@ -1708,11 +1871,7 @@ const App = (function () {
     const pct = (d.idx / d.total) * 100;
     const wrap = el(`
       <div class="view view-drill">
-        <div class="row spread" style="margin-bottom: 4px">
-          <span class="muted" style="font-size:0.8125rem">${d.idx + 1} / ${d.total}</span>
-          <button class="btn ghost" id="quit-drill" style="font-size:0.8125rem; padding:4px 10px">Quit</button>
-        </div>
-        <div class="progress-track" style="margin-bottom: 16px"><div class="progress-fill" style="width:${pct}%"></div></div>
+        ${focusBar(d.idx, d.total, "quit-drill", "drill")}
         <div class="card lg drill-card">
           <span class="eyebrow">Shadowing · listen, then echo it back</span>
           <div class="speaking-prompt nl-text">${escape(q.answer)}</div>
@@ -1832,7 +1991,7 @@ const App = (function () {
     });
     $("#quit-drill", wrap).addEventListener("click", () => {
       if (stream) stream.getTracks().forEach((t) => t.stop());
-      if (confirm("Quit this drill?")) { currentDrill = null; navigate("home"); }
+      endDrill();
     });
     Speech.probeMlx().then((ok) => {
       if (!ok) status.textContent = "Speech server not running — start with ./start-mlx.sh to score shadowing.";
@@ -1856,11 +2015,7 @@ const App = (function () {
 
     const wrap = el(`
       <div class="view view-drill">
-        <div class="row spread" style="margin-bottom: 4px">
-          <span class="muted" style="font-size:0.8125rem">${d.idx + 1} / ${d.total}</span>
-          <button class="btn ghost" id="quit-drill" style="font-size:0.8125rem; padding:4px 10px">Quit</button>
-        </div>
-        <div class="progress-track" style="margin-bottom: 16px"><div class="progress-fill" style="width:${pct}%"></div></div>
+        ${focusBar(d.idx, d.total, "quit-drill", "drill")}
         <div class="card lg drill-card">
           <span class="eyebrow">Minimal pairs · which did you hear?</span>
           <div class="muted" style="text-align:center; font-size: 0.75rem;">contrast: <strong>${escape(q.hint)}</strong></div>
@@ -1916,7 +2071,7 @@ const App = (function () {
       });
     });
     $("#quit-drill", wrap).addEventListener("click", () => {
-      if (confirm("Quit this drill?")) { currentDrill = null; navigate("home"); }
+      endDrill();
     });
     return wrap;
   }
@@ -1934,7 +2089,7 @@ const App = (function () {
         <div class="hero" style="text-align:center">
           <div style="font-size:3rem; margin-bottom:8px;">🎉</div>
           <h1 style="margin-bottom:4px;">${Lang.cfg().doneHeading}</h1>
-          <p class="muted">You finished the session. Streak: ${state.streak} day${state.streak === 1 ? "" : "s"}.</p>
+          <p class="muted">You finished the session. ${Goals.consistencyLine(state, todayISO())}</p>
         </div>
         <div class="grid-2">
           <div class="stat">
@@ -1973,7 +2128,7 @@ const App = (function () {
     `);
     $("#next-drill", wrap).addEventListener("click", () => { currentSession = null; startDrill("chunk"); });
     const nr = $("#next-read", wrap);
-    if (nr) nr.addEventListener("click", () => { currentSession = null; nav.passageId = window.PASSAGES[0].id; navigate("passage"); });
+    if (nr) nr.addEventListener("click", () => { currentSession = null; nav.passageBack = "home"; nav.passageId = nextPassage().id; navigate("passage"); });
     $("#back-home", wrap).addEventListener("click", () => { currentSession = null; navigate("home"); });
     $("#another", wrap).addEventListener("click", () => { currentSession = null; startSession(); });
     const sb = $("#summary-backup", wrap);
@@ -1987,32 +2142,61 @@ const App = (function () {
   }
 
   /* ============ BROWSE ============ */
+  const BROWSE_SHOW = 6;   // long lists show this many, then "Show all N"
   function renderBrowse() {
+    const hasPron = !!pronGuide();
+    const read = state.passagesRead || {};
+    const sections = [
+      hasPron ? ["sounds", "Sounds"] : null,
+      ["words", "Words"], ["sentences", "Sentences"], ["dialogues", "Dialogues"], ["grammar", "Grammar"],
+      (window.PASSAGES || []).length ? ["reading", "Reading"] : null,
+    ].filter(Boolean);
+
     const wrap = el(`
       <div class="view view-browse">
-        <h1 style="margin-bottom:0">Browse</h1>
-        <p class="muted" style="margin-top:0">Pick a category to learn or revisit.</p>
+        <div>
+          <h1 style="margin-bottom:0">Browse</h1>
+          <p class="muted" style="margin:4px 0 0">Pick a category to learn or revisit.</p>
+        </div>
+        <nav class="jump-bar" aria-label="Jump to section">
+          ${sections.map(([id, label]) => `<button type="button" class="jump-chip" data-jump="${id}">${label}</button>`).join("")}
+        </nav>
 
-        <div class="section-header browse-pron-head"><h2>Pronunciation</h2></div>
-        <div class="stack-sm browse-pron" id="browse-pron"></div>
+        ${hasPron ? `<section class="browse-sec" id="sec-sounds" data-sec="sounds" aria-labelledby="h-sounds">
+          <div class="section-header"><h2 id="h-sounds">Sounds</h2></div>
+          <div class="stack-sm browse-pron" id="browse-pron"></div>
+        </section>` : ""}
 
-        <div class="section-header"><h2>Vocabulary themes</h2></div>
-        <div class="grid-2 browse-vocab" id="theme-grid"></div>
+        <section class="browse-sec" id="sec-words" data-sec="words" aria-labelledby="h-words">
+          <div class="section-header"><h2 id="h-words">Words</h2><span class="muted sec-count">${VOCAB_THEMES.length} themes</span></div>
+          <div class="grid-2 browse-vocab" id="theme-grid"></div>
+        </section>
 
-        <div class="section-header"><h2>Sentence patterns</h2></div>
-        <div class="stack-sm browse-list" id="sentence-themes"></div>
+        <section class="browse-sec" id="sec-sentences" data-sec="sentences" aria-labelledby="h-sentences">
+          <div class="section-header"><h2 id="h-sentences">Sentence patterns</h2><span class="muted sec-count">${SENTENCE_THEMES.length}</span></div>
+          <div class="stack-sm browse-list" id="sentence-themes"></div>
+        </section>
 
-        <div class="section-header"><h2>Scenario dialogues</h2></div>
-        <div class="stack-sm browse-list" id="scenario-list"></div>
+        <section class="browse-sec" id="sec-dialogues" data-sec="dialogues" aria-labelledby="h-dialogues">
+          <div class="section-header"><h2 id="h-dialogues">Scenario dialogues</h2><span class="muted sec-count">${SCENARIOS.length}</span></div>
+          <div class="stack-sm browse-list" id="scenario-list"></div>
+        </section>
 
-        <div class="section-header"><h2>Grammar capsules</h2></div>
-        <div class="stack-sm browse-list" id="grammar-list"></div>
+        <section class="browse-sec" id="sec-grammar" data-sec="grammar" aria-labelledby="h-grammar">
+          <div class="section-header"><h2 id="h-grammar">Grammar capsules</h2><span class="muted sec-count">${GRAMMAR.length}</span></div>
+          <div class="stack-sm browse-list" id="grammar-list"></div>
+        </section>
+
+        ${(window.PASSAGES || []).length ? `<section class="browse-sec" id="sec-reading" data-sec="reading" aria-labelledby="h-reading">
+          <div class="section-header"><h2 id="h-reading">Reading</h2><span class="muted sec-count">${window.PASSAGES.length} passages</span></div>
+          <p class="muted" style="margin:-4px 0 12px">Tap any word for its translation. Aim for the gist, not every word.</p>
+          <div class="stack-sm browse-list passage-list" id="passage-list"></div>
+        </section>` : ""}
       </div>
     `);
 
     const pronItem = pronLinkItem();
-    if (pronItem) $("#browse-pron", wrap).appendChild(pronItem);
-    else { $(".browse-pron-head", wrap).remove(); $("#browse-pron", wrap).remove(); }
+    if (pronItem && hasPron) $("#browse-pron", wrap).appendChild(pronItem);
 
     // Themes
     const themeGrid = $("#theme-grid", wrap);
@@ -2022,12 +2206,12 @@ const App = (function () {
       const learned = counts.young + counts.mature;
       const btn = el(`
         <button class="list-item">
-          <span style="font-size:1.5rem">${t.icon}</span>
+          <span class="li-icon" aria-hidden="true">${t.icon}</span>
           <div class="li-main">
             <div class="li-title">${escape(t.name)}</div>
             <div class="li-sub">${learned}/${items.length} learned</div>
           </div>
-          <span class="li-arrow">→</span>
+          <span class="li-arrow" aria-hidden="true">→</span>
         </button>
       `);
       btn.addEventListener("click", () => {
@@ -2040,15 +2224,14 @@ const App = (function () {
     // Sentence themes
     const sentList = $("#sentence-themes", wrap);
     SENTENCE_THEMES.forEach((t) => {
-      const items = SENTENCES.filter((s) => s.theme === t.id);
       const btn = el(`
         <button class="list-item">
-          <span style="font-size:1.375rem">${t.icon}</span>
+          <span class="li-icon" aria-hidden="true">${t.icon}</span>
           <div class="li-main">
             <div class="li-title">${escape(t.name)}</div>
             <div class="li-sub">${escape(t.blurb)}</div>
           </div>
-          <span class="li-arrow">→</span>
+          <span class="li-arrow" aria-hidden="true">→</span>
         </button>
       `);
       btn.addEventListener("click", () => {
@@ -2063,12 +2246,12 @@ const App = (function () {
     SCENARIOS.forEach((s) => {
       const btn = el(`
         <button class="list-item">
-          <span style="font-size:1.375rem">${s.icon || "📍"}</span>
+          <span class="li-icon" aria-hidden="true">${s.icon || "📍"}</span>
           <div class="li-main">
             <div class="li-title">${escape(s.title)}</div>
             <div class="li-sub">${s.dialogue.length} lines</div>
           </div>
-          <span class="li-arrow">→</span>
+          <span class="li-arrow" aria-hidden="true">→</span>
         </button>
       `);
       btn.addEventListener("click", () => {
@@ -2087,7 +2270,7 @@ const App = (function () {
             <div class="li-title">${escape(g.title)}</div>
             <div class="li-sub">${escape(g.blurb)}</div>
           </div>
-          <span class="li-arrow">→</span>
+          <span class="li-arrow" aria-hidden="true">→</span>
         </button>
       `);
       btn.addEventListener("click", () => {
@@ -2096,6 +2279,72 @@ const App = (function () {
       });
       grList.appendChild(btn);
     });
+
+    // Reading (moved here from Home)
+    const pList = $("#passage-list", wrap);
+    if (pList) (window.PASSAGES || []).forEach((p) => {
+      const item = el(`
+        <button class="passage-item" data-pid="${p.id}" type="button">
+          <span class="passage-level">${escape(p.level)}</span>
+          <div class="passage-meta">
+            <div class="passage-title">${escape(p.title)}</div>
+            <div class="passage-blurb">${escape(p.blurb)}</div>
+          </div>
+          ${read[p.id] ? `<span class="chip success">Read</span>` : ""}
+          <span class="li-arrow" aria-hidden="true">→</span>
+        </button>
+      `);
+      item.addEventListener("click", () => openPassage(p.id));
+      pList.appendChild(item);
+    });
+
+    // Long lists: first few, then "Show all N" (state kept for the session).
+    nav.browseOpen = nav.browseOpen || {};
+    [["sentences", "#sentence-themes"], ["dialogues", "#scenario-list"], ["grammar", "#grammar-list"], ["reading", "#passage-list"]].forEach(([key, sel]) => {
+      const list = $(sel, wrap);
+      if (!list) return;
+      const items = Array.from(list.children);
+      if (items.length <= BROWSE_SHOW + 1) return;
+      if (!list.id) list.id = "list-" + key;
+      const btn = el(`<button type="button" class="btn show-more" aria-expanded="false" aria-controls="${list.id}"></button>`);
+      const paint = () => {
+        const open = !!nav.browseOpen[key];
+        items.forEach((it, i) => { it.hidden = !open && i >= BROWSE_SHOW; });
+        btn.setAttribute("aria-expanded", open ? "true" : "false");
+        btn.textContent = open ? "Show fewer" : `Show all ${items.length}`;
+      };
+      btn.addEventListener("click", () => { nav.browseOpen[key] = !nav.browseOpen[key]; paint(); });
+      paint();
+      list.after(btn);
+    });
+
+    // Jump bar: chips scroll to a section; the chip of the section being read stays highlighted.
+    const chips = $$(".jump-chip", wrap);
+    const reduce = reducedMotion();
+    const setActive = (id) => chips.forEach((c) => {
+      const on = c.dataset.jump === id;
+      c.classList.toggle("is-active", on);
+      if (on) { c.setAttribute("aria-current", "true"); const bar = c.parentElement; if (bar.scrollWidth > bar.clientWidth) bar.scrollTo({ left: c.offsetLeft - 16, behavior: "auto" }); }
+      else c.removeAttribute("aria-current");
+    });
+    const jumpTo = (id, smooth) => {
+      const t = $(`#sec-${id}`, wrap);
+      if (t) t.scrollIntoView({ behavior: smooth && !reduce ? "smooth" : "auto", block: "start" });
+    };
+    chips.forEach((c) => c.addEventListener("click", () => { setActive(c.dataset.jump); jumpTo(c.dataset.jump, true); }));
+    if (chips.length) setActive(chips[0].dataset.jump);
+    if ("IntersectionObserver" in window) {
+      const io = new IntersectionObserver((entries) => {
+        if (!wrap.isConnected) { io.disconnect(); return; }
+        entries.forEach((en) => { if (en.isIntersecting) setActive(en.target.dataset.sec); });
+      }, { rootMargin: "-25% 0px -65% 0px" });
+      $$("[data-sec]", wrap).forEach((s) => io.observe(s));
+    }
+    if (nav.browseJump) {
+      const id = nav.browseJump;
+      nav.browseJump = null;
+      setTimeout(() => { setActive(id); jumpTo(id, false); }, 0);
+    }
 
     return wrap;
   }
@@ -2110,12 +2359,12 @@ const App = (function () {
       if (!t || items.length === 0) { navigate("browse"); return el(`<div></div>`); }
       const wrap = el(`
         <div class="view stack">
-          <button class="btn ghost" id="back" style="align-self:flex-start; padding:6px 12px; font-size:0.8125rem">${arrowBack()} Back</button>
+          <button class="btn ghost back-btn" id="back" type="button">${arrowBack()} Back</button>
           <h1>${t.icon} ${escape(t.name)}</h1>
           <p class="muted">${items.length} cards. Tap a card to hear it.</p>
-          <div class="row" style="gap: 8px; flex-wrap: wrap;">
-            <button class="btn primary lg" id="study-theme" style="flex: 1; min-width: 200px;">Study this theme</button>
-            <button class="btn lg" id="challenge-theme" title="Test yourself before studying — even failed pretests boost later retention">Challenge me · 5</button>
+          <div class="theme-actions">
+            <button class="btn primary lg full" id="study-theme">Study this theme</button>
+            <button class="btn lg full" id="challenge-theme" title="Test yourself before studying — even failed pretests boost later retention">Challenge me · 5</button>
           </div>
           <div class="stack-sm" id="vocab-list"></div>
         </div>
@@ -2171,10 +2420,10 @@ const App = (function () {
       if (!t || items.length === 0) { navigate("browse"); return el(`<div></div>`); }
       const wrap = el(`
         <div class="view stack">
-          <button class="btn ghost" id="back" style="align-self:flex-start; padding:6px 12px; font-size:0.8125rem">${arrowBack()} Back</button>
+          <button class="btn ghost back-btn" id="back" type="button">${arrowBack()} Back</button>
           <h1>${t.icon} ${escape(t.name)}</h1>
           <p class="muted">${escape(t.blurb)}</p>
-          <button class="btn primary lg full" id="study-theme">Drill these patterns</button>
+          <div class="theme-actions"><button class="btn primary lg full" id="study-theme">Drill these patterns</button></div>
           <div class="stack-sm" id="sent-list"></div>
         </div>
       `);
@@ -2229,6 +2478,18 @@ const App = (function () {
     navigate("study");
   }
 
+  // "Nothing due. Learn 5 new words?": a short session of never-seen cards.
+  function startNewWords(n) {
+    const batch = SRS.pickBatch(allCardIds(), state.cards, { size: n, newRatio: 1 });
+    if (batch.length === 0) { toast("You have met every card. Come back when reviews are due."); return; }
+    currentSession = {
+      queue: batch, index: 0, reviewed: 0, correct: 0,
+      modes: batch.map((id) => pickMode(id)),
+      cardStartMs: Date.now(),
+    };
+    navigate("study");
+  }
+
   function startThemeSession(ids) {
     const batch = SRS.pickBatch(ids, state.cards, { size: Math.min(ids.length, 14), newRatio: 0.7 });
     if (batch.length === 0) {
@@ -2258,7 +2519,7 @@ const App = (function () {
 
     const wrap = el(`
       <div class="view stack">
-        <button class="btn ghost" id="back" style="align-self:flex-start; padding:6px 12px; font-size:0.8125rem">${arrowBack()} Back</button>
+        <button class="btn ghost back-btn" id="back" type="button">${arrowBack()} Back</button>
         <h1>${s.icon || "📍"} ${escape(s.title)}</h1>
         <p class="muted">${escape(s.setting)}</p>
         <div class="row" style="flex-wrap: wrap; gap: 8px;">
@@ -2375,6 +2636,7 @@ const App = (function () {
   function renderPassage(pId) {
     const p = (window.PASSAGES || []).find((x) => x.id === pId);
     if (!p) { navigate("home"); return el(`<div></div>`); }
+    Goals.markPassage(state, pId); persist();   // reading progress for "finish all passages" goals
 
     function lookup(word) {
       const w = word.toLowerCase().replace(/[.,!?;:"'()«»،؟؛—]/g, "");
@@ -2392,7 +2654,7 @@ const App = (function () {
 
     const wrap = el(`
       <div class="view stack">
-        <button class="btn ghost" id="back" style="align-self:flex-start; padding:6px 12px; font-size:0.8125rem">${arrowBack()} Back</button>
+        <button class="btn ghost back-btn" id="back" type="button">${arrowBack()} Back</button>
         <article class="card lg passage-card">
           <span class="eyebrow">${escape(p.level)} · Reading</span>
           <h1 style="margin: 8px 0 6px">${escape(p.title)}</h1>
@@ -2470,7 +2732,7 @@ const App = (function () {
       }
     }
 
-    $("#back", wrap).addEventListener("click", () => navigate("home"));
+    $("#back", wrap).addEventListener("click", () => navigate(nav.passageBack === "home" ? "home" : "browse"));
     $("#play-passage", wrap).addEventListener("click", () => {
       let i = 0;
       const playNext = () => {
@@ -2495,7 +2757,7 @@ const App = (function () {
 
     const wrap = el(`
       <div class="view stack">
-        <button class="btn ghost" id="back" style="align-self:flex-start; padding:6px 12px; font-size:0.8125rem">${arrowBack()} Back</button>
+        <button class="btn ghost back-btn" id="back" type="button">${arrowBack()} Back</button>
         <article class="capsule">
           <span class="eyebrow">Grammar capsule</span>
           <h1 style="margin: 6px 0 8px">${escape(g.title)}</h1>
@@ -2585,16 +2847,15 @@ const App = (function () {
     navigate("pronunciation");
   }
 
-  // All prose here is English (with inline target words), so it's pinned LTR
-  // rather than left to autoDir(), which would flip a line that starts with a
-  // Sorani letter. Target words (.nl-text) still resolve their own direction.
+  // All prose here is English (with inline target words); the target words
+  // (.nl-text) and any Kurdish run inside a sentence are marked RTL by rtlFix().
   function renderPronunciation() {
     const P = pronGuide();
     const back = PRON_BACK.includes(nav.pronBack) ? nav.pronBack : "home";
     if (!P) {
       const empty = el(`
         <div class="view stack">
-          <button class="btn ghost" id="back" style="align-self:flex-start; padding:6px 12px; font-size:0.8125rem">${arrowBack()} Back</button>
+          <button class="btn ghost back-btn" id="back" type="button">${arrowBack()} Back</button>
           <div class="empty-state">The ${escape(Lang.cfg().name)} pronunciation guide isn't available yet.</div>
         </div>
       `);
@@ -2621,7 +2882,7 @@ const App = (function () {
 
     const wrap = el(`
       <div class="view stack pron-view">
-        <button class="btn ghost" id="back" style="align-self:flex-start; padding:6px 12px; font-size:0.8125rem">${arrowBack()} Back</button>
+        <button class="btn ghost back-btn" id="back" type="button">${arrowBack()} Back</button>
         <header class="pron-head" dir="ltr">
           <span class="eyebrow">Pronunciation guide · ${Number(P.minutes) || 15} min read</span>
           <h1>${escape(P.title)}</h1>
@@ -2691,7 +2952,7 @@ const App = (function () {
     }
     function scrollToSec(id, smooth = true) {
       const t = $$("[data-sec]", wrap).find((x) => x.dataset.sec === id);
-      if (t) t.scrollIntoView({ behavior: smooth ? "smooth" : "instant", block: "start" });
+      if (t) t.scrollIntoView({ behavior: smooth && !reducedMotion() ? "smooth" : "instant", block: "start" });
     }
 
     // Reading progress: the section crossing the upper part of the screen is "being read".
@@ -2740,7 +3001,7 @@ const App = (function () {
     const playPractice = $("#pron-play-practice", wrap);
     if (playPractice) playPractice.addEventListener("click", () => playSeq(practice.map((x) => x.nl), 800));
     const topBtn = $("#pron-top", wrap);
-    if (topBtn) topBtn.addEventListener("click", () => $(".pron-toc", wrap).scrollIntoView({ behavior: "smooth", block: "start" }));
+    if (topBtn) topBtn.addEventListener("click", () => $(".pron-toc", wrap).scrollIntoView({ behavior: reducedMotion() ? "instant" : "smooth", block: "start" }));
 
     // Opened at a section (e.g. from a grammar capsule): jump there once the
     // view is mounted and navigate() has scrolled to the top.
@@ -2766,11 +3027,7 @@ const App = (function () {
         <p class="muted" style="margin-top:0">Your progress, in numbers.</p>
 
         <div class="grid-2 stats-tiles">
-          <div class="stat">
-            <span class="stat-label">Streak</span>
-            <span class="stat-value">${state.streak}</span>
-            <span class="stat-sub">consecutive days</span>
-          </div>
+          ${Goals.consistencyTileHtml(state, todayISO())}
           <div class="stat">
             <span class="stat-label">Total reviews</span>
             <span class="stat-value">${totalReviews}</span>
@@ -2867,14 +3124,18 @@ const App = (function () {
           <div class="row" style="gap: 10px; flex-wrap: wrap">
             <button class="btn" id="export-btn">Export JSON</button>
             <button class="btn" id="import-btn">Import JSON</button>
-            <button class="btn" id="reset-btn" style="color: var(--error); border-color: var(--error)">Reset everything</button>
           </div>
           <p class="muted" style="font-size:0.75rem; margin-top:10px">Your progress lives only in this browser's localStorage. Export to back it up.</p>
+          <div class="danger-zone">
+            <p class="muted">Start over: this deletes everything for this language.</p>
+            <button class="btn danger" id="reset-btn" type="button">Reset everything</button>
+          </div>
         </article>
       </div>
     `);
 
     // Heatmap
+    $(".stats-tiles", wrap).after(Goals.statsCard(goalsCtx()));
     const heat = $("#heatmap", wrap);
     const today = new Date();
     const days = 12 * 7;
@@ -2985,10 +3246,13 @@ const App = (function () {
       inp.click();
     });
     $("#reset-btn", wrap).addEventListener("click", () => {
-      if (confirm("This will erase all progress, streaks, and settings. Continue?")) {
-        Store.reset();
-        location.reload();
-      }
+      confirmDialog({
+        title: "Erase everything?",
+        body: "This deletes all progress, goals and settings for this language in this browser. Export a backup first if you might want it back.",
+        confirmLabel: "Erase everything",
+        cancelLabel: "Keep my progress",
+        onConfirm: () => { Store.reset(); location.reload(); },
+      });
     });
 
     return wrap;
@@ -3208,11 +3472,12 @@ const App = (function () {
     if (Speech.setEnglishVoice) Speech.setEnglishVoice(state.settings.englishVoice || "M1");
     if (Speech.setTargetSpeech) Speech.setTargetSpeech(speech);
     if (Speech.setTargetLive)   Speech.setTargetLive(cfg.ttsLive !== false);
-    // Root flags: hide audio-only UI when there's no speech; flip the WHOLE app
-    // to right-to-left for scripts like Sorani (Arabic-based). Latin-script
-    // languages — including Kurmanji — stay left-to-right (the default).
+    // Root flags: hide audio-only UI when there's no speech.
     document.documentElement.toggleAttribute("data-no-speech", !speech);
-    document.documentElement.setAttribute("dir", cfg.rtl ? "rtl" : "ltr");
+    // Chrome is English → the document stays LTR for every language; only
+    // Kurdish text blocks are RTL (see rtlFix). html.lang-rtl marks the script.
+    document.documentElement.setAttribute("dir", "ltr");
+    document.documentElement.classList.toggle("lang-rtl", !!cfg.rtl);
     applyBranding(cfg);
   }
 
@@ -3296,8 +3561,10 @@ const App = (function () {
     Onboarding.init({
       getState: () => state,
       persist,
+      back: () => navigate(nav.helpBack && !["study", "summary", "drill", "drill-summary", "help"].includes(nav.helpBack) ? nav.helpBack : "home"),
       startFirst: startFirstSession,
       startSession: () => startSession(),
+      navigate: (v) => navigate(v),
       openPronunciation: (id) => openPronunciation(id),
       pronunciation: () => pronGuide(),
     });
@@ -3329,7 +3596,7 @@ const App = (function () {
   // expose for debugging
   window.__app = { state: () => state, store: Store, srs: SRS, lang: Lang };
 
-  return { init, navigate, startSession, openPronunciation, arrowFwd, arrowBack };
+  return { init, navigate, startSession, openPronunciation, arrowFwd, arrowBack, isolateRtl, confirmDialog };
 })();
 
 document.addEventListener("DOMContentLoaded", App.init);

@@ -1,4 +1,4 @@
-// Kurmanji (Northern Kurdish) pronunciation guide: the Hawar Latin alphabet, every vowel and tricky consonant, stress, ezafe and regional variation.
+// Kurmanji (Northern Kurdish) pronunciation guide: the Hawar Latin alphabet, every vowel and tricky consonant, stress, veqetandek and regional variation.
 window.__DECK.kmr.PRONUNCIATION = {
   title: "How Kurmanji sounds",
   minutes: 18,
@@ -267,7 +267,7 @@ window.__DECK.kmr.PRONUNCIATION = {
       body: [
         "Kurmanji has no special diphthong letters. A vowel followed by y or w simply glides into that sound: ay ≈ English 'eye' (çay sounds like 'chai'), ew ≈ 'eh' + 'w', a bit like 'ow' in 'how' but starting from a fronter vowel.",
         "The combination xw is very common: xwe, xweş, xwarin. In standard Kurmanji it is a 'kh' made with rounded lips, so the w melts into the x: 'khw'. You will also hear speakers who reduce it, and in Behdînî (Iraq) xwe is often said and written xo.",
-        "When a vowel ending meets a vowel ending, a y appears in between to keep them apart: ode 'room' becomes odeya min 'my room'. You'll see more of this in the ezafe section.",
+        "When a vowel ending meets a vowel ending, a y appears in between to keep them apart: ode 'room' becomes odeya min 'my room'. You'll see more of this in the veqetandek section.",
       ],
       rules: [
         {
@@ -569,7 +569,7 @@ window.__DECK.kmr.PRONUNCIATION = {
       summary: "Nouns and adjectives stress their last syllable. Verb prefixes (di-, bi-, na-, ne-) pull the stress to the front. Small endings don't take stress.",
       body: [
         "The default is simple: stress the last syllable of the word itself: heVAL, zaROK, pirTÛK, kurDÎ. This is the opposite of most English words, so it takes conscious effort at first.",
-        "When a real suffix like the plural -an is added, the stress moves onto it: zarok → zarokAN. But small 'weak' endings, like the ezafe (-ê, -a, -ên) and the 'is/am/are' endings (e, im, in), don't take stress: hevalê min keeps the stress on VAL.",
+        "When a real suffix like the plural -an is added, the stress moves onto it: zarok → zarokAN. But small 'weak' endings, like the veqetandek (-ê, -a, -ên) and the 'is/am/are' endings (e, im, in), don't take stress: hevalê min keeps the stress on VAL.",
         "Verbs are different: the prefixes di- (present), bi- (subjunctive/imperative), na- and ne- (negation) carry the main stress, so the beat comes early: DIxwazim 'I want', NAxwim 'I don't eat', BIbore 'sorry'. A few common words also break the rule: ÇAwa 'how', KÎjan 'which'.",
         "These are general tendencies, and stress in Kurmanji is lighter than in English: there is less shortening of unstressed vowels, so every syllable stays clear.",
       ],
@@ -614,17 +614,17 @@ window.__DECK.kmr.PRONUNCIATION = {
     // ------------------------------------------------------------------
     {
       id: "ezafe-connected",
-      title: "Ezafe and connected speech",
+      title: "Veqetandek and connected speech",
       summary: "Linking endings (-ê, -a, -ên) glue nouns to what follows. They are unstressed and flow into the next word; a y slides in after vowels.",
       body: [
-        "Kurmanji links a noun to its describing word or owner with a small vowel called the ezafe: -ê for masculine, -a for feminine, -ên for plural. Navê min 'my name' (lit. 'name-of me'), mala min 'my house', çavên wê 'her eyes'. In speech, the ezafe is short, unstressed, and runs straight into the next word: 'NAH-vay-min'.",
-        "Because the ezafe shows gender, you can hear it: hevalê min is a male friend, hevala min a female friend.",
+        "Kurmanji links a noun to its describing word or owner with a small vowel ending, called the veqetandek in Kurdish: -ê for masculine, -a for feminine, -ên for plural. Navê min 'my name' (lit. 'name-of me'), mala min 'my house', çavên wê 'her eyes'. In speech, the veqetandek is short, unstressed, and runs straight into the next word: 'NAH-vay-min'.",
+        "Because the veqetandek shows gender, you can hear it: hevalê min is a male friend, hevala min a female friend.",
         "When a word ends in a vowel, a y is inserted to avoid two vowels clashing: ode 'room' → odeya min 'my room'. The same thing happens with the 'to be' endings: ez baş im 'I'm well', but tu çawa yî 'how are you', ev çi ye 'what is this'.",
         "Watch the vowel change in the oblique case: some words swap a for ê when they take an ending, so bajar 'city' becomes li bajêr 'in the city'. And the future marker ê glues onto the pronoun: ez ê is said almost as one word, 'eh-ZAY'.",
       ],
       rules: [
         {
-          rule: "Ezafe -ê (masculine), -a (feminine), -ên (plural)",
+          rule: "Veqetandek -ê (masculine), -a (feminine), -ên (plural)",
           examples: [
             { nl: "navê min", en: "my name", note: "NAH-vay min: one flowing phrase" },
             { nl: "mala min", en: "my house", note: "MAH-lah min" },
@@ -660,7 +660,7 @@ window.__DECK.kmr.PRONUNCIATION = {
           ],
         },
       ],
-      pitfall: "Don't pause between a noun and its ezafe, or stress the ezafe: it's navê min (NAH-vay min), never 'nah-VAY... min'.",
+      pitfall: "Don't pause between a noun and its veqetandek, or stress the veqetandek: it's navê min (NAH-vay min), never 'nah-VAY... min'.",
     },
 
     // ------------------------------------------------------------------
@@ -727,7 +727,7 @@ window.__DECK.kmr.PRONUNCIATION = {
     },
   ],
   practice: [
-    { nl: "Silav, navê min Azad e.", en: "Hello, my name is Azad.", note: "ezafe in navê, 'is' as e; stress aZAD" },
+    { nl: "Silav, navê min Azad e.", en: "Hello, my name is Azad.", note: "veqetandek in navê, 'is' as e; stress aZAD" },
     { nl: "Tu çawa yî? Ez baş im, sipas.", en: "How are you? I'm well, thanks.", note: "ç = ch, the linking y in yî, the weak i in sipas" },
     { nl: "Ez çayeke reş dixwazim.", en: "I'd like a black tea.", note: "trilled r in reş, xw in dixwazim, stress on DI-" },
     { nl: "Şêr şîr venaxwe.", en: "The lion doesn't drink milk.", note: "ê vs î: şêr / şîr" },
@@ -737,9 +737,9 @@ window.__DECK.kmr.PRONUNCIATION = {
     { nl: "Bajar mezin e, lê gundê me piçûk e.", en: "The city is big, but our village is small.", note: "a = ah, final stress in meZIN, piÇÛK" },
     { nl: "Îro hewa sar e û berf dibare.", en: "Today the weather is cold and it's snowing.", note: "î, the h in hewa, tapped r in dibare" },
     { nl: "Ez kurdî hîn dibim, hêdî hêdî.", en: "I'm learning Kurdish, slowly.", note: "short i vs long î, clear h" },
-    { nl: "Hevalê min Kurd e û li Amedê dijî.", en: "My friend is Kurdish and lives in Amed.", note: "ezafe -ê, final d in Kurd" },
+    { nl: "Hevalê min Kurd e û li Amedê dijî.", en: "My friend is Kurdish and lives in Amed.", note: "veqetandek -ê, final d in Kurd" },
     { nl: "Ji kerema xwe, hêdîtir biaxive.", en: "Please speak more slowly.", note: "weak i in ji, xw in xwe, stress on BI-" },
-    { nl: "Çavên wê reş in û porê wê dirêj e.", en: "Her eyes are black and her hair is long.", note: "plural ezafe -ên, w vs v, j = zh at the end of dirêj" },
+    { nl: "Çavên wê reş in û porê wê dirêj e.", en: "Her eyes are black and her hair is long.", note: "plural veqetandek -ên, w vs v, j = zh at the end of dirêj" },
     { nl: "Şev baş, xewa xweş!", en: "Good night, sleep well!", note: "ş = sh, ew in xew" },
   ],
 };

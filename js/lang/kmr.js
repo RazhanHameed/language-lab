@@ -140,7 +140,7 @@
       { title: "The Latin alphabet helps you", body: "Kurmanji's Hawar script is phonemic: every letter is one sound. ê = 'ay', î = 'ee', û = 'oo', c = 'j', ç = 'ch', ş = 'sh', x = 'kh'." },
       { title: "Interleave, don't block", body: "Mixed card types beat doing 20 of the same. Your brain learns to distinguish, not just recognise." },
       { title: "Kurdish is verb-final", body: "Subject–Object–Verb: 'Ez çayê vedixwim' = I tea drink. The verb almost always lands last." },
-      { title: "Nouns have gender", body: "Kurmanji marks masculine/feminine — it shows up in the ezafe (-a / -ê / -ê) and cases, not in the article. Learn each noun's gender with the word." },
+      { title: "Nouns have gender", body: "Kurmanji marks masculine/feminine — it shows up in the linking ending (-ê / -a / -ên, called the veqetandek in Kurdish) and cases, not in the article. Learn each noun's gender with the word." },
       { title: "The past tense flips", body: "Kurmanji is split-ergative: in the past, transitive verbs agree with the OBJECT and the subject takes the oblique case. Odd at first, natural with practice." },
       { title: "Mind the case endings", body: "The oblique case (-î / -ê / -an) marks objects and possessors. Small endings, big meaning." },
       { title: "One 'silav' fits all", body: "Silav works morning, noon, or night, formal or casual. When in doubt, say silav." },

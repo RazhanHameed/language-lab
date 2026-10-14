@@ -33,10 +33,10 @@ window.__DECK.kmr.GRAMMAR = [
   },
   {
     id: "g_dehet",
-    title: "The ezafe linker (-ê / -a / -ên)",
+    title: "The veqetandek linker (-ê / -a / -ên)",
     blurb: "A little linker glues a noun to its adjective or owner — and its shape depends on the noun's gender and number.",
     body:
-      "To say 'my house' or 'the pretty girl', Kurmanji links the two words with an ezafe vowel: NOUN-linker MODIFIER. Unlike Sorani's single -î, the Kurmanji linker shows GENDER and NUMBER: -ê after a masculine noun, -a after a feminine noun, -ên for any plural.",
+      "To say 'my house' or 'the pretty girl', Kurmanji links the two words with a linking ending, called the veqetandek in Kurdish: NOUN-linker MODIFIER. English textbooks often call it the 'ezafe', a term borrowed from Arabic/Persian. Unlike Sorani's single -î, the Kurmanji linker shows GENDER and NUMBER: -ê after a masculine noun, -a after a feminine noun, -ên for any plural.",
     examples: [
       { nl: "birayê min", en: "my brother (bira is masculine)", tag: "masculine noun → -ê" },
       { nl: "mala min", en: "my house (mal is feminine)", tag: "feminine noun → -a" },
@@ -121,14 +121,14 @@ window.__DECK.kmr.GRAMMAR = [
     title: "Plurals, the indefinite -ek, and noun gender",
     blurb: "Indefinite = -ek 'a/an'; the plural (oblique) ending is -an. And every Kurmanji noun is either masculine or feminine.",
     body:
-      "Kurmanji marks 'a/an' with the suffix -ek. The plural surfaces mainly in the oblique case as -an (the bare direct plural often looks like the singular, with number shown by the ezafe -ên). Crucially, every noun has GENDER — masculine or feminine — which rarely shows on the noun itself but drives the ezafe and the oblique.",
+      "Kurmanji marks 'a/an' with the suffix -ek. The plural surfaces mainly in the oblique case as -an (the bare direct plural often looks like the singular, with number shown by the veqetandek -ên). Crucially, every noun has GENDER — masculine or feminine — which rarely shows on the noun itself but drives the veqetandek and the oblique.",
     examples: [
       { nl: "pirtûk → pirtûkek", en: "book → a book", tag: "-ek = 'a/an' (indefinite)" },
       { nl: "pirtûk → pirtûkan", en: "book → books (oblique)", tag: "-an = plural, oblique case" },
       { nl: "bav / dê", en: "father / mother", tag: "gender: bav is masculine, dê is feminine" },
       { nl: "bavê min / dayika min", en: "my father / my mother", tag: "gender shows in the linker: -ê (m) vs -a (f)" },
     ],
-    pitfall: "Unlike Sorani, Kurmanji nouns have GENDER. You rarely see it on the noun itself — it surfaces in the ezafe linker and the oblique — so learn each noun together with its gender.",
+    pitfall: "Unlike Sorani, Kurmanji nouns have GENDER. You rarely see it on the noun itself — it surfaces in the veqetandek linker and the oblique — so learn each noun together with its gender.",
   },
   // ---- B1 expansion ----
   {
@@ -163,14 +163,14 @@ window.__DECK.kmr.GRAMMAR = [
   },
   {
     id: "g_b1_ezafe",
-    title: "Ezafe in detail: -ê / -a / -ên and -yê / -ya / -yên",
+    title: "Veqetandek in detail: -ê / -a / -ên and -yê / -ya / -yên",
     blurb: "The linker between noun and adjective or owner agrees with the noun and adds -y- after a vowel.",
     body:
-      "A noun links to what follows (an adjective, an owner, another noun) with the ezafe: -ê for a masculine noun, -a for a feminine one, -ên for any plural. After a noun that already ends in a vowel, a -y- is inserted: -yê, -ya, -yên (bira -> birayê min, dê -> dêya min, xanî -> xaniyê me). You can chain ezafes: mala bavê min = the house of my father. With 'a/an', the ezafe shape moves to the adjective: zilamekî dirêj (a tall man), keçeke ciwan (a young girl). Possession and adjectives use the same linker.",
+      "A noun links to what follows (an adjective, an owner, another noun) with a linking ending, called the veqetandek in Kurdish: -ê for a masculine noun, -a for a feminine one, -ên for any plural. After a noun that already ends in a vowel, a -y- is inserted: -yê, -ya, -yên (bira -> birayê min, dê -> dêya min, xanî -> xaniyê me). You can chain several veqetandek endings: mala bavê min = the house of my father. With 'a/an', the veqetandek shape moves to the adjective: zilamekî dirêj (a tall man), keçeke ciwan (a young girl). Possession and adjectives use the same linker.",
     examples: [
       { nl: "birayê min", en: "my brother", tag: "masculine, vowel-ending noun: -yê" },
       { nl: "dêya min", en: "my mother", tag: "feminine, vowel-ending noun: -ya" },
-      { nl: "mala bavê min", en: "my father's house", tag: "two ezafes in a chain" },
+      { nl: "mala bavê min", en: "my father's house", tag: "two veqetandek endings in a chain" },
       { nl: "pirtûkên nû", en: "new books", tag: "plural -ên" },
       { nl: "zilamekî dirêj, keçeke ciwan", en: "a tall man, a young girl", tag: "indefinite: -ekî (m) / -eke (f)" },
     ],
@@ -256,7 +256,7 @@ window.__DECK.kmr.GRAMMAR = [
     title: "Linking clauses: ku, eger and dema",
     blurb: "'Ku' means 'who / which / that'; eger/heke build 'if' sentences.",
     body:
-      "A relative clause comes straight after the noun with ku, and the noun takes the ezafe: zilamê ku li wir rûniştiye (the man who is sitting there). The same ku means 'that' after verbs of saying and thinking: Ez difikirim ku ew rast e. Conditionals use eger, heke or ger plus the subjunctive for realistic futures: Eger baran bibare, em ê li malê bimînin. For unreal 'if' use the past subjunctive (-ya / -a ending): Eger wext hebûya, em ê biçûna Wanê. Time clauses: dema (ku), piştî ku, beriya ku, heta.",
+      "A relative clause comes straight after the noun with ku, and the noun takes the veqetandek: zilamê ku li wir rûniştiye (the man who is sitting there). The same ku means 'that' after verbs of saying and thinking: Ez difikirim ku ew rast e. Conditionals use eger, heke or ger plus the subjunctive for realistic futures: Eger baran bibare, em ê li malê bimînin. For unreal 'if' use the past subjunctive (-ya / -a ending): Eger wext hebûya, em ê biçûna Wanê. Time clauses: dema (ku), piştî ku, beriya ku, heta.",
     examples: [
       { nl: "Zilamê ku li wir rûniştiye bavê min e.", en: "The man who is sitting there is my father.", tag: "relative clause with ku" },
       { nl: "Pirtûka ku min duh kirî pir xweş e.", en: "The book that I bought yesterday is very nice.", tag: "ku + ergative past inside" },

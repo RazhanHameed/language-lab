@@ -346,7 +346,7 @@
       { title: "Learn the script first", body: "The Sorani alphabet is only ~34 letters and mostly phonemic — an afternoon of practice unlocks reading everything else." },
       { title: "Interleave, don't block", body: "Mixed card types beat doing 20 of the same. Your brain learns to distinguish, not just recognise." },
       { title: "Kurdish is verb-final", body: "Subject–Object–Verb: 'Min çay dexwazim' = I tea want. The verb almost always lands last." },
-      { title: "Meet the ezafe", body: "The little linker -î / -ی joins a noun to what describes it: 'kiteb-î min' = book-of me = my book. It's everywhere." },
+      { title: "Meet the danepał", body: "The little linker -î / -ی, called ئامرازی دانەپاڵ (amrazî danepał) in Kurdish, joins a noun to what describes it: 'kiteb-î min' = book-of me = my book. It's everywhere." },
       { title: "The past tense flips", body: "Kurdish is split-ergative: in the past, transitive verbs agree with the OBJECT, not the subject. Strange at first, natural with practice." },
       { title: "ح, خ, غ, ق from the throat", body: "Kurdish keeps the deep throat consonants ح/خ/غ/ق distinct. Lean into them — they carry meaning." },
       { title: "One 'silaw' fits all", body: "سڵاو (silaw) works morning, noon, or night, formal or casual. When in doubt, say silaw." },
@@ -368,7 +368,7 @@
     guideKey: "Guide letters: ê = 'ay' · î = 'ee' · û = 'oo' · e as in 'bed' · i as in 'bit' · c = 'j' · ç = 'ch' · ş = 'sh' · j = 'zh' · x = 'kh' · q = deep k · ř = rolled r · ł = dark l · ḧ = breathy h · ẍ = French r. The short i is never written in Sorani script — the guide restores it.",
     onboarding: {
       typing: "Kurdish script or Latin letters both work (e.g. siław).",
-      tourNote: "Sorani is written right to left, so the whole app flips to match.",
+      tourNote: "Sorani is written right to left. The app itself stays in English and reads left to right; only the Sorani text runs right to left.",
       tips: [
         { icon: "🔤", text: "Under every Kurdish word you'll see a small Latin reading guide. Read it aloud, and tap the speaker to hear how it really sounds." },
         { icon: "⌨️", text: "Type answers in Latin letters (siław) or in Kurdish script. Both count as correct." },

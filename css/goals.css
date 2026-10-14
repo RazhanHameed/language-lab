@@ -1,0 +1,84 @@
+/* Plan / goals. Uses the tokens from styles.css so every theme works. */
+.view-plan, .plan-body { display: flex; flex-direction: column; gap: 18px; }
+.plan-back { align-self: flex-start; min-height: 44px; }
+.plan-head h1 { margin: 0 0 6px; }
+.plan-head p { max-width: 68ch; margin: 0; }
+.plan-goals { display: flex; flex-direction: column; gap: 14px; }
+.plan-sub { font-size: 1.125rem; margin: 10px 0 0; }
+.plan-why summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; }
+.plan-why .why-list { padding-inline-start: 1.2em; margin: 0.6em 0; }
+.plan-why p, .plan-consistency p, .goal-card p, .goal-sheet p { max-width: 68ch; }
+.view-plan .small, .goal-card .small, .goal-sheet .small { font-size: 0.8125rem; }
+
+.goal-card { display: flex; flex-direction: column; gap: 8px; }
+.goal-card > * { margin: 0; }
+.goal-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.goal-title { font-size: 1.1875rem; line-height: 1.25; }
+.goal-sub { font-size: 0.875rem; }
+.goal-progress-text { font-size: 0.875rem; font-weight: 600; }
+.goal-today { font-weight: 500; }
+.goal-cue { font-size: 0.875rem; }
+.goal-note:empty { display: none; }
+.goal-note { background: var(--accent-soft); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+.goal-note p { margin: 0; }
+.goal-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; align-items: center; }
+.goal-actions .btn { min-height: 44px; justify-content: center; }
+.goal-card.is-paused { opacity: 0.85; border-style: dashed; }
+.goal-more { font-size: 0.875rem; }
+.goal-of { font-size: 0.9375rem; color: var(--text-muted); font-family: var(--sans); font-weight: 500; }
+
+.goal-bar { position: relative; height: 10px; background: var(--surface-2); border: 1px solid var(--border-strong); border-radius: 999px; overflow: visible; margin: 6px 0 2px; }
+.goal-bar-fill { height: 100%; background: var(--primary); border-radius: 999px; min-width: 0; transition: width 220ms ease; }
+.goal-bar-mark { position: absolute; top: -5px; bottom: -5px; width: 3px; margin-inline-start: -1.5px; background: var(--accent-text); border-radius: 2px; }
+
+.goal-dots { display: inline-flex; gap: 5px; align-items: center; flex-wrap: wrap; }
+.goal-dot { width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid var(--text-subtle); background: transparent; display: inline-block; }
+.goal-dot.is-on { background: var(--primary); border-color: var(--primary); }
+.consistency-badge { display: inline-flex; align-items: center; gap: 10px; font-size: 0.875rem; font-weight: 600; color: var(--text); flex-wrap: wrap; }
+
+.btn.danger, .btn.ghost.danger { color: var(--error); }
+.btn.danger:not(.ghost) { border-color: var(--error); }
+.linklike { background: none; border: 0; padding: 0; color: var(--link); text-decoration: underline; font: inherit; cursor: pointer; min-height: 24px; }
+.warn { color: var(--warn); font-weight: 500; }
+
+/* ---- create flow ---- */
+.goal-sheet { display: flex; flex-direction: column; gap: 16px; }
+.goal-sheet > * { margin: 0; }
+.sheet-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.sheet-h { font-size: 1.5rem; outline: none; }
+.sheet-types { border: 0; padding: 0; margin: 0; display: grid; gap: 10px; min-width: 0; }
+.type-card { display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px; min-height: 64px; border: 1px solid var(--ctl-border); border-radius: var(--radius); background: var(--surface); cursor: pointer; }
+.type-card:hover { background: var(--surface-2); }
+.type-card input { margin-top: 4px; width: 20px; height: 20px; flex-shrink: 0; accent-color: var(--primary); }
+.type-card:has(input:checked) { border-color: var(--primary); box-shadow: inset 0 0 0 1px var(--primary); background: var(--primary-soft); }
+.type-card:has(input:focus-visible) { outline: 3px solid var(--focus); outline-offset: 2px; }
+.type-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.field { display: flex; flex-direction: column; gap: 6px; min-width: 0; flex: 1; }
+.field label { font-weight: 600; font-size: 0.875rem; }
+.field input, .field select { min-height: 44px; padding: 8px 12px; border: var(--ctl-border-w) solid var(--ctl-border); border-radius: 10px; background: var(--surface); color: var(--text); font: inherit; width: 100%; min-width: 0; }
+.field-row { display: flex; gap: 12px; flex-wrap: wrap; }
+.field-row .field { flex: 1 1 9rem; }
+.sheet-presets { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip-btn { min-height: 44px; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--ctl-border); background: var(--surface); color: var(--text); font: inherit; font-size: 0.875rem; cursor: pointer; }
+.chip-btn:hover { background: var(--surface-2); }
+.preview { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+.preview p { margin: 0; }
+.preview:empty { display: none; }
+.sheet-foot { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+.sheet-foot .btn { min-height: 48px; min-width: 7rem; justify-content: center; }
+
+.goal-card :focus-visible, .goal-sheet :focus-visible, .plan-why summary:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+
+@media (max-width: 420px) {
+  .sheet-foot { flex-direction: column-reverse; }
+  .sheet-foot .btn { width: 100%; }
+  .goal-actions .btn { flex: 1 1 100%; }
+}
+@media (prefers-reduced-motion: reduce) { .goal-bar-fill { transition: none; } }
+
+/* High contrast: strong outlines on the new elements */
+[data-theme="contrast"] .goal-bar, [data-theme="contrast"] .type-card, [data-theme="contrast"] .preview, [data-theme="contrast"] .goal-note, [data-theme="contrast"] .chip-btn { border-width: 2px; border-color: var(--text); }
+[data-theme="contrast"] .goal-dot { border-width: 2px; border-color: var(--text); }
+[data-theme="contrast"] .goal-dot.is-on { background: var(--text); }
+[data-theme="contrast"] .goal-bar-fill { background: var(--text); }
+[data-theme="contrast"] .goal-bar-mark { background: var(--text); width: 4px; }

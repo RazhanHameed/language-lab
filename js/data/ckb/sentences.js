@@ -1,7 +1,7 @@
 // Pattern sentences — Central Kurdish (Sorani, Arabic script, RTL).
 // Tim Ferriss's "Deconstruction Dozen" plus production templates you swap
 // vocab into. The point is to internalise grammatical scaffolding through
-// repetition, not to memorise rules. Kurdish is SOV, uses the ezafe linker,
+// repetition, not to memorise rules. Kurdish is SOV, uses the danepał linker,
 // the present de- prefix, subjunctive bi-, split-ergative past, and na-/ne-
 // negation. (`nl` = target-language slot, holds Sorani Kurdish.)
 window.__DECK.ckb.SENTENCES = [
@@ -10,8 +10,8 @@ window.__DECK.ckb.SENTENCES = [
     reveals: ["Copular clause: predicate adjective + enclitic copula '-ە'", "Definite suffix '-ەکە' on the noun (sêw → sêweke)", "No verb 'to be' word — the copula clings to the adjective"],
     pattern: "SUBJ-eke + ADJ-e", ferriss: true, theme: "ferriss" },
   { id: "s_f02", nl: "ئەوە سێوی جۆنە.", en: "It is John's apple.",
-    reveals: ["Ezafe linker '-ی' binds noun to possessor: sêw-î Jon = apple-of-John", "Possessor follows the noun", "Enclitic copula '-ە' closes the clause"],
-    pattern: "ewe + N-EZAFE + POSS-e", ferriss: true, theme: "ferriss" },
+    reveals: ["Danepał linker '-ی' binds noun to possessor: sêw-î Jon = apple-of-John", "Possessor follows the noun", "Enclitic copula '-ە' closes the clause"],
+    pattern: "ewe + N-DANEPAŁ + POSS-e", ferriss: true, theme: "ferriss" },
   { id: "s_f03", nl: "من سێوەکە دەدەمە جۆن.", en: "I give John the apple.",
     reveals: ["SOV order: subject + object + verb", "Present tense de- prefix on 'dan' (give): de-dem", "1sg ending '-م'", "Directional '-ە' on the verb points to the recipient"],
     pattern: "SUBJ + OBJ + de-V-em-e IO", ferriss: true, theme: "ferriss" },
@@ -91,8 +91,8 @@ window.__DECK.ckb.SENTENCES = [
     reveals: ["Impersonal obligation 'debê' + subjunctive 'dabezim'", "Adverb 'lêre' (here) precedes the final verb"],
     pattern: "debê + ADV + bi-V", theme: "transport" },
   { id: "s_tr04", nl: "وێستگەی داهاتوو هی منە.", en: "The next stop is mine.",
-    reveals: ["Ezafe '-ی' links noun to adjective: wêstge-y dahatû (stop-next)", "Possessive pronoun 'hî min' = mine + copula '-ە'"],
-    pattern: "N-EZAFE-ADJ + hî min-e", theme: "transport" },
+    reveals: ["Danepał '-ی' links noun to adjective: wêstge-y dahatû (stop-next)", "Possessive pronoun 'hî min' = mine + copula '-ە'"],
+    pattern: "N-DANEPAŁ-ADJ + hî min-e", theme: "transport" },
 
   // ===== WORK PATTERNS =====
   { id: "s_w01", nl: "کاتژمێر دە کۆبوونەوەیەکم هەیە.", en: "I have a meeting at 10.",
@@ -130,8 +130,8 @@ window.__DECK.ckb.SENTENCES = [
     reveals: ["Clitic possessor '-ت' (your) on 'naw' (name)", "Predicate 'çî' (what) + copula '-ە'"],
     pattern: "N-CL + çî-ye ?", theme: "phrases" },
   { id: "s_p02", nl: "من خەڵکی ئێرانم.", en: "I'm from Iran.",
-    reveals: ["Ezafe '-ی' in 'xełk-î Êran' (people-of-Iran)", "Copula clitic '-م' (I am)"],
-    pattern: "SUBJ + N-EZAFE-LAND-am", theme: "phrases" },
+    reveals: ["Danepał '-ی' in 'xełk-î Êran' (people-of-Iran)", "Copula clitic '-م' (I am)"],
+    pattern: "SUBJ + N-DANEPAŁ-LAND-am", theme: "phrases" },
   { id: "s_p03", nl: "من لە کرۆیتسبێرگ دەژیم.", en: "I live in Kreuzberg.",
     reveals: ["Locative 'لە' + place", "Present de- on 'jîn' (live), 1sg '-یم'"],
     pattern: "SUBJ + le PLACE + de-V-im", theme: "phrases" },
@@ -148,11 +148,11 @@ window.__DECK.ckb.SENTENCES = [
     reveals: ["Ability 'twanîn'", "Compound 'dûbare kirdinewe' (repeat), object clitic '-ی'", "Subjunctive with -ewe suffix"],
     pattern: "de-CAN + CL-bi-V-ewe ?", theme: "phrases" },
   { id: "s_p08", nl: "ئەمە واتای چییە؟", en: "What does that mean?",
-    reveals: ["Possession via ezafe: 'wata-y' (its meaning)", "Predicate 'çî' (what) + copula"],
-    pattern: "SUBJ + N-EZAFE + çî-ye ?", theme: "phrases" },
+    reveals: ["Possession via danepał: 'wata-y' (its meaning)", "Predicate 'çî' (what) + copula"],
+    pattern: "SUBJ + N-DANEPAŁ + çî-ye ?", theme: "phrases" },
   { id: "s_p09", nl: "نرخی چەندە؟", en: "How much does it cost?",
-    reveals: ["Ezafe '-ی' in 'nirx-î' (price of)", "Predicate 'çend' (how much) + copula '-ە'"],
-    pattern: "N-EZAFE + çend-e ?", theme: "phrases" },
+    reveals: ["Danepał '-ی' in 'nirx-î' (price of)", "Predicate 'çend' (how much) + copula '-ە'"],
+    pattern: "N-DANEPAŁ + çend-e ?", theme: "phrases" },
   { id: "s_p10", nl: "تا سبەی!", en: "See you tomorrow!",
     reveals: ["Elliptical farewell: 'ta' (until) + 'sibey' (tomorrow)"],
     pattern: "ta + TIME !", theme: "phrases" },
@@ -220,10 +220,10 @@ window.__DECK.ckb.SENTENCES = [
     pattern: "ew + ne-CL-V-past + ke + SUBJ + ...", theme: "past" },
   // ---- Giving opinions, agreeing & disagreeing ----
   { id: "s_opn01", nl: "پێموایە ئەمە بیرۆکەیەکی باشە.", en: "I think this is a good idea.",
-    reveals: ["'pê-m-waye' = 'it seems to me thus' = I think", "No 'that' needed before the next clause", "بیرۆکەیەکی باش: -یەک + ezafe + adjective"],
+    reveals: ["'pê-m-waye' = 'it seems to me thus' = I think", "No 'that' needed before the next clause", "بیرۆکەیەکی باش: -یەک + danepał + adjective"],
     pattern: "pêm-waye + SUBJ + N-yek-î ADJ-e", theme: "opinions" },
   { id: "s_opn02", nl: "بە بڕوای من، ئەمە دروست نییە.", en: "In my opinion, this isn't right.",
-    reveals: ["بە بڕوای من = in my belief (frame)", "Ezafe: brrwa-y min", "نییە = negative copula 'is not'"],
+    reveals: ["بە بڕوای من = in my belief (frame)", "Danepał: brrwa-y min", "نییە = negative copula 'is not'"],
     pattern: "be brrwa-y min , SUBJ + ADJ + niye", theme: "opinions" },
   { id: "s_opn03", nl: "لەگەڵ تۆ هاوڕام.", en: "I agree with you.",
     reveals: ["Predicate adjective + copula clitic -م: hawrra-m", "لەگەڵ + person = with", "Order: the person first, the state last"],
@@ -277,7 +277,7 @@ window.__DECK.ckb.SENTENCES = [
     reveals: ["با + subjunctive = let (us)", "یەکتر = each other", "لەگەڵ یەکتر = with one another / together"],
     pattern: "ba + legel yektir + subjunctive", theme: "opinions" },
   { id: "s_opn20", nl: "ئەوە بیروڕای منە، بەڵام ڕێزی بیروڕای تۆش دەگرم.", en: "That's my opinion, but I respect yours too.",
-    reveals: ["Ezafe: بیروڕای من, بیروڕای تۆ", "ڕێز گرتن = to respect", "-ش = 'also' attached to تۆ"],
+    reveals: ["Danepał: بیروڕای من, بیروڕای تۆ", "ڕێز گرتن = to respect", "-ش = 'also' attached to تۆ"],
     pattern: "ewe + N-y min-e , belam + rrêz-î N-y to-ş + de-V-im", theme: "opinions" },
   // ---- Linking ideas: because, although, if, when, which/who ----
   { id: "s_cmp01", nl: "نەهاتم، چونکە نەخۆش بووم.", en: "I didn't come because I was ill.",
@@ -302,10 +302,10 @@ window.__DECK.ckb.SENTENCES = [
     reveals: ["Pluperfect = participle + بوو (ڕۆیشتبوون)", "Earlier action in the past", "کاتێک gives the point in time"],
     pattern: "kateyk + V-past , hemû + V-pluperfect", theme: "complex" },
   { id: "s_cmp08", nl: "ئەو پیاوەی کە لەوێ دانیشتووە مامۆستامە.", en: "The man who is sitting there is my teacher.",
-    reveals: ["Relative clause: noun + ezafe -ی + کە ...", "The clause precedes the main predicate", "مامۆستامە = noun + clitic copula"],
+    reveals: ["Relative clause: noun + danepał -ی + کە ...", "The clause precedes the main predicate", "مامۆستامە = noun + clitic copula"],
     pattern: "N-ey + ke + clause + N-m-e", theme: "complex" },
   { id: "s_cmp09", nl: "ئەو کتێبەی کە دوێنێ کڕیم زۆر بەسوودە.", en: "The book that I bought yesterday is very useful.",
-    reveals: ["Object relative: کتێبەی کە ... (ezafe + کە)", "Inside: doer -م is the clitic, کڕیم", "بەسوود = useful (be + sûd)"],
+    reveals: ["Object relative: کتێبەی کە ... (danepał + کە)", "Inside: doer -م is the clitic, کڕیم", "بەسوود = useful (be + sûd)"],
     pattern: "ew N-ey ke + TIME + V + zor + ADJ-e", theme: "complex" },
   { id: "s_cmp10", nl: "ئەو شارەی کە تێیدا لەدایک بووم زۆر کۆنە.", en: "The city in which I was born is very old.",
     reveals: ["Resumptive pronoun in the relative clause: تێیدا (in it)", "لەدایک بوون = to be born", "Clause is long but the predicate stays last"],

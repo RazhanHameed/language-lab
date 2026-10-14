@@ -21,7 +21,7 @@
    ===================================================================== */
 window.Onboarding = (function () {
   const TOUR_KEY = "langlab:tour:v1";
-  const COACH_SHOW_FOR = 3;      // a coach tip stays open for the first N meetings
+  const COACH_SHOW_FOR = 1;      // a coach tip stays open for the first N meetings, then it is a one-line disclosure
   const FIRST_SESSION_SIZE = 5;
 
   let ctx = null;                // wired by App via init()
@@ -76,7 +76,7 @@ window.Onboarding = (function () {
   }
 
   /* ---------- coaching text ---------- */
-  const RATE = "Then rate it: Again (missed), Hard, Good or Easy. Your rating decides when you see it next.";
+  const RATE = "Then rate it.";
   function coachText(key) {
     const n = L();
     return ({
@@ -122,6 +122,8 @@ window.Onboarding = (function () {
     ctx.persist();
   }
 
+  // First meeting: a compact open tip (max ~3 lines). Every later meeting: one
+  // line, "How this works", that opens in place (a native <details>).
   function coachEl(key) {
     const text = coachText(key);
     if (!text) return null;
@@ -134,11 +136,11 @@ window.Onboarding = (function () {
       wrap.classList.toggle("is-open", open);
       if (open) {
         wrap.innerHTML = `
-          <div class="coach-card" role="note" dir="auto">
+          <div class="coach-card" role="note">
             <span class="coach-icon" aria-hidden="true">💡</span>
             <div class="coach-body">
               <span class="eyebrow">${esc(title)} · what to do</span>
-              <p dir="auto">${esc(text)}</p>
+              <p>${esc(text)}</p>
             </div>
             <button class="coach-dismiss" type="button" aria-label="Got it, hide this tip">Got it</button>
           </div>`;
@@ -149,9 +151,12 @@ window.Onboarding = (function () {
           paint(false, true);
         });
       } else {
-        wrap.innerHTML = `<button class="coach-help" type="button" aria-expanded="false" aria-label="Show tip: how does ${esc(title)} work?" title="How does this work?">?</button>`;
-        wrap.querySelector(".coach-help").addEventListener("click", () => paint(true));
-        if (focusBtn) wrap.querySelector(".coach-help").focus();
+        wrap.innerHTML = `
+          <details class="coach-details">
+            <summary><span aria-hidden="true">💡</span> How this works<span class="coach-sum-title"> · ${esc(title)}</span></summary>
+            <p>${esc(text)}</p>
+          </details>`;
+        if (focusBtn) wrap.querySelector("summary").focus();
       }
     }
     paint(open0);
@@ -163,8 +168,8 @@ window.Onboarding = (function () {
     const c = coachState();
     c.seen.rating = (c.seen.rating || 0) + 1;
     ctx.persist();
-    if (c.seen.rating > COACH_SHOW_FOR) return "";
-    return `<p class="rating-hint" dir="auto">How hard was it? This schedules your next review.</p>`;
+    if (c.seen.rating > 3) return "";
+    return `<p class="rating-hint">How hard was it? This schedules your next review.</p>`;
   }
 
   // Forget what's been dismissed/seen so every tip shows again.
@@ -196,16 +201,16 @@ window.Onboarding = (function () {
       {
         id: "day", title: "How a day works",
         visual: `<ol class="ob-steps" aria-label="A typical day">
-            <li dir="auto"><span class="ob-num">1</span><span class="ob-step-text"><strong dir="auto">Review your due cards</strong><small dir="auto">the main thing</small></span><span class="chip">~8 min</span></li>
-            <li dir="auto"><span class="ob-num">2</span><span class="ob-step-text"><strong dir="auto">One quick drill</strong><small dir="auto">pick any</small></span><span class="chip">~3 min</span></li>
-            <li dir="auto"><span class="ob-num">3</span><span class="ob-step-text"><strong dir="auto">Read or listen to one thing</strong><small dir="auto">a passage or dialogue</small></span><span class="chip">~4 min</span></li>
+            <li><span class="ob-num">1</span><span class="ob-step-text"><strong>Review your due cards</strong><small>the main thing</small></span><span class="chip">~8 min</span></li>
+            <li><span class="ob-num">2</span><span class="ob-step-text"><strong>One quick drill</strong><small>pick any</small></span><span class="chip">~3 min</span></li>
+            <li><span class="ob-num">3</span><span class="ob-step-text"><strong>Read or listen to one thing</strong><small>a passage or dialogue</small></span><span class="chip">~4 min</span></li>
           </ol>`,
         body: `<p>That's the whole routine. Short and often beats long and rare: the app brings each card back just before you'd forget it.</p>`,
       },
       {
         id: "cards", title: "How the cards work",
         visual: `<div class="ob-mock" aria-hidden="true">
-            <div class="ob-mock-card"><span class="ob-mock-q">?</span><small dir="auto">try to recall first</small></div>
+            <div class="ob-mock-card"><span class="ob-mock-q">?</span><small>try to recall first</small></div>
             <span class="ob-mock-arrow">→</span>
             <div class="ob-mock-rates">
               <span class="ob-pill again">Again</span><span class="ob-pill hard">Hard</span><span class="ob-pill good">Good</span><span class="ob-pill easy">Easy</span>
@@ -217,17 +222,17 @@ window.Onboarding = (function () {
       {
         id: "areas", title: "The other areas",
         visual: `<ul class="ob-areas" aria-label="Areas of the app">${nav.map(([i, t, d]) =>
-          `<li dir="auto"><span class="ob-area-ico" aria-hidden="true">${i}</span><span class="ob-step-text"><strong dir="auto">${t}</strong><small dir="auto">${esc(d)}</small></span></li>`).join("")}</ul>`,
+          `<li><span class="ob-area-ico" aria-hidden="true">${i}</span><span class="ob-step-text"><strong>${t}</strong><small>${esc(d)}</small></span></li>`).join("")}</ul>`,
         body: `<p class="muted">You don't need to visit them all today. The first session is enough.</p>`,
       },
       {
         id: "lang", title: `Tips for ${n}`,
-        visual: `${pron() ? `<div class="ob-pron" dir="auto">
+        visual: `${pron() ? `<div class="ob-pron">
             <span class="ob-area-ico" aria-hidden="true">🔊</span>
-            <span class="ob-step-text"><strong dir="auto">Start here: ${esc(pronLine())}</strong><small dir="auto">Every sound explained with real words you can play. Read it once now, come back any time from Browse.</small></span>
+            <span class="ob-step-text"><strong>Start here: ${esc(pronLine())}</strong><small>Every sound explained with real words you can play. Read it once now, come back any time from Browse.</small></span>
             <button class="btn primary" type="button" data-ob-pron>Open the guide</button>
           </div>` : ""}<ul class="ob-areas" aria-label="Tips for ${esc(n)}">${tips().map((t) =>
-          `<li dir="auto"><span class="ob-area-ico" aria-hidden="true">${t.icon}</span><span class="ob-step-text"><small class="ob-tip-text" dir="auto">${esc(t.text)}</small></span></li>`).join("")}</ul>`,
+          `<li><span class="ob-area-ico" aria-hidden="true">${t.icon}</span><span class="ob-step-text"><small class="ob-tip-text">${esc(t.text)}</small></span></li>`).join("")}</ul>`,
         body: "",
       },
       {
@@ -258,7 +263,7 @@ window.Onboarding = (function () {
             <span class="ob-count eyebrow" id="ob-count"></span>
             <button class="ob-skip" type="button" id="ob-skip">Skip tour</button>
           </div>
-          <h2 id="ob-title" tabindex="-1" dir="auto" data-no-guide></h2>
+          <h2 id="ob-title" tabindex="-1" data-no-guide></h2>
           <div class="ob-visual" id="ob-visual"></div>
           <div class="ob-text" id="ob-desc"></div>
           <div class="ob-foot">
@@ -307,8 +312,7 @@ window.Onboarding = (function () {
       if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
         if (/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName)) return;
         e.preventDefault();
-        const rtl = document.documentElement.dir === "rtl";
-        go((e.key === "ArrowRight") !== rtl ? 1 : -1);
+        go(e.key === "ArrowRight" ? 1 : -1);
         return;
       }
       if (e.key === "Tab") {      // focus trap
@@ -387,10 +391,11 @@ window.Onboarding = (function () {
       ["Times", "Type the time the way you'd say it."],
       ["Conjugation", "Type the right verb form for each pronoun."],
     ].filter(Boolean);
-    const rows = (a) => a.map(([t, d]) => `<li><strong>${esc(t)}</strong><span dir="auto">${esc(d)}</span></li>`).join("");
+    const rows = (a) => a.map(([t, d]) => `<li><strong>${esc(t)}</strong><span>${esc(d)}</span></li>`).join("");
 
     const wrap = el(`
       <div class="view stack help-view">
+        <button class="btn ghost back-btn" id="help-back" type="button"><span class="icon-arrow-back" aria-hidden="true">←</span> Back</button>
         <div>
           <h1 style="margin-bottom:0">How it works</h1>
           <p class="muted" style="margin-top:4px">What to do, and why it works. Skim it once, then just start a session.</p>
@@ -400,6 +405,13 @@ window.Onboarding = (function () {
           <button class="btn" id="help-start">Start a session</button>
           <button class="btn ghost" id="help-reset">Show all tips again</button>
         </div>
+
+        <article class="card help-plan">
+          <span class="eyebrow">Plan</span>
+          <h3 style="margin:6px 0 4px">Set a goal</h3>
+          <p class="muted" style="margin:0 0 12px">Set a goal, e.g. 100 words in 20 days. The planner checks the pace is realistic for this language and adjusts kindly if life gets in the way.</p>
+          <button class="btn primary" id="help-plan">Open the planner</button>
+        </article>
 
         ${pron() ? `<article class="card help-pron">
           <span class="eyebrow">Start here · pronunciation</span>
@@ -464,20 +476,22 @@ window.Onboarding = (function () {
 
         <article class="card">
           <span class="eyebrow">Tips for ${esc(n)}</span>
-          <ul class="help-list tips">${tips().map((t) => `<li><span aria-hidden="true">${t.icon}</span><span dir="auto">${esc(t.text)}</span></li>`).join("")}</ul>
+          <ul class="help-list tips">${tips().map((t) => `<li><span aria-hidden="true">${t.icon}</span><span>${esc(t.text)}</span></li>`).join("")}</ul>
         </article>
 
         <article class="card">
           <span class="eyebrow">Why it works</span>
           <p class="muted" style="margin:6px 0 10px">Everything here is built on well-tested findings about how people learn languages.</p>
           <dl class="help-science">
-            ${SCIENCE.map(([t, d]) => `<div><dt>${esc(t)}</dt><dd dir="auto">${esc(d)}</dd></div>`).join("")}
+            ${SCIENCE.map(([t, d]) => `<div><dt>${esc(t)}</dt><dd>${esc(d)}</dd></div>`).join("")}
           </dl>
         </article>
       </div>`);
+    wrap.querySelector("#help-back").addEventListener("click", () => ctx.back());
     wrap.querySelector("#help-tour").addEventListener("click", () => openTour());
     const hp = wrap.querySelector("#help-pron");
     if (hp) hp.addEventListener("click", () => ctx.openPronunciation());
+    wrap.querySelector("#help-plan").addEventListener("click", () => ctx.navigate("plan"));
     wrap.querySelector("#help-start").addEventListener("click", () => ctx.startSession());
     wrap.querySelector("#help-reset").addEventListener("click", (e) => {
       resetCoaching();

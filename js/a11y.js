@@ -4,6 +4,7 @@
 // file watches the DOM (one MutationObserver) and applies them centrally:
 //
 //   * target-language text gets lang="<code>" so screen readers switch voice
+//     (Kurdish blocks also carry dir="rtl" — set in app.js, the chrome stays LTR)
 //   * the Latin reading guide (<rt>) is aria-hidden, so it isn't read twice
 //   * icon-only voice buttons get "Play pronunciation of <word>"
 //   * flashcards are keyboard-operable (Enter / Space), hidden faces are inert
@@ -50,7 +51,7 @@
 
   /* ---------- per-node enhancements ---------- */
   // Elements that always hold target-language text (see the classes app.js emits).
-  const TARGET = "ruby.guide, .nl-text, .prompt-word, .dlg-nl, .passage-para, .word-chip, .pron-ex-word";
+  const TARGET = "ruby.guide, .nl-text, .prompt-word, .dlg-nl, .passage-para, .word-chip, .pron-ex-word, [dir='rtl']:not(html)";
 
   function tagLang(root) {
     const code = primary();

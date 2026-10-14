@@ -53,7 +53,7 @@ Every card, sentence, dialogue, grammar capsule, drill and reading passage is wr
 - **Vocabulary**: survival themes (greetings, café, transport, work, numbers, …) and B1 themes (health, home, food, people, travel, nature, media, opinions, connectors), chosen by frequency. Each card has its part of speech (and gender where relevant), an example sentence and a usage or culture note.
 - **Sentence patterns**: word-order diagnostics, negation and everyday phrases, then B1 sets for telling stories in the past, giving opinions and linking ideas.
 - **Scenario dialogues**: café, supermarket, tram, pharmacy, landlord, … and at B1 a doctor's visit, a job interview, a complaint and a discussion. "Narrow listen · 3×" loops a dialogue with alternating voices.
-- **Grammar capsules**: short, example-led explanations. The Kurdish decks cover their own core, such as past-tense ergativity, ezafe, clitics, the subjunctive, conditionals and the passive.
+- **Grammar capsules**: short, example-led explanations. The Kurdish decks cover their own core, such as past-tense ergativity, the linking particle (danepał / veqetandek), clitics, the subjunctive, conditionals and the passive.
 - **Reading**: stories, opinion pieces, emails and how-tos from A1 to B1, plus an article on how each Kurdish script is read. Tap any word for a gloss and its pronunciation.
 - **Pronunciation guide**: a long, systematic article per language (for example, how German spelling maps to sound by rule), with about 230 playable examples each and read-aloud practice sentences at the end.
 
@@ -303,7 +303,7 @@ The selector, per-language progress, drills and onboarding pick it up automatica
 | `hasStt: false` | TTS but no speech recognition: hides Speaking and Shadowing |
 | `ttsEngine: "omnivoice"` | Render clips with OmniVoice instead of Supertonic-3. The pack `id` must equal the `langCode` primary subtag (clips are keyed by it) |
 | `ttsLive: false` | Pre-rendered clips only, with no live-server or Web Speech fallback |
-| `rtl: true` | Right-to-left script: the whole UI flips while the language is active |
+| `rtl: true` | Right-to-left script: the interface stays English and left-to-right; only the target-language text (and Kurdish runs inside English sentences) is marked `dir="rtl"` |
 | `transliterate`, `guideKey` | A reading guide (Latin letters over each word) and its legend in Settings |
 | `answerMatches` | Extra answer checking, for example accepting Latin-letter answers for a non-Latin script |
 | `onboarding` | Language-specific tips for the tour, the coaching and the help page |

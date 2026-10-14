@@ -33,17 +33,17 @@ window.__DECK.ckb.GRAMMAR = [
   },
   {
     id: "g_dehet",
-    title: "The ezafe linker (-î) and 'the' (-eke)",
+    title: "The danepał linker (-î) and 'the' (-eke)",
     blurb: "A tiny -î glues a noun to its adjective or owner; -eke (ەکە) makes a noun definite ('the').",
     body:
-      "To say 'my house' or 'a big book', Sorani links the two words with the ezafe vowel -î (ی): NOUN-î MODIFIER. Definiteness is a suffix, not a separate word: add -eke (ەکە) for 'the'. The two can stack: کتێبەکەی من = 'my book' (the-book-of me).",
+      "To say 'my house' or 'a big book', Sorani links the two words with the linker -î (ی), called ئامرازی دانەپاڵ (amrazî danepał) in Kurdish: NOUN-î MODIFIER. English textbooks often call it the 'ezafe', a term borrowed from Arabic/Persian. Definiteness is a suffix, not a separate word: add -eke (ەکە) for 'the'. The two can stack: کتێبەکەی من = 'my book' (the-book-of me).",
     examples: [
       { nl: "ماڵی من", en: "my house (lit. house-OF me)", tag: "-î links house to its owner" },
       { nl: "کچێکی جوان", en: "a pretty girl", tag: "-î links noun to adjective" },
       { nl: "کتێبەکە", en: "the book", tag: "-eke = 'the' (definite)" },
-      { nl: "کتێبەکەی من", en: "my book (the book of me)", tag: "definite -eke + ezafe + 'me'" },
+      { nl: "کتێبەکەی من", en: "my book (the book of me)", tag: "definite -eke + danepał + 'me'" },
     ],
-    pitfall: "Don't drop the ezafe -î — 'ماڵ من' sounds broken. The linker is obligatory whenever a noun takes a following adjective or possessor: 'ماڵی من'.",
+    pitfall: "Don't drop the danepał -î — 'ماڵ من' sounds broken. The linker is obligatory whenever a noun takes a following adjective or possessor: 'ماڵی من'.",
   },
   {
     id: "g_neg",
@@ -235,10 +235,10 @@ window.__DECK.ckb.GRAMMAR = [
   },
   {
     id: "g_b1_ezafe",
-    title: "The ezafe -ی in detail: chains and possessors",
+    title: "The danepał -ی in detail: chains and possessors",
     blurb: "One little -ی links noun to adjective, noun to possessor and noun to noun — and it chains.",
     body:
-      "Whenever a noun is followed by something that describes or owns it, the noun takes the ezafe -ی: ماڵی باوکم 'my father's house', کتێبی نوێ 'new book', شاری هەولێر 'the city of Hewlêr'. After a vowel it is still written -ی (دەرگای ماڵ 'door of the house'). The order is HEAD first, then describers, then the owner, each link marked by -ی: کتێبی نوێی خوشکم 'my sister's new book'. With -ێک the ezafe still appears: کتێبێکی نوێ 'a new book'. With the definite -ەکە, the ezafe attaches after it: ماڵەکەی ئارام 'Aram's house'. Plural definite adjectives are glued: کتێبە نوێکان 'the new books'.",
+      "Whenever a noun is followed by something that describes or owns it, the noun takes the linker -ی, called ئامرازی دانەپاڵ (amrazî danepał) in Kurdish: ماڵی باوکم 'my father's house', کتێبی نوێ 'new book', شاری هەولێر 'the city of Hewlêr'. After a vowel it is still written -ی (دەرگای ماڵ 'door of the house'). The order is HEAD first, then describers, then the owner, each link marked by -ی: کتێبی نوێی خوشکم 'my sister's new book'. With -ێک the danepał still appears: کتێبێکی نوێ 'a new book'. With the definite -ەکە, the danepał attaches after it: ماڵەکەی ئارام 'Aram's house'. Plural definite adjectives are glued: کتێبە نوێکان 'the new books'.",
     examples: [
       { nl: "ماڵی باوکم گەورەیە.", en: "My father's house is big.", tag: "noun + ی + possessor" },
       { nl: "کتێبێکی نوێم کڕی.", en: "I bought a new book.", tag: "-ێک + ی + adjective" },
@@ -246,7 +246,7 @@ window.__DECK.ckb.GRAMMAR = [
       { nl: "دەرگای ماڵەکە کراوەیە.", en: "The door of the house is open.", tag: "after a vowel" },
       { nl: "ماڵەکەی ئارام لە سلێمانییە.", en: "Aram's house is in Silêmanî.", tag: "-ەکە + ی" },
     ],
-    pitfall: "No ezafe after a verb or a demonstrative (ئەم کتێبە نوێیە, not ئەم کتێبی نوێ). And possessor clitic OR ezafe — not both: کتێبی من or کتێبەکەم, never کتێبی منم.",
+    pitfall: "No danepał after a verb or a demonstrative (ئەم کتێبە نوێیە, not ئەم کتێبی نوێ). And possessor clitic OR danepał — not both: کتێبی من or کتێبەکەم, never کتێبی منم.",
   },
   {
     id: "g_b1_comparison",
@@ -281,9 +281,9 @@ window.__DECK.ckb.GRAMMAR = [
   {
     id: "g_b1_relative",
     title: "Relative clauses: ئەو … ی کە …",
-    blurb: "Noun + ezafe -ی + کە + clause: 'the man who …', 'the book that …'.",
+    blurb: "Noun + danepał -ی + کە + clause: 'the man who …', 'the book that …'.",
     body:
-      "Sorani has no who/which/that words. Instead the noun takes the ezafe -ی and the clause follows, usually introduced by کە (often dropped in speech): ئەو پیاوەی کە لەوێ دانیشتووە 'the man who is sitting there'. The relative clause comes BEFORE the main predicate and the verb of the main clause stays last. If the head noun would be the object of a preposition inside the clause, a pronoun clitic is left behind: ئەو کچەی کە لەگەڵی قسەم کرد 'the girl I talked with' (lit. 'with her'). ئەوەی … means 'what / the one who': ئەوەی دەیڵێیت ڕاستە.",
+      "Sorani has no who/which/that words. Instead the noun takes the danepał -ی and the clause follows, usually introduced by کە (often dropped in speech): ئەو پیاوەی کە لەوێ دانیشتووە 'the man who is sitting there'. The relative clause comes BEFORE the main predicate and the verb of the main clause stays last. If the head noun would be the object of a preposition inside the clause, a pronoun clitic is left behind: ئەو کچەی کە لەگەڵی قسەم کرد 'the girl I talked with' (lit. 'with her'). ئەوەی … means 'what / the one who': ئەوەی دەیڵێیت ڕاستە.",
     examples: [
       { nl: "ئەو پیاوەی کە لەوێ دانیشتووە مامۆستامە.", en: "The man who is sitting there is my teacher.", tag: "subject relative" },
       { nl: "ئەو کتێبەی کە خوێندمەوە زۆر باش بوو.", en: "The book that I read was very good.", tag: "object relative" },
@@ -291,7 +291,7 @@ window.__DECK.ckb.GRAMMAR = [
       { nl: "ئەوەی دەیڵێیت ڕاستە.", en: "What you say is true.", tag: "ئەوەی = what" },
       { nl: "دەبێت کەسێک بدۆزمەوە کە کوردی بزانێت.", en: "I have to find someone who knows Kurdish.", tag: "indefinite head + subjunctive" },
     ],
-    pitfall: "Don't leave out the ezafe -ی after the noun, and don't copy the English 'whom': with a preposition you need the leftover clitic (لەگەڵی, لێی), not a separate word.",
+    pitfall: "Don't leave out the danepał -ی after the noun, and don't copy the English 'whom': with a preposition you need the leftover clitic (لەگەڵی, لێی), not a separate word.",
   },
   {
     id: "g_b1_passive",

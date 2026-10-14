@@ -639,11 +639,11 @@ window.__DECK.ckb.PRONUNCIATION = {
     // ------------------------------------------------------------------
     {
       id: "ezafe",
-      title: "The ezafe: the little -î that links words",
+      title: "The danepał: the little -î that links words",
       summary: "To say 'my name' or 'cold water', join the words with -î (or -y after a vowel).",
       body: [
-        "Kurdish puts the main noun first and the describing word after it, linked by a short -î, the ezafe: ناوی من 'nawî min' = name-of me = my name; ئاوی سارد 'awî sard' = water-of cold = cold water.",
-        "The ezafe is written as ی joined to the end of the first word, and it's pronounced as an unstressed 'ee' flowing straight into the next word, so the two words sound like one. After a vowel it becomes just a y-glide: خانووی نوێ 'xanûy nwê'.",
+        "Kurdish puts the main noun first and the describing word after it, linked by a short -î, called ئامرازی دانەپاڵ (amrazî danepał) in Kurdish: ناوی من 'nawî min' = name-of me = my name; ئاوی سارد 'awî sard' = water-of cold = cold water.",
+        "The danepał is written as ی joined to the end of the first word, and it's pronounced as an unstressed 'ee' flowing straight into the next word, so the two words sound like one. After a vowel it becomes just a y-glide: خانووی نوێ 'xanûy nwê'.",
         "Listen for it everywhere: in names of places (شاری هەولێر, the city of Hewlêr) and in everyday phrases. Missing it makes your Kurdish sound like a list of separate words.",
       ],
       rules: [
@@ -665,7 +665,7 @@ window.__DECK.ckb.PRONUNCIATION = {
           ],
         },
       ],
-      pitfall: "The ezafe -î is unstressed. Don't say 'na-WEE min'; the stress stays on the noun and the -î slides on.",
+      pitfall: "The danepał -î is unstressed. Don't say 'na-WEE min'; the stress stays on the noun and the -î slides on.",
     },
     // ------------------------------------------------------------------
     {
@@ -737,7 +737,7 @@ window.__DECK.ckb.PRONUNCIATION = {
   ],
   practice: [
     { nl: "سڵاو، چۆنی؟", en: "Hello, how are you?", note: "dark ł in سڵاو, a pure o in چۆنی, stress at the end of both." },
-    { nl: "ناوی من ئارامە.", en: "My name is Aram.", note: "the ezafe -î linking ناو and من; final ە is pronounced." },
+    { nl: "ناوی من ئارامە.", en: "My name is Aram.", note: "the danepał -î linking ناو and من; final ە is pronounced." },
     { nl: "من کوردی فێر دەبم.", en: "I'm learning Kurdish.", note: "hidden i in من and دەبم; stress on DE- of the verb." },
     { nl: "ئەمڕۆ هەوا زۆر گەرمە.", en: "Today the weather is very hot.", note: "rolled ř in ئەمڕۆ; plain h in هەوا." },
     { nl: "حەز لە چای دەکەم.", en: "I like tea.", note: "throaty ḧ in حەز; ay diphthong in چای." },
