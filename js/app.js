@@ -2876,7 +2876,10 @@ const App = (function () {
             ${ex.note ? `<div class="subtle pron-ex-note" dir="ltr">${escape(ex.note)}</div>` : ""}
           </div>
         </div>
-        <button class="voice-btn" data-say="${escape(ex.nl)}" aria-label="Hear ${escape(ex.nl)}">${iconSound()}</button>
+        <div class="pron-ex-btns" dir="ltr">
+          <button class="voice-btn" data-say="${escape(ex.nl)}" aria-label="Hear ${escape(ex.nl)}">${iconSound()}</button>
+          <button class="voice-btn voice-btn--slow" data-say-slow="${escape(ex.nl)}" aria-label="Play slowly: ${escape(ex.nl)}" title="Play slowly"><span aria-hidden="true">🐢</span></button>
+        </div>
       </div>`;
     const playLabel = (n) => n === 2 ? "Play both" : `Play all ${n}`;
 
@@ -2888,7 +2891,6 @@ const App = (function () {
           <h1>${escape(P.title)}</h1>
           <div class="row pron-tools">
             ${resume ? `<button class="btn primary" id="pron-resume">Continue: ${escape(resume)} ${arrowFwd()}</button>` : ""}
-            <button class="btn pron-slow" id="pron-slow" aria-pressed="${nav.pronSlow ? "true" : "false"}">🐢 Slow audio</button>
           </div>
           ${(P.intro || []).map((p) => `<p>${escape(p)}</p>`).join("")}
         </header>
@@ -2931,12 +2933,12 @@ const App = (function () {
       </div>
     `);
 
-    const rate = () => (nav.pronSlow ? 0.7 : state.settings.prefRate);
+    const rate = () => state.settings.prefRate;
     const lang = () => Lang.cfg().langCode;
     let chain = 0;   // bumps on every tap so a running "play all" stops
-    function say(text) {
+    function say(text, slow) {
       chain += 1;
-      Speech.speak(text, { lang: lang(), rate: rate() });
+      Speech.speak(text, { lang: lang(), rate: slow ? 0.6 : rate() });
     }
     function playSeq(texts, gap) {
       const my = ++chain;
@@ -2981,9 +2983,10 @@ const App = (function () {
     }
 
     wrap.addEventListener("click", (e) => {
-      const b = e.target.closest("[data-say], [data-jump], [data-play-rule]");
+      const b = e.target.closest("[data-say], [data-say-slow], [data-jump], [data-play-rule]");
       if (!b) return;
       if (b.dataset.say) say(b.dataset.say);
+      else if (b.dataset.saySlow) say(b.dataset.saySlow, true);
       else if (b.dataset.jump) scrollToSec(b.dataset.jump);
       else {
         const [si, ri] = b.dataset.playRule.split(":").map(Number);
@@ -2993,11 +2996,6 @@ const App = (function () {
     $("#back", wrap).addEventListener("click", () => navigate(back));
     const resumeBtn = $("#pron-resume", wrap);
     if (resumeBtn) resumeBtn.addEventListener("click", () => scrollToSec(ps.last));
-    const slowBtn = $("#pron-slow", wrap);
-    slowBtn.addEventListener("click", () => {
-      nav.pronSlow = !nav.pronSlow;
-      slowBtn.setAttribute("aria-pressed", nav.pronSlow ? "true" : "false");
-    });
     const playPractice = $("#pron-play-practice", wrap);
     if (playPractice) playPractice.addEventListener("click", () => playSeq(practice.map((x) => x.nl), 800));
     const topBtn = $("#pron-top", wrap);

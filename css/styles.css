@@ -853,6 +853,7 @@ ruby.guide rt {
 
 /* Languages with no speech model yet: hide audio-only controls */
 [data-no-speech] .voice-btn,
+[data-no-speech] .pron-ex-btns,
 [data-no-speech] .voice-action,
 [data-no-speech] #play-all,
 [data-no-speech] #narrow-listen,
@@ -1642,8 +1643,9 @@ ruby.guide rt { padding-inline: 0.12em; }
 .pron-head h1 { margin: 6px 0 12px; }
 .pron-tools { flex-wrap: wrap; gap: 8px; margin: 0 0 16px; }
 .pron-tools .btn { white-space: normal; text-align: start; }
-.pron-slow[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-text); }
-[data-no-speech] .pron-slow, [data-no-speech] .pron-play-rule { display: none; }
+.pron-ex-btns { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.voice-btn--slow { background: transparent; color: var(--muted, inherit); font-size: 1.05rem; line-height: 1; }
+[data-no-speech] .pron-play-rule { display: none; }
 .pron-toc ol { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 2px; }
 .pron-toc-item {
   width: 100%; display: flex; align-items: center; gap: 10px;
