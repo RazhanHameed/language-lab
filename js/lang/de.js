@@ -227,7 +227,7 @@
     onboarding: {
       tips: [
         { icon: "🔊", text: "Tap the speaker on any German word to hear it. The small \"say it like\" line under each word is an English-style respelling to get you started." },
-        { icon: "🎙️", text: "Speaking and Shadowing listen to you through a local Whisper server (start-mlx.sh). If it isn't running, skip those two. Everything else works without it." },
+        { icon: "🎙️", text: "Speaking and Shadowing listen to you and score what they hear. If scoring isn't available on your device, you can still record yourself, play the answer and compare. Everything else works without it." },
         { icon: "⌨️", text: "Typing exercises don't mind capitals or punctuation, and a wrong answer comes with a one-line rule explaining why." },
       ],
     },

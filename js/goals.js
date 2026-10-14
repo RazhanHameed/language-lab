@@ -405,12 +405,12 @@
     return `Practised ${c.last7} of the last 7 days. Rest days are normal.`;
   }
   function consistencyTileHtml(state, today) {
-    const c = consistency(state.sessions, today, 14);
+    const c = consistency(state.sessions, today, 7);
     return `<div class="stat">
-        <span class="stat-label">Consistency · last 14 days</span>
-        <span class="stat-value">${c.lastN}<span class="goal-of"> of 14</span></span>
-        ${dotsHtml(c.days, `Practised ${c.lastN} of the last 14 days`)}
-        <span class="stat-sub">days practised. Missing one day does not hurt.</span>
+        <span class="stat-label">Consistency</span>
+        <span class="stat-value">${c.lastN}<span class="goal-of"> of 7</span></span>
+        ${dotsHtml(c.days, `Practised ${c.lastN} of the last 7 days`)}
+        <span class="stat-sub">Practised ${c.lastN} of the last 7 days</span>
       </div>`;
   }
 
@@ -445,7 +445,7 @@
           <span class="eyebrow">Plan</span>
           <h3>Set a goal for ${esc(langName())}</h3>
           <p class="muted">A specific goal with a date works better than "do my best". Pick a pace that feels reachable. Takes about a minute.</p>
-          <div class="goal-actions"><button class="btn primary" id="goal-set">Set a goal</button></div>
+          <div class="goal-actions"><button class="btn" id="goal-set">Set a goal</button></div>
         </article>`);
       c.querySelector("#goal-set").addEventListener("click", () => { ui.mode = "create"; ui.step = 1; ui.draft = {}; navigate("plan"); });
       return c;
@@ -497,19 +497,17 @@
     return wrap;
   }
 
+  // The shared page header (App.pageHeader in app.js).
+  function pageHead(o) { return root.App || typeof App !== "undefined" ? App.pageHeader(o) : ""; }
+
   function listView(ctx, repaint) {
     const { state, navigate } = ctx;
     const today = ctx.todayISO();
     if (refresh(state, today)) ctx.persist();
     const frag = mk(`<div class="plan-body"></div>`);
     frag.innerHTML = `
-      <button class="btn ghost back-btn plan-back" id="plan-back" type="button"><span class="icon-arrow-back" aria-hidden="true">←</span> Back</button>
-      <header class="plan-head">
-        <h1>Your plan</h1>
-        <p class="muted">A goal is specific, has an end date, and is reachable. Practice is spaced and retrieval-based, which the scheduler already handles; the plan only sets how fast new material arrives.</p>
-      </header>
+      ${pageHead({ back: "plan-back", eyebrow: "Plan", title: "Your plan", lead: "A goal is specific, has an end date, and is reachable. Practice is spaced and retrieval-based, which the scheduler already handles; the plan only sets how fast new material arrives.", actions: `<button class="btn primary" id="plan-new">Set a new goal</button>` })}
       <div id="plan-goals" class="plan-goals"></div>
-      <div><button class="btn primary" id="plan-new">Set a new goal</button></div>
       <article class="card plan-consistency">
         <span class="eyebrow">Consistency</span>
         <h3>The last 14 days</h3>
@@ -572,7 +570,7 @@
       let html = `<p><strong>Life happens. Here's an adjusted plan.</strong> `;
       if (a.suggestedEnd) {
         html += `Catching up by the original date would mean ${plural(a.newPerDay, "new word")} a day (${esc(a.band.label.toLowerCase())}). A later end date keeps it reachable.</p>
-          <button class="btn primary" data-act="move">Move the end date to ${esc(fmtDate(a.suggestedEnd, true))}</button>`;
+          <button class="btn" data-act="move">Move the end date to ${esc(fmtDate(a.suggestedEnd, true))}</button>`;
       } else {
         html += `${plural(a.newPerDay, "new word")} a day over the days left is ${esc(a.band.label.toLowerCase())}, so the plan stays as it is.</p>`;
       }
@@ -592,15 +590,15 @@
       actions.appendChild(b);
       return b;
     }
-    if (!done && !paused) btn("Start today's session", "primary", () => startSession());
+    if (!done && !paused) btn("Start today's session", "", () => startSession());
     if (!done) {
-      if (paused) btn("Resume", "primary", () => {
+      if (paused) btn("Resume", "", () => {
         g.pausedDays = (g.pausedDays || 0) + currentPauseDays(g, today);
         g.pausedAt = null; g.status = "active"; ctx.persist(); ctx.toast("Welcome back. The end date moved by the days you were away."); repaint();
       });
       else btn("Pause", "", () => { g.status = "paused"; g.pausedAt = today; ctx.persist(); repaint(); });
     }
-    btn("Remove", "ghost danger", () => {
+    btn("Remove", "danger", () => {
       actions.innerHTML = `<span class="small">Remove this goal? Your cards and progress stay.</span>`;
       const y = mk(`<button class="btn danger">Yes, remove</button>`), n = mk(`<button class="btn">Keep it</button>`);
       y.addEventListener("click", () => { state.goals = state.goals.filter((x) => x.id !== g.id); ctx.persist(); repaint(); });
@@ -645,13 +643,24 @@
     const { state } = ctx;
     const today = ctx.todayISO();
     const d = ui.draft;
-    const root0 = mk(`<section class="goal-sheet card" aria-labelledby="sheet-h"></section>`);
+    const root0 = mk(`<section class="goal-sheet" aria-labelledby="sheet-h"></section>`);
     const m = mNow();
 
+    // Shared page header (Back, step, title), then the form in a card below it.
     function head(step, title) {
-      return `<div class="sheet-top"><span class="eyebrow">Step ${step} of 3</span><button class="btn ghost" id="sheet-cancel">Cancel</button></div><h1 id="sheet-h" class="sheet-h" tabindex="-1">${esc(title)}</h1>`;
+      return pageHead({ back: "sheet-cancel", eyebrow: `Step ${step} of 3`, title });
+    }
+    function frame() {
+      const h = root0.querySelector(".page-head");
+      if (!h || root0.querySelector(".goal-form")) return;
+      const h1 = h.querySelector("h1");
+      h1.id = "sheet-h"; h1.tabIndex = -1; h1.classList.add("sheet-h");
+      const body = mk(`<div class="card goal-form"></div>`);
+      while (h.nextSibling) body.appendChild(h.nextSibling);
+      root0.appendChild(body);
     }
     function wireCancel() {
+      frame();
       root0.querySelector("#sheet-cancel").addEventListener("click", () => { ui.mode = "list"; repaint(); window.scrollTo(0, 0); });
     }
     function focusHeading() { const h = root0.querySelector("#sheet-h"); if (h) setTimeout(() => h.focus({ preventScroll: true }), 0); }
@@ -896,7 +905,7 @@
              ${list[0].goal.type === "habit" ? "" : progressBar(list[0].done, list[0].total, list[0].expected, "Goal progress")}
              <p class="goal-progress-text">${list[0].goal.type === "habit" ? `${list[0].done} of ${list[0].total} planned days practised` : `${Math.round(list[0].done)} of ${list[0].total} ${list[0].unit}`} · ${PACE_TEXT[list[0].pace]}</p>`
           : `<h3>No goal set</h3><p class="muted">A dated, reachable goal sets the pace of new cards.</p>`}
-        <div class="goal-actions"><button class="btn ${list.length ? "" : "primary"}" id="stats-plan">${list.length ? "Open plan" : "Set a goal"}</button></div>
+        <div class="goal-actions"><button class="btn" id="stats-plan">${list.length ? "Open plan" : "Set a goal"}</button></div>
       </article>`);
     c.querySelector("#stats-plan").addEventListener("click", () => { ui.mode = list.length ? "list" : "create"; ui.step = 1; ui.draft = {}; ctx.navigate("plan"); });
     return c;

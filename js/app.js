@@ -287,6 +287,20 @@ const App = (function () {
     confirmDialog({ title: `End this ${noun}?`, body, confirmLabel: `End ${noun}`, onConfirm: doEnd });
   }
 
+  // One header for every page. Order is always: Back, eyebrow, H1, lead, page actions.
+  // (The coach tip is mounted right after it by mountCoach, then the content.)
+  // `back` is the id of the Back button (true = "back"); `actions` is trusted HTML.
+  function pageHeader({ back, eyebrow, title, lead, actions } = {}) {
+    const backId = back === true ? "back" : back;
+    return `<header class="page-head">
+      ${backId ? `<button class="btn back-btn" id="${backId}" type="button">${arrowBack()} Back</button>` : ""}
+      ${eyebrow ? `<span class="eyebrow">${escape(eyebrow)}</span>` : ""}
+      <h1>${escape(title)}</h1>
+      ${lead ? `<p class="lead">${escape(lead)}</p>` : ""}
+      ${actions ? `<div class="page-actions">${actions}</div>` : ""}
+    </header>`;
+  }
+
   // Top bar of a session or drill: a clear End button and a labelled progress bar.
   function focusBar(idx, total, quitId, noun) {
     const n = Math.min(idx + 1, total);
@@ -531,11 +545,11 @@ const App = (function () {
     const coach = Onboarding.coachEl(key);
     if (!coach) return;
     const anchor = viewEl.querySelector(".flashcard-wrap, .drill-card");
-    const back = viewEl.querySelector("#back");
+    const head = viewEl.querySelector(".page-head");
     const bar = viewEl.querySelector(".session-bar");
     if (bar) bar.after(coach);                 // focus bar first, then the tip, then the card
+    else if (head) head.after(coach);          // header (Back, title, actions), then the tip, then the content
     else if (anchor) anchor.parentNode.insertBefore(coach, anchor);
-    else if (back) back.after(coach);
     else viewEl.prepend(coach);
   }
 
@@ -550,21 +564,18 @@ const App = (function () {
 
     const wrap = el(`<div class="view view-home"></div>`);
 
-    // Backup reminder banner — shown when last export is >= 7 days ago,
-    // OR has never happened and the user has any review data to lose.
+    // Backup reminder: only once there is something worth keeping (3+ sessions),
+    // no backup in 14 days, and not dismissed in the last 7 days. One quiet row.
     const days = Store.daysSinceExport(state);
-    const hasData = (state.sessions || []).length > 0 || Object.keys(state.cards).length > 0;
-    if (hasData && days >= 7) {
-      const stale = days === Infinity
-        ? "Never backed up."
-        : `Last backup: ${Math.floor(days)} days ago.`;
+    const dismissedDays = state.backupDismissedAt ? (Date.now() - state.backupDismissedAt) / 86400000 : Infinity;
+    if ((state.sessions || []).length >= 3 && days >= 14 && dismissedDays >= 7) {
       const banner = el(`
-        <div class="backup-banner">
+        <div class="backup-banner" role="region" aria-label="Back up your progress">
           <div class="backup-banner-text">
-            <strong>Back up your progress.</strong> ${stale} It only lives in this browser.
+            <strong>Back up your progress.</strong> It only lives in this browser.
           </div>
-          <button class="btn primary" id="banner-backup">Download backup</button>
-          <button class="icon-btn" id="banner-dismiss" aria-label="Dismiss">✕</button>
+          <button class="btn" id="banner-backup" type="button">Back up</button>
+          <button class="icon-btn" id="banner-dismiss" type="button" aria-label="Dismiss">✕</button>
         </div>
       `);
       banner.querySelector("#banner-backup").addEventListener("click", () => {
@@ -574,9 +585,7 @@ const App = (function () {
         toast("Backup saved to your Downloads folder.");
       });
       banner.querySelector("#banner-dismiss").addEventListener("click", () => {
-        // Snooze for 24h: bump lastExportAt forward by (current - 6 days) so
-        // we won't nag again for ~24 hours.
-        state.lastExportAt = Date.now() - 6 * 24 * 60 * 60 * 1000;
+        state.backupDismissedAt = Date.now();
         persist();
         banner.remove();
       });
@@ -616,7 +625,7 @@ const App = (function () {
       const helpRow = el(`
         <div class="row home-first-links" style="gap:8px; flex-wrap:wrap">
           <button class="btn" id="home-tour">Take the 1-minute tour</button>
-          <button class="btn ghost" id="home-how">How it works</button>
+          <button class="btn" id="home-how">How it works</button>
         </div>
       `);
       $("#home-tour", helpRow).addEventListener("click", () => Onboarding.openTour());
@@ -764,7 +773,7 @@ const App = (function () {
           <button class="drill-chip" data-drill="speaking">
             <span class="drill-chip-emoji">🎙️</span>
             <span class="drill-chip-label">Speaking</span>
-            <span class="drill-chip-sub">say it · Whisper-scored</span>
+            <span class="drill-chip-sub">say it · get a score</span>
           </button>
           <button class="drill-chip" data-drill="shadow">
             <span class="drill-chip-emoji">🌓</span>
@@ -823,7 +832,7 @@ const App = (function () {
             </div>
             <span class="li-arrow" aria-hidden="true">→</span>
           </button>
-          <button class="btn ghost" id="read-all" type="button" style="margin-top:10px">All ${window.PASSAGES.length} passages ${arrowFwd()}</button>
+          <button class="btn" id="read-all" type="button" style="margin-top:10px">All ${window.PASSAGES.length} passages ${arrowFwd()}</button>
         </article>
       `);
       $("#read-next", readCard).addEventListener("click", () => openPassage(nextP.id));
@@ -945,16 +954,12 @@ const App = (function () {
             ${card.gender ? `<div class="prompt-meta"><span class="chip primary">${card.gender}</span><span class="chip">${card.pos || ""}</span></div>` : `<div class="prompt-meta"><span class="chip">${card.pos || ""}</span></div>`}
           </div>
           <div class="face back">
-            <span class="prompt-line">English</span>
             <div class="speak-row">
-              <div class="prompt-en">${escape(card.en)}</div>
-              <button class="voice-btn" data-speak-en="${escape(card.en)}" aria-label="Hear English">${iconSound()}</button>
-            </div>
-            <div class="speak-row" style="margin-top: 6px;">
-              <span class="nl-text" style="font-size: 1.375rem;">${escape(card.nl)}</span>
+              <div class="prompt-word">${escape(card.nl)}</div>
               <button class="voice-btn" data-speak-nl="${escape(card.nl)}" aria-label="Hear ${Lang.cfg().name}">${iconSound()}</button>
             </div>
             ${respellLine(card.nl, card.respell)}
+            <div class="prompt-en">${escape(card.en)}</div>
             ${exampleBlock(card)}
             ${noteBlock(card)}
           </div>
@@ -1058,7 +1063,7 @@ const App = (function () {
     const wrap = el(`
       <div class="card lg stack-sm">
         <span class="prompt-line">${askInDutch ? Lang.cfg().name + " · pick the meaning" : "English · pick the " + Lang.cfg().name}</span>
-        <div class="prompt-word ${askInDutch ? "" : "small"}">${escape(promptText)}</div>
+        ${askInDutch ? `<div class="prompt-word">${escape(promptText)}</div>` : `<div class="prompt-en prompt-en--lg">${escape(promptText)}</div>`}
         ${askInDutch ? respellLine(card.nl, card.respell) : ""}
         <div class="choice-grid" id="choices"></div>
         <div id="reveal-area"></div>
@@ -1067,7 +1072,7 @@ const App = (function () {
 
     const grid = $("#choices", wrap);
     choices.forEach((text) => {
-      const btn = el(`<button class="choice-btn" data-val="${escape(text)}">${escape(text)}</button>`);
+      const btn = el(`<button class="choice-btn ${askInDutch ? "" : "tl"}" data-val="${escape(text)}">${escape(text)}</button>`);
       btn.addEventListener("click", () => {
         const isCorrect = text === correctAnswer;
         $$(".choice-btn", grid).forEach((b) => {
@@ -1083,7 +1088,7 @@ const App = (function () {
     });
 
     if (askInDutch) {
-      const audioBtn = el(`<button class="btn voice-action" style="align-self:flex-start">${iconSound()} Hear it</button>`);
+      const audioBtn = el(`<button class="btn audio voice-action" style="align-self:flex-start">${iconSound()} Hear it</button>`);
       audioBtn.addEventListener("click", () => Speech.speak(card.nl, { rate: state.settings.prefRate }));
       wrap.insertBefore(audioBtn, grid);
     }
@@ -1098,8 +1103,8 @@ const App = (function () {
         <span class="prompt-line">Listen and type</span>
         <p class="muted" style="margin:0">You'll hear a ${Lang.cfg().name} word — type what you hear.</p>
         <div class="row" style="gap: 10px">
-          <button class="btn primary voice-action" id="play-btn">${iconSound()} Play</button>
-          <button class="btn voice-action" id="play-slow">${iconSound()} Slow</button>
+          <button class="btn audio voice-action" id="play-btn">${iconSound()} Play</button>
+          <button class="btn audio voice-action" id="play-slow">${iconSound()} Slow</button>
         </div>
         <input type="text" class="cloze-input" id="answer" placeholder="${escape(typeHint(`Type ${Lang.cfg().name} here…`))}" autocomplete="off" autocapitalize="none" />
         <button class="btn primary full" id="check-btn">Check</button>
@@ -1154,16 +1159,12 @@ const App = (function () {
             ${card.pattern ? `<div class="prompt-meta"><span class="chip">${escape(card.pattern)}</span></div>` : ""}
           </div>
           <div class="face back">
-            <span class="prompt-line">English</span>
             <div class="speak-row">
-              <div class="prompt-en">${escape(card.en)}</div>
-              <button class="voice-btn" data-speak-en="${escape(card.en)}" aria-label="Hear English">${iconSound()}</button>
-            </div>
-            <div class="speak-row" style="margin-top: 6px;">
-              <span class="nl-text" style="font-size: 1.125rem;">${escape(card.nl)}</span>
+              <div class="prompt-word small">${escape(card.nl)}</div>
               <button class="voice-btn" data-speak-nl="${escape(card.nl)}" aria-label="Hear ${Lang.cfg().name}">${iconSound()}</button>
             </div>
             ${respellLine(card.nl, card.respell)}
+            <div class="prompt-en">${escape(card.en)}</div>
             ${revealsBlock(card)}
           </div>
         </div>
@@ -1215,7 +1216,7 @@ const App = (function () {
         <div class="cloze-prompt">${promptHtml}</div>
         <input type="text" class="cloze-input" id="answer" placeholder="${escape(typeHint("…"))}" autocomplete="off" autocapitalize="none" />
         <div class="row">
-          <button class="btn voice-action" id="hear-btn">${iconSound()} Hear full sentence</button>
+          <button class="btn audio voice-action" id="hear-btn">${iconSound()} Hear full sentence</button>
           <button class="btn primary" id="check-btn" style="flex:1; justify-content:center">Check</button>
         </div>
         <div id="reveal-area"></div>
@@ -1265,7 +1266,7 @@ const App = (function () {
         <div class="reorder-area" id="answer-area" data-empty="Tap words below"></div>
         <div class="reorder-bank" id="bank"></div>
         <div class="row">
-          <button class="btn voice-action" id="hear-btn">${iconSound()} Hear it</button>
+          <button class="btn audio voice-action" id="hear-btn">${iconSound()} Hear it</button>
           <button class="btn primary" id="check-btn" style="flex:1; justify-content:center">Check</button>
         </div>
         <div id="reveal-area"></div>
@@ -1317,8 +1318,8 @@ const App = (function () {
       <div class="card lg stack-sm">
         <span class="prompt-line">Listen and type the sentence</span>
         <div class="row" style="gap: 10px">
-          <button class="btn primary voice-action" id="play-btn">${iconSound()} Play</button>
-          <button class="btn voice-action" id="play-slow">${iconSound()} Slow</button>
+          <button class="btn audio voice-action" id="play-btn">${iconSound()} Play</button>
+          <button class="btn audio voice-action" id="play-slow">${iconSound()} Slow</button>
         </div>
         <textarea class="cloze-input" id="answer" rows="2" placeholder="${escape(typeHint("Type what you hear…"))}" autocomplete="off" autocapitalize="none"></textarea>
         <button class="btn primary full" id="check-btn">Check</button>
@@ -1410,10 +1411,7 @@ const App = (function () {
           <span class="nl-text">${escape(card.example.nl)}</span>
           <button class="voice-btn" data-speak-nl="${escape(card.example.nl)}" aria-label="Hear ${Lang.cfg().name}">${iconSound()}</button>
         </div>
-        <div class="speak-row muted">
-          <span>${escape(card.example.en)}</span>
-          <button class="voice-btn" data-speak-en="${escape(card.example.en)}" aria-label="Hear English">${iconSound()}</button>
-        </div>
+        <div class="prompt-example-en">${escape(card.example.en)}</div>
       </div>`;
   }
   function noteBlock(card) {
@@ -1432,22 +1430,6 @@ const App = (function () {
 
   function iconSound() {
     return `<svg class="ico-sound" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5L6 9H2v6h4l5 4z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>`;
-  }
-  function iconCopy() {
-    return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
-  }
-  // Copy text to the clipboard, with a graceful fallback for older browsers.
-  function copyText(text) {
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      return navigator.clipboard.writeText(text);
-    }
-    try {
-      const ta = document.createElement("textarea");
-      ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
-      document.body.appendChild(ta); ta.select();
-      document.execCommand("copy"); ta.remove();
-      return Promise.resolve();
-    } catch (e) { return Promise.reject(e); }
   }
   // Arrows. The interface is always left-to-right (only Kurdish content is
   // RTL), so these are plain glyphs: forward points right, back points left.
@@ -1501,7 +1483,7 @@ const App = (function () {
           <div class="drill-prompt">${q.prompt}</div>
           <input type="text" class="cloze-input" id="drill-input" placeholder="${escape(typeHint("type your answer…"))}" autocomplete="off" autocapitalize="none" />
           <div class="row" style="gap: 10px">
-            <button class="btn ghost" id="drill-skip" style="flex: 0">Skip</button>
+            <button class="btn" id="drill-skip" style="flex: 0">Skip</button>
             <button class="btn primary" id="drill-check" style="flex: 1; justify-content: center">Check</button>
           </div>
           <div id="drill-feedback"></div>
@@ -1534,7 +1516,7 @@ const App = (function () {
         </div>
         ${diag ? `<div class="metaling-tip"><span class="chip accent">${escape(diag.tag)}</span> ${diag.note}</div>` : ""}
         ${q.kind === "number" || q.kind === "time"
-          ? `<button class="btn voice-action full" data-hear style="margin-top:8px">${iconSound()} Hear it</button>`
+          ? `<button class="btn audio voice-action full" data-hear style="margin-top:8px">${iconSound()} Hear it</button>`
           : ""}
         <div style="margin-top:6px"><button class="btn primary full" id="drill-next">Next ${arrowFwd()}</button></div>
       `;
@@ -1704,7 +1686,7 @@ const App = (function () {
               <span id="rec-icon">●</span>
               <span id="rec-label">Tap to record</span>
             </button>
-            <button class="btn voice-action" id="rec-listen">${iconSound()} Hear answer</button>
+            <button class="btn audio voice-action" id="rec-listen">${iconSound()} Hear answer</button>
           </div>
           <div id="rec-status" class="muted" style="font-size: 0.8125rem; min-height: 20px;"></div>
           <div id="rec-feedback"></div>
@@ -1755,7 +1737,7 @@ const App = (function () {
       recBtn.disabled = true;
       recIcon.textContent = "…";
       recLabel.textContent = "Transcribing…";
-      status.textContent = "First speaking question downloads Whisper (~1 min). Subsequent ones are fast.";
+      status.textContent = "Checking what you said…";
     }
     async function onRecordingDone() {
       const blob = new Blob(chunks, { type: chunks[0]?.type || (mediaRecorder && mediaRecorder.mimeType) || "audio/webm" });
@@ -1765,7 +1747,7 @@ const App = (function () {
         showFeedback(heard, grade);
       } catch (e) {
         console.error(e);
-        status.textContent = "Transcription failed: " + e.message;
+        status.textContent = "Couldn't check that recording. Try again, or play the answer and compare.";
         recBtn.disabled = false;
         recIcon.textContent = "●";
         recLabel.textContent = "Try again";
@@ -1803,7 +1785,7 @@ const App = (function () {
           </div>
         ` : ""}
         <div class="row" style="gap:8px; margin-top: 12px;">
-          <button class="btn ghost" id="speak-retry" style="flex:0">Retry</button>
+          <button class="btn" id="speak-retry" style="flex:0">Retry</button>
           <button class="btn primary" id="speak-next" style="flex:1; justify-content: center">Next ${arrowFwd()}</button>
         </div>
       `;
@@ -1841,7 +1823,7 @@ const App = (function () {
 
     // Probe: warn if MLX server isn't running
     Speech.probeMlx().then((ok) => {
-      if (!ok) status.textContent = "Speech server not running — start with ./start-mlx.sh to score speaking.";
+      if (!ok) status.textContent = "Record yourself, then play the answer and compare.";
     });
 
     return wrap;
@@ -1881,7 +1863,7 @@ const App = (function () {
               <span id="rec-icon">${iconSound()}</span>
               <span id="rec-label">Hear it, then shadow</span>
             </button>
-            <button class="btn voice-action" id="rec-listen-only">${iconSound()} Hear again</button>
+            <button class="btn audio voice-action" id="rec-listen-only">${iconSound()} Hear again</button>
           </div>
           <div id="rec-status" class="muted" style="font-size: 0.8125rem; min-height: 20px;"></div>
           <div id="rec-feedback"></div>
@@ -1950,7 +1932,7 @@ const App = (function () {
         const grade = gradeSpeaking(q.answer, heard);
         showFeedback(heard, grade);
       } catch (e) {
-        status.textContent = "Transcription failed: " + e.message;
+        status.textContent = "Couldn't check that recording. Try again, or play the answer and compare.";
         stage = "ready"; recBtn.disabled = false;
         recIcon.innerHTML = iconSound(); recLabel.textContent = "Hear it, then shadow";
       }
@@ -1969,7 +1951,7 @@ const App = (function () {
           <div><span class="speaking-tag">heard</span> ${escape(heard) || "<em>nothing</em>"}</div>
         </div>
         <div class="row" style="gap:8px; margin-top:12px">
-          <button class="btn ghost" id="shadow-retry" style="flex:0">Retry</button>
+          <button class="btn" id="shadow-retry" style="flex:0">Retry</button>
           <button class="btn primary" id="shadow-next" style="flex:1; justify-content:center">Next ${arrowFwd()}</button>
         </div>
       `;
@@ -1994,7 +1976,7 @@ const App = (function () {
       endDrill();
     });
     Speech.probeMlx().then((ok) => {
-      if (!ok) status.textContent = "Speech server not running — start with ./start-mlx.sh to score shadowing.";
+      if (!ok) status.textContent = "Repeat after the voice, then play it again and compare.";
     });
     return wrap;
   }
@@ -2018,8 +2000,8 @@ const App = (function () {
         ${focusBar(d.idx, d.total, "quit-drill", "drill")}
         <div class="card lg drill-card">
           <span class="eyebrow">Minimal pairs · which did you hear?</span>
-          <div class="muted" style="text-align:center; font-size: 0.75rem;">contrast: <strong>${escape(q.hint)}</strong></div>
-          <button class="btn primary lg voice-action" id="play-pair" style="margin: 8px 0">${iconSound()} Play</button>
+          <div class="drill-chip-row"><span class="chip">Contrast: ${escape(q.hint)}</span></div>
+          <button class="btn audio voice-action" id="play-pair" style="align-self:flex-start">${iconSound()} Play</button>
           <div class="minpair-grid">
             <button class="minpair-choice" data-side="left">
               <span class="nl-text">${escape(left.nl)}</span>
@@ -2083,7 +2065,7 @@ const App = (function () {
     // Backup nudge at session end: if it's been a week since last export
     // AND the user has data, gently surface the option here.
     const days = Store.daysSinceExport(state);
-    const stale = (days >= 7) && (Object.keys(state.cards).length > 0);
+    const stale = (days >= 14) && (state.sessions || []).length >= 3;
     const wrap = el(`
       <div class="view stack">
         <div class="hero" style="text-align:center">
@@ -2104,11 +2086,11 @@ const App = (function () {
           </div>
         </div>
         ${stale ? `
-          <div class="backup-banner" style="margin-top: 8px">
+          <div class="backup-banner">
             <div class="backup-banner-text">
               <strong>Save your progress.</strong> ${days === Infinity ? "You haven't backed up yet." : `No backup in ${Math.floor(days)} days.`}
             </div>
-            <button class="btn primary" id="summary-backup">Download backup</button>
+            <button class="btn" id="summary-backup">Back up</button>
           </div>` : ""}
         <article class="card summary-next">
           <span class="eyebrow">${state.sessions.length <= 1 ? "Nice start" : "What next?"}</span>
@@ -2154,10 +2136,7 @@ const App = (function () {
 
     const wrap = el(`
       <div class="view view-browse">
-        <div>
-          <h1 style="margin-bottom:0">Browse</h1>
-          <p class="muted" style="margin:4px 0 0">Pick a category to learn or revisit.</p>
-        </div>
+        ${pageHeader({ title: "Browse", lead: "Pick a category to learn or revisit." })}
         <nav class="jump-bar" aria-label="Jump to section">
           ${sections.map(([id, label]) => `<button type="button" class="jump-chip" data-jump="${id}">${label}</button>`).join("")}
         </nav>
@@ -2359,13 +2338,11 @@ const App = (function () {
       if (!t || items.length === 0) { navigate("browse"); return el(`<div></div>`); }
       const wrap = el(`
         <div class="view stack">
-          <button class="btn ghost back-btn" id="back" type="button">${arrowBack()} Back</button>
-          <h1>${t.icon} ${escape(t.name)}</h1>
-          <p class="muted">${items.length} cards. Tap a card to hear it.</p>
-          <div class="theme-actions">
-            <button class="btn primary lg full" id="study-theme">Study this theme</button>
-            <button class="btn lg full" id="challenge-theme" title="Test yourself before studying — even failed pretests boost later retention">Challenge me · 5</button>
-          </div>
+          ${pageHeader({ back: true, eyebrow: "Vocabulary theme", title: t.name, lead: `${items.length} cards. Tap a speaker to hear a word or its example.`,
+            actions: `<div class="theme-actions">
+              <button class="btn primary" id="study-theme">Study this theme</button>
+              <button class="btn" id="challenge-theme" title="Test yourself before studying — even failed pretests boost later retention">Challenge me · 5</button>
+            </div>` })}
           <div class="stack-sm" id="vocab-list"></div>
         </div>
       `);
@@ -2375,39 +2352,22 @@ const App = (function () {
         const m = SRS.maturity(st);
         const item = el(`
           <div class="list-item vocab-item">
-            <div class="li-main">
-              <button class="vocab-word" title="Hear the word">
-                <span class="li-title nl-text" style="font-size:1.125rem">${v.gender ? `<span class="muted" style="font-weight:400">${v.gender}</span> ` : ""}${escape(v.nl)}</span>
+            <div class="vocab-top">
+              <div class="vocab-word-text">
+                <span class="li-title nl-text">${v.gender ? `<span class="vocab-gender">${v.gender}</span> ` : ""}${escape(v.nl)}</span>
                 <span class="li-sub">${escape(v.en)}</span>
-              </button>
-              ${v.example ? `
-                <div class="vocab-example-row">
-                  <button class="vocab-example" title="Hear the example sentence">
-                    <span class="voice-btn voice-btn--static" aria-hidden="true">${iconSound()}</span><em class="nl-text">${escape(v.example.nl)}</em>
-                  </button>
-                  <button class="vocab-copy" title="Copy sentence" aria-label="Copy sentence">${iconCopy()}</button>
-                </div>` : ""}
+              </div>
+              <span class="chip ${m === "mature" ? "success" : m === "young" ? "primary" : ""}">${({ mature: "well known", young: "getting there", learning: "learning", new: "new" })[m] || m}</span>
+              <button class="voice-btn" data-speak-nl="${escape(v.nl)}" aria-label="Hear ${escape(v.nl)}">${iconSound()}</button>
             </div>
-            <span class="chip ${m === "mature" ? "success" : m === "young" ? "primary" : ""}">${({ mature: "well known", young: "getting there", learning: "learning", new: "new" })[m] || m}</span>
+            ${v.example ? `
+              <div class="vocab-ex">
+                <span class="nl-text vocab-ex-nl">${escape(v.example.nl)}</span>
+                <button class="voice-btn" data-speak-nl="${escape(v.example.nl)}" aria-label="Hear the example sentence">${iconSound()}</button>
+              </div>` : ""}
           </div>
         `);
-        // Clicking anywhere on the card → word pronunciation; the example
-        // sentence → sentence pronunciation; the copy button → copy only.
-        item.addEventListener("click", () => Speech.speak(v.nl, { rate: state.settings.prefRate }));
-        const exBtn = $(".vocab-example", item);
-        if (exBtn) exBtn.addEventListener("click", (e) => {
-          e.stopPropagation();
-          Speech.speak(v.example.nl, { rate: state.settings.prefRate });
-        });
-        const copyBtn = $(".vocab-copy", item);
-        if (copyBtn) copyBtn.addEventListener("click", (e) => {
-          e.stopPropagation();  // don't play the word or the sentence
-          copyText(v.example.nl).then(() => {
-            copyBtn.classList.add("copied");
-            toast("Copied");
-            setTimeout(() => copyBtn.classList.remove("copied"), 1200);
-          }).catch(() => toast("Couldn't copy"));
-        });
+        wireSpeakButtons(item);
         list.appendChild(item);
       });
       $("#back", wrap).addEventListener("click", () => navigate("browse"));
@@ -2420,10 +2380,8 @@ const App = (function () {
       if (!t || items.length === 0) { navigate("browse"); return el(`<div></div>`); }
       const wrap = el(`
         <div class="view stack">
-          <button class="btn ghost back-btn" id="back" type="button">${arrowBack()} Back</button>
-          <h1>${t.icon} ${escape(t.name)}</h1>
-          <p class="muted">${escape(t.blurb)}</p>
-          <div class="theme-actions"><button class="btn primary lg full" id="study-theme">Drill these patterns</button></div>
+          ${pageHeader({ back: true, eyebrow: "Sentence patterns", title: t.name, lead: t.blurb,
+            actions: `<div class="theme-actions"><button class="btn primary" id="study-theme">Drill these patterns</button></div>` })}
           <div class="stack-sm" id="sent-list"></div>
         </div>
       `);
@@ -2433,10 +2391,10 @@ const App = (function () {
           <article class="card">
             <div class="row spread" style="align-items:flex-start">
               <div style="flex:1">
-                <div class="nl-text" style="font-size:1.1875rem">${escape(s.nl)}</div>
-                <div class="muted" style="margin-top:4px; font-size:0.875rem">${escape(s.en)}</div>
+                <div class="nl-text tl-sentence">${escape(s.nl)}</div>
+                <div class="tl-gloss">${escape(s.en)}</div>
                 ${s.pattern ? `<div style="margin-top:8px"><span class="chip">${escape(s.pattern)}</span></div>` : ""}
-                ${s.reveals ? `<ul class="muted" style="font-size:0.8125rem; margin:8px 0 0 18px; padding:0">${s.reveals.map((r) => `<li>${escape(r)}</li>`).join("")}</ul>` : ""}
+                ${s.reveals ? `<ul class="muted tl-notes">${s.reveals.map((r) => `<li>${escape(r)}</li>`).join("")}</ul>` : ""}
               </div>
               <button class="voice-btn" data-speak="${escape(s.nl)}" aria-label="Hear it">${iconSound()}</button>
             </div>
@@ -2519,18 +2477,14 @@ const App = (function () {
 
     const wrap = el(`
       <div class="view stack">
-        <button class="btn ghost back-btn" id="back" type="button">${arrowBack()} Back</button>
-        <h1>${s.icon || "📍"} ${escape(s.title)}</h1>
-        <p class="muted">${escape(s.setting)}</p>
-        <div class="row" style="flex-wrap: wrap; gap: 8px;">
-          <button class="btn primary voice-action" id="play-all">${iconSound()} Play full dialogue</button>
-          <button class="btn voice-action" id="narrow-listen" title="Same dialogue, 3 passes, alternating speakers">${iconSound()} Narrow listen · 3×</button>
-        </div>
+        ${pageHeader({ back: true, eyebrow: "Dialogue", title: s.title, lead: s.setting,
+          actions: `<button class="btn audio voice-action" id="play-all">${iconSound()} Play full dialogue</button>
+            <button class="btn audio voice-action" id="narrow-listen" title="Same dialogue, 3 passes, alternating speakers">${iconSound()} Narrow listen · 3×</button>` })}
         <div id="narrow-status" class="muted" style="font-size: 0.8125rem; min-height: 0;"></div>
         <div class="dialogue" id="dlg"></div>
         ${s.notes && s.notes.length ? `
-          <div class="card" style="background: var(--accent-soft); border-color: transparent">
-            <span class="eyebrow" style="color:var(--accent)">Notes</span>
+          <div class="card note-card">
+            <span class="eyebrow">Notes</span>
             <ul style="margin:8px 0 0 18px; padding:0">
               ${s.notes.map((n) => `<li style="margin-bottom:6px">${escape(n)}</li>`).join("")}
             </ul>
@@ -2654,15 +2608,10 @@ const App = (function () {
 
     const wrap = el(`
       <div class="view stack">
-        <button class="btn ghost back-btn" id="back" type="button">${arrowBack()} Back</button>
+        ${pageHeader({ back: true, eyebrow: `Reading · ${p.level}`, title: p.title, lead: p.blurb,
+          actions: `<button class="btn audio voice-action" id="play-passage">${iconSound()} Read it to me</button>` })}
         <article class="card lg passage-card">
-          <span class="eyebrow">${escape(p.level)} · Reading</span>
-          <h1 style="margin: 8px 0 6px">${escape(p.title)}</h1>
-          <p class="muted" style="margin: 0 0 14px">${escape(p.blurb)}</p>
           <div class="passage-body" id="passage-body"></div>
-          <div class="row" style="gap: 8px; margin-top: 14px;">
-            <button class="btn voice-action" id="play-passage">${iconSound()} Read it to me</button>
-          </div>
         </article>
         <div class="lookup-bar" id="lookup-bar">
           <div class="lookup-empty">Tap any ${Lang.cfg().name} word for its meaning.</div>
@@ -2757,12 +2706,9 @@ const App = (function () {
 
     const wrap = el(`
       <div class="view stack">
-        <button class="btn ghost back-btn" id="back" type="button">${arrowBack()} Back</button>
+        ${pageHeader({ back: true, eyebrow: g.level ? `Grammar · ${g.level}` : "Grammar", title: g.title, lead: g.blurb })}
         <article class="capsule">
-          <span class="eyebrow">Grammar capsule</span>
-          <h1 style="margin: 6px 0 8px">${escape(g.title)}</h1>
-          <p class="muted" style="margin:0">${escape(g.blurb)}</p>
-          <p style="margin-top:14px">${escape(g.body)}</p>
+          <p style="margin:0">${escape(g.body)}</p>
           <div class="stack-sm" style="margin-top: 16px" id="examples"></div>
           <div class="pitfall"><strong>Pitfall:</strong> ${escape(g.pitfall)}</div>
           ${gId === "g_pronunciation" && pronGuide() ? `<button class="btn primary pron-capsule-link" id="pron-open">Read the full guide: ${escape(pronGuide().title)} ${arrowFwd()}</button>` : ""}
@@ -2774,11 +2720,11 @@ const App = (function () {
     const exWrap = $("#examples", wrap);
     g.examples.forEach((ex) => {
       const exEl = el(`
-        <div class="card" style="background: var(--surface-2); padding: 14px 16px;">
+        <div class="card ex-card">
           <div class="row spread" style="align-items: flex-start">
             <div style="flex:1">
-              <div class="nl-text" style="font-size:1.125rem">${escape(ex.nl)}</div>
-              <div class="muted" style="font-size:0.875rem; margin-top:4px">${escape(ex.en)}</div>
+              <div class="nl-text tl-sentence">${escape(ex.nl)}</div>
+              <div class="tl-gloss">${escape(ex.en)}</div>
               ${ex.tag ? `<div style="margin-top:8px"><span class="chip">${escape(ex.tag)}</span></div>` : ""}
             </div>
             <button class="voice-btn" data-speak aria-label="Hear it">${iconSound()}</button>
@@ -2855,7 +2801,7 @@ const App = (function () {
     if (!P) {
       const empty = el(`
         <div class="view stack">
-          <button class="btn ghost back-btn" id="back" type="button">${arrowBack()} Back</button>
+          ${pageHeader({ back: true, eyebrow: "Pronunciation", title: "Pronunciation guide" })}
           <div class="empty-state">The ${escape(Lang.cfg().name)} pronunciation guide isn't available yet.</div>
         </div>
       `);
@@ -2885,15 +2831,9 @@ const App = (function () {
 
     const wrap = el(`
       <div class="view stack pron-view">
-        <button class="btn ghost back-btn" id="back" type="button">${arrowBack()} Back</button>
-        <header class="pron-head" dir="ltr">
-          <span class="eyebrow">Pronunciation guide · ${Number(P.minutes) || 15} min read</span>
-          <h1>${escape(P.title)}</h1>
-          <div class="row pron-tools">
-            ${resume ? `<button class="btn primary" id="pron-resume">Continue: ${escape(resume)} ${arrowFwd()}</button>` : ""}
-          </div>
-          ${(P.intro || []).map((p) => `<p>${escape(p)}</p>`).join("")}
-        </header>
+        ${pageHeader({ back: true, eyebrow: `Pronunciation · ${Number(P.minutes) || 15} min`, title: P.title, lead: (P.intro || [])[0],
+          actions: resume ? `<button class="btn primary" id="pron-resume">Continue: ${escape(resume)} ${arrowFwd()}</button>` : "" })}
+        ${(P.intro || []).length > 1 ? `<div class="pron-intro" dir="ltr">${P.intro.slice(1).map((p) => `<p>${escape(p)}</p>`).join("")}</div>` : ""}
         <nav class="card pron-toc" aria-label="Contents" dir="ltr">
           <span class="eyebrow">Contents · <span id="pron-count"></span></span>
           <ol>
@@ -2914,21 +2854,21 @@ const App = (function () {
                     <h3 dir="ltr">${escape(r.rule)}</h3>
                     ${r.explain ? `<p class="muted pron-rule-explain" dir="ltr">${escape(r.explain)}</p>` : ""}
                   </div>
-                  ${(r.examples || []).length > 1 ? `<button class="btn voice-action pron-play-rule" data-play-rule="${si}:${ri}">${iconSound()} ${playLabel(r.examples.length)}</button>` : ""}
+                  ${(r.examples || []).length > 1 ? `<button class="btn audio voice-action pron-play-rule" data-play-rule="${si}:${ri}">${iconSound()} ${playLabel(r.examples.length)}</button>` : ""}
                 </div>
                 <div class="pron-examples">${(r.examples || []).map(exRow).join("")}</div>
               </div>`).join("")}
             ${s.pitfall ? `<div class="pitfall" dir="ltr"><strong>Pitfall:</strong> ${escape(s.pitfall)}</div>` : ""}
-            ${sections[si + 1] || practice.length ? `<div class="pron-sec-foot"><button class="btn ghost pron-next" data-jump="${escape(sections[si + 1] ? sections[si + 1].id : PRON_PRACTICE)}">Next: ${escape(sections[si + 1] ? sections[si + 1].title : "Practice sentences")} ${arrowFwd()}</button></div>` : ""}
+            ${sections[si + 1] || practice.length ? `<div class="pron-sec-foot"><button class="btn pron-next" data-jump="${escape(sections[si + 1] ? sections[si + 1].id : PRON_PRACTICE)}">Next: ${escape(sections[si + 1] ? sections[si + 1].title : "Practice sentences")} ${arrowFwd()}</button></div>` : ""}
           </section>`).join("")}
         ${practice.length ? `
           <section class="card pron-section pron-practice" data-sec="${PRON_PRACTICE}">
             <span class="eyebrow" dir="ltr">Practice</span>
             <h2 dir="ltr">Read these aloud</h2>
             <p class="muted" dir="ltr">Say each sentence yourself first, then play it and compare. The notes say which sounds to listen for.</p>
-            <button class="btn primary voice-action" id="pron-play-practice">${iconSound()} Play all practice sentences</button>
+            <button class="btn audio voice-action" id="pron-play-practice">${iconSound()} Play all practice sentences</button>
             <div class="pron-examples">${practice.map(exRow).join("")}</div>
-            <div class="pron-sec-foot"><button class="btn ghost" id="pron-top">Back to contents</button></div>
+            <div class="pron-sec-foot"><button class="btn" id="pron-top">Back to contents</button></div>
           </section>` : ""}
       </div>
     `);
@@ -3011,6 +2951,12 @@ const App = (function () {
     return wrap;
   }
 
+  // "Supertonic · Female 1" / "OmniVoice · Male" -> "Voice 2 (female)": no engine names for learners.
+  function voiceLabel(label, i) {
+    const g = /female/i.test(label) ? "female" : /male/i.test(label) ? "male" : "";
+    return `Voice ${i + 1}${g ? ` (${g})` : ""}`;
+  }
+
   /* ============ STATS ============ */
   function renderStats() {
     const ids = allCardIds();
@@ -3021,9 +2967,7 @@ const App = (function () {
 
     const wrap = el(`
       <div class="view view-stats">
-        <h1 style="margin-bottom:0">Stats</h1>
-        <p class="muted" style="margin-top:0">Your progress, in numbers.</p>
-
+        ${pageHeader({ title: "Stats", lead: "Your progress, in numbers." })}
         <div class="grid-2 stats-tiles">
           ${Goals.consistencyTileHtml(state, todayISO())}
           <div class="stat">
@@ -3053,7 +2997,7 @@ const App = (function () {
           <h3 style="margin: 6px 0 4px">New here, or need a refresher?</h3>
           <p class="muted" style="margin:0 0 12px">The daily routine, every card type and drill in one line each, and why it all works.</p>
           <div class="row" style="gap:8px; flex-wrap:wrap">
-            <button class="btn primary" id="stats-how">How it works</button>
+            <button class="btn" id="stats-how">How it works</button>
             <button class="btn" id="stats-tour">Replay the tour</button>
           </div>
         </article>
@@ -3102,17 +3046,20 @@ const App = (function () {
             <label class="row spread" style="gap:12px">
               <span>${Lang.cfg().name} voice</span>
               <select id="set-dutch-voice">
-                ${Lang.cfg().voices.map(v => `<option value="${v.value}" ${state.settings.targetVoice === v.value ? "selected" : ""}>${v.label}</option>`).join("")}
+                ${Lang.cfg().voices.map((v, i) => `<option value="${v.value}" ${state.settings.targetVoice === v.value ? "selected" : ""}>${voiceLabel(v.label, i)}</option>`).join("")}
               </select>
             </label>
             <label class="row spread" style="gap:12px">
               <span>English voice</span>
               <select id="set-english-voice">
                 ${[["M1","Male 1"],["F1","Female 1"],["M2","Male 2"],["F2","Female 2"]]
-                  .map(([v,l]) => `<option value="${v}" ${state.settings.englishVoice === v ? "selected" : ""}>Supertonic · ${l}</option>`).join("")}
+                  .map(([v,l], i) => `<option value="${v}" ${state.settings.englishVoice === v ? "selected" : ""}>${voiceLabel(l, i)}</option>`).join("")}
               </select>
             </label>
-            <div id="tts-status" class="muted" style="font-size:0.75rem;"></div>
+            <details class="tech-info">
+              <summary>Technical info</summary>
+              <div id="tts-status" class="muted"></div>
+            </details>
           </div>
         </article>
 
@@ -3123,7 +3070,7 @@ const App = (function () {
             <button class="btn" id="export-btn">Export JSON</button>
             <button class="btn" id="import-btn">Import JSON</button>
           </div>
-          <p class="muted" style="font-size:0.75rem; margin-top:10px">Your progress lives only in this browser's localStorage. Export to back it up.</p>
+          <p class="muted" style="font-size:0.75rem; margin-top:10px">Your progress lives only in this browser. Export a backup to keep it safe.</p>
           <div class="danger-zone">
             <p class="muted">Start over: this deletes everything for this language.</p>
             <button class="btn danger" id="reset-btn" type="button">Reset everything</button>
@@ -3204,7 +3151,7 @@ const App = (function () {
       if (mlxOK) {
         parts.push(`<span class="chip primary">Live TTS: Supertonic-3 ready</span>`);
       } else if (pregen === 0) {
-        parts.push(`<span class="chip">TTS: not running — start with <span class="mono">./start-mlx.sh</span></span>`);
+        parts.push(`<span class="chip">Live voice service: not available</span>`);
       }
       if (Speech.supported) {
         parts.push(webOK
@@ -3594,7 +3541,7 @@ const App = (function () {
   // expose for debugging
   window.__app = { state: () => state, store: Store, srs: SRS, lang: Lang };
 
-  return { init, navigate, startSession, openPronunciation, arrowFwd, arrowBack, isolateRtl, confirmDialog };
+  return { init, navigate, startSession, openPronunciation, arrowFwd, arrowBack, isolateRtl, confirmDialog, pageHeader };
 })();
 
 document.addEventListener("DOMContentLoaded", App.init);

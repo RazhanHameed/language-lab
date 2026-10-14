@@ -1,10 +1,7 @@
 /* Plan / goals. Uses the tokens from styles.css so every theme works. */
-.view-plan, .plan-body { display: flex; flex-direction: column; gap: 18px; }
-.plan-back { align-self: flex-start; min-height: 44px; }
-.plan-head h1 { margin: 0 0 6px; }
-.plan-head p { max-width: 68ch; margin: 0; }
-.plan-goals { display: flex; flex-direction: column; gap: 14px; }
-.plan-sub { font-size: 1.125rem; margin: 10px 0 0; }
+.view-plan, .plan-body { display: flex; flex-direction: column; gap: var(--gap); }
+.plan-goals { display: flex; flex-direction: column; gap: var(--gap); }
+.plan-sub { margin: 0; }
 .plan-why summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; }
 .plan-why .why-list { padding-inline-start: 1.2em; margin: 0.6em 0; }
 .plan-why p, .plan-consistency p, .goal-card p, .goal-sheet p { max-width: 68ch; }
@@ -13,7 +10,6 @@
 .goal-card { display: flex; flex-direction: column; gap: 8px; }
 .goal-card > * { margin: 0; }
 .goal-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
-.goal-title { font-size: 1.1875rem; line-height: 1.25; }
 .goal-sub { font-size: 0.875rem; }
 .goal-progress-text { font-size: 0.875rem; font-weight: 600; }
 .goal-today { font-weight: 500; }
@@ -31,21 +27,19 @@
 .goal-bar-fill { height: 100%; background: var(--primary); border-radius: 999px; min-width: 0; transition: width 220ms ease; }
 .goal-bar-mark { position: absolute; top: -5px; bottom: -5px; width: 3px; margin-inline-start: -1.5px; background: var(--accent-text); border-radius: 2px; }
 
-.goal-dots { display: inline-flex; gap: 5px; align-items: center; flex-wrap: wrap; }
+.goal-dots { display: inline-flex; gap: 5px; align-items: center; flex-wrap: nowrap; }
 .goal-dot { width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid var(--text-subtle); background: transparent; display: inline-block; }
 .goal-dot.is-on { background: var(--primary); border-color: var(--primary); }
 .consistency-badge { display: inline-flex; align-items: center; gap: 10px; font-size: 0.875rem; font-weight: 600; color: var(--text); flex-wrap: wrap; }
 
-.btn.danger, .btn.ghost.danger { color: var(--error); }
-.btn.danger:not(.ghost) { border-color: var(--error); }
+.btn.danger { color: var(--error); border-color: var(--error); }
 .linklike { background: none; border: 0; padding: 0; color: var(--link); text-decoration: underline; font: inherit; cursor: pointer; min-height: 24px; }
 .warn { color: var(--warn); font-weight: 500; }
 
 /* ---- create flow ---- */
-.goal-sheet { display: flex; flex-direction: column; gap: 16px; }
+.goal-sheet { display: flex; flex-direction: column; gap: var(--gap); }
 .goal-sheet > * { margin: 0; }
-.sheet-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-.sheet-h { font-size: 1.5rem; outline: none; }
+.sheet-h { outline: none; }
 .sheet-types { border: 0; padding: 0; margin: 0; display: grid; gap: 10px; min-width: 0; }
 .type-card { display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px; min-height: 64px; border: 1px solid var(--ctl-border); border-radius: var(--radius); background: var(--surface); cursor: pointer; }
 .type-card:hover { background: var(--surface-2); }

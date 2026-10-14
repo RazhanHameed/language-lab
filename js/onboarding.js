@@ -63,7 +63,7 @@ window.Onboarding = (function () {
     if (ob().tips && ob().tips.length) return ob().tips;
     const out = [];
     if (hasSpeech()) out.push({ icon: "🔊", text: `Tap the speaker on any ${L()} word or sentence to hear it. Listen first, then say it back out loud.` });
-    if (hasStt()) out.push({ icon: "🎙️", text: "Speaking and Shadowing listen to you through a local Whisper server. If it isn't running, just skip those two. Everything else works without it." });
+    if (hasStt()) out.push({ icon: "🎙️", text: "Speaking and Shadowing listen to you and score what they hear. If scoring isn't available on your device, you can still record yourself, play the answer and compare. Everything else works without it." });
     else out.push({ icon: "🎙️", text: `Speaking and Shadowing need speech recognition, which ${L()} doesn't have yet, so they're hidden. Everything else works.` });
     return out;
   }
@@ -267,7 +267,7 @@ window.Onboarding = (function () {
           <div class="ob-visual" id="ob-visual"></div>
           <div class="ob-text" id="ob-desc"></div>
           <div class="ob-foot">
-            <button class="btn ghost" type="button" id="ob-back">Back</button>
+            <button class="btn" type="button" id="ob-back">Back</button>
             <div class="ob-dots" id="ob-dots" aria-hidden="true"></div>
             <button class="btn primary" type="button" id="ob-next">Next</button>
           </div>
@@ -395,29 +395,23 @@ window.Onboarding = (function () {
 
     const wrap = el(`
       <div class="view stack help-view">
-        <button class="btn ghost back-btn" id="help-back" type="button"><span class="icon-arrow-back" aria-hidden="true">←</span> Back</button>
-        <div>
-          <h1 style="margin-bottom:0">How it works</h1>
-          <p class="muted" style="margin-top:4px">What to do, and why it works. Skim it once, then just start a session.</p>
-        </div>
-        <div class="row help-actions" style="gap:8px; flex-wrap:wrap">
-          <button class="btn primary" id="help-tour">Replay the tour</button>
-          <button class="btn" id="help-start">Start a session</button>
-          <button class="btn ghost" id="help-reset">Show all tips again</button>
-        </div>
+        ${App.pageHeader({ back: "help-back", eyebrow: "Help", title: "How it works", lead: "What to do, and why it works. Skim it once, then just start a session.",
+          actions: `<button class="btn primary" id="help-start">Start a session</button>
+            <button class="btn" id="help-tour">Replay the tour</button>
+            <button class="btn" id="help-reset">Show all tips again</button>` })}
 
         <article class="card help-plan">
           <span class="eyebrow">Plan</span>
           <h3 style="margin:6px 0 4px">Set a goal</h3>
           <p class="muted" style="margin:0 0 12px">Set a goal, e.g. 100 words in 20 days. The planner checks the pace is realistic for this language and adjusts kindly if life gets in the way.</p>
-          <button class="btn primary" id="help-plan">Open the planner</button>
+          <button class="btn" id="help-plan">Open the planner</button>
         </article>
 
         ${pron() ? `<article class="card help-pron">
           <span class="eyebrow">Start here · pronunciation</span>
           <h3 style="margin:6px 0 4px">${esc(pron().title)}</h3>
           <p class="muted" style="margin:0 0 12px">${Number(pron().minutes) || 15} minutes${hasSpeech() ? ", with audio for every example" : ""}. How each letter and sound works, the rules behind the spelling, and the classic mistakes. Read it once at the start, then dip back in.</p>
-          <button class="btn primary" id="help-pron">Open the pronunciation guide</button>
+          <button class="btn" id="help-pron">Open the pronunciation guide</button>
         </article>` : ""}
 
         <article class="card">
