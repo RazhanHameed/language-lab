@@ -420,7 +420,7 @@
   // <bdi dir="ltr">; a Kurmanji (LTR) paragraph wraps every Arabic-script run in
   // <bdi dir="rtl" lang="ckb">. Input is raw text; output is escaped HTML.
   const LAT = "A-Za-zÀ-ɏ";
-  const LATIN_RUN = new RegExp(`[${LAT}][${LAT}0-9'’]*(?:[ \\u00a0.,/\\-–"“”()=+?!:;]+(?=[${LAT}0-9])[${LAT}0-9'’]*)*(?:[?!.](?=\\s|$|[^${LAT}]))?`, "g");
+  const LATIN_RUN = new RegExp(`[${LAT}][${LAT}0-9'’]*(?:[ \\u00a0.,/\\-–…"“”()=+?!:;]+(?=[${LAT}0-9])[${LAT}0-9'’]*)*(?:[?!.](?=\\s|$|[^${LAT}]))?`, "g");
   const ARABIC_RUN = /[؀-ۿݐ-ݿ](?:[؀-ۿݐ-ݿ‌‍ \u00a0«».!?…'"\-/]*[؀-ۿݐ-ݿ»])?/g;
   function richKu(code, text) {
     const t = String(text == null ? "" : text);
@@ -810,7 +810,10 @@
       const det = el(`<details class="card br-hooks"><summary>Regional echoes you may already know</summary>
         <ul class="br-hook-list">${hooks.map((h) => {
           const t = tx(h, ctx.state);
-          return `<li><strong>${esc(h.where)}</strong> ${t.ku ? K(me.src, t.text) : esc(t.text)}${h.ex ? ` <span class="br-ex">${/[؀-ۿ]/.test(h.ex) ? K("ckb", h.ex) : K("kmr", h.ex)}</span>` : ""}</li>`;
+          const ex = h.ex && typeof h.ex === "object"
+            ? `<p class="br-hook-ex">${K(me.src, h.ex[me.src])} <span aria-hidden="true">→</span> ${K(me.tgt, h.ex[me.tgt], "br-hook-tgt")}${h.ex.en ? ` <span class="muted">· ${esc(h.ex.en)}</span>` : ""}</p>`
+            : h.ex ? `<p class="br-hook-ex">${/[؀-ۿ]/.test(h.ex) ? K("ckb", h.ex) : K("kmr", h.ex)}</p>` : "";
+          return `<li><span class="br-hook-where">${esc(h.where)}</span>${t.ku ? KB(me.src, t.text, "br-explain") : `<p class="br-explain">${esc(t.text)}</p>`}${ex}</li>`;
         }).join("")}</ul>
         <p class="muted br-small">These are only mentioned as hooks. The course teaches the standard written forms.</p></details>`);
       wrap.appendChild(det);

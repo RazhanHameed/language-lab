@@ -114,7 +114,7 @@ button.br-seg[aria-pressed="true"], .br-seg.is-linked { outline: 2px solid var(-
 .br-kb { font-family: var(--serif); font-weight: var(--nl-weight); font-size: var(--tl-md); line-height: 1.7; }
 .br-kb[dir="rtl"] { text-align: start; }
 .br-explain { margin: 0; max-width: 62ch; line-height: 1.65; }
-.br-kb.br-explain { font-weight: 500; }
+.br-kb.br-explain { font-family: inherit; font-size: inherit; font-weight: 400; line-height: 1.7; }
 .br-big { font-family: var(--serif); font-weight: var(--nl-weight); font-size: var(--tl-xl); line-height: 1.5; }
 .br-big.sm { font-size: var(--tl-lg); line-height: 1.6; }
 .br-big .br-wtext, .br-wtext { white-space: nowrap; }
@@ -300,3 +300,11 @@ html.lang-rtl .br-kb[dir="rtl"], html.lang-rtl .br-pat[dir="rtl"] { line-height:
 .br-assembled { font-family: var(--serif); font-size: var(--tl-lg); min-height: 1.6em; text-align: start; }
 .br-tile-area .word-chip.is-clitic { margin-inline-start: -8px; border-start-start-radius: 4px; border-end-start-radius: 4px; padding-inline: 10px; }
 .br-nowrap { white-space: nowrap; }
+
+/* Regional echoes: label, explanation block, example line */
+.br-hook-list { list-style: none; padding: 0; }
+.br-hook-list li { margin: 0; padding: 12px 0; border-top: 1px solid var(--border); }
+.br-hook-list li:first-child { border-top: 0; }
+.br-hook-where { display: block; font-size: 0.75rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px; }
+.br-hook-ex { margin: 6px 0 0; font-size: var(--tl-md, 1.05rem); }
+.br-hook-tgt { font-weight: var(--nl-weight, 600); }
