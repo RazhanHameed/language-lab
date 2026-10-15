@@ -13,7 +13,7 @@ global.location = { search: "" };
 function load(rel) { require(path.join(ROOT, rel)); }
 
 const LANGS = fs.readdirSync(path.join(ROOT, "js/data"), { withFileTypes: true })
-  .filter((d) => d.isDirectory()).map((d) => d.name);
+  .filter((d) => d.isDirectory()).map((d) => d.name);   // js/bridge is NOT under js/data, so it is never scanned as a language
 
 load("js/data/_boot.js");
 for (const l of LANGS) {
@@ -87,6 +87,36 @@ for (const cfg of Lang.list()) {
   for (let n = 0; n <= 100; n++) add(V, lang, cfg.numberToWord(n));
   for (let h = 1; h <= 12; h++) for (let m = 0; m < 60; m += 5) add(V, lang, cfg.timeToWord(h, m));
 }
+
+// Bridge course (Sorani <-> Kurmanji): every Kurdish text a bridge "hear it" button can speak,
+// in the voice/engine of the language that text belongs to.
+(function addBridge() {
+  const bdir = path.join(ROOT, "js/bridge");
+  if (!fs.existsSync(bdir)) return;
+  global.window.__BRIDGE = {};
+  for (const f of fs.readdirSync(bdir).filter((x) => x.endsWith(".js")).sort()) load(`js/bridge/${f}`);
+  const B = global.window.__BRIDGE;
+  const side = {};
+  for (const l of ["ckb", "kmr"]) {
+    const cfg = Lang.list().find((c) => c.id === l);
+    if (cfg && cfg.hasSpeech !== false) side[l] = { cfg, voice: cfg.defaultVoice };
+  }
+  const say = (l, text) => { if (!side[l] || !text) return; engine = side[l].cfg.ttsEngine || "supertonic"; add(side[l].voice, l, text); };
+  const both = (o) => { if (o) { say("ckb", o.ckb); say("kmr", o.kmr); } };
+  (B.LEXICON || []).forEach(both);
+  (B.RULES || []).forEach((r) => { (r.examples || []).forEach(both); (r.test || []).forEach(both); });
+  (B.FRAMES || []).forEach((f) => {
+    (f.items || []).forEach(both);
+    (f.pi || []).forEach((q) => say(q.show, q.text));
+  });
+  (B.TRAPS || []).forEach((t) => {
+    say("ckb", t.ckb && t.ckb.w); say("kmr", t.kmr && t.kmr.w);
+    Object.entries(t.fix || {}).forEach(([dir, fx]) => say(dir.split(">")[1], fx && fx.w));
+  });
+  ((B.INTRO && B.INTRO.script) || []).forEach((r) => both(r.ex));
+  (B.FERRISS || []).forEach(both);
+  (B.READING || []).forEach((r) => (r.sents || []).forEach(both));
+})();
 
 // Per-language "primary" pre-render voice (the pack default) — lets the runtime
 // fall back to a pre-rendered clip even if the user picked a different voice.

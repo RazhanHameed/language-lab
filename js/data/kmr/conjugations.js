@@ -13,10 +13,10 @@
 window.__DECK = window.__DECK || {};
 window.__DECK.kmr = window.__DECK.kmr || {};
 window.__DECK.kmr.CONJUGATIONS = [
-  { inf: "bûn",           en: "to be",             irregular: true,
+  { inf: "bûn",           en: "to become",             irregular: true,
     s1: "dibim",          s2: "dibî",              s3: "dibe",           p1: "dibin",           p2: "dibin",             p3: "dibin" },
   { inf: "hebûn",         en: "to have",           irregular: true,
-    s1: "min heye",       s2: "te heye",           s3: "wê heye",        p1: "me heye",         p2: "we heye",           p3: "wan heye" },
+    s1: "min heye",       s2: "te heye",           s3: "wî/wê heye",     p1: "me heye",         p2: "we heye",           p3: "wan heye" },
   { inf: "xwestin",       en: "to want",           irregular: true,
     s1: "dixwazim",       s2: "dixwazî",           s3: "dixwaze",        p1: "dixwazin",        p2: "dixwazin",          p3: "dixwazin" },
   { inf: "karîn",         en: "can",               irregular: true,

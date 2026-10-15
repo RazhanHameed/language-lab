@@ -224,6 +224,14 @@ const App = (function () {
 
   function persist() { Store.save(state); }
 
+  // Context handed to the Bridge course (js/bridge.js).
+  function bridgeCtx() {
+    return {
+      state, persist, navigate, render, toast, pageHeader, focusBar, confirmDialog,
+      todayISO, recordPractice, answerOk, typeHint,
+    };
+  }
+
   // Context handed to the Plan feature (js/goals.js).
   function goalsCtx() {
     return { state, persist, navigate, toast, todayISO, startSession: () => startSession() };
@@ -439,7 +447,8 @@ const App = (function () {
     }
   }
 
-  function finishSession() {
+  // Count a finished practice round toward today's streak and totals.
+  function recordPractice(reviewed, correct) {
     const today = todayISO();
     const last = state.lastSessionDate;
     if (last !== today) {
@@ -452,29 +461,31 @@ const App = (function () {
     // record session
     const existing = state.sessions.find((s) => s.date === today);
     if (existing) {
-      existing.reviewed += currentSession.reviewed;
-      existing.correct += currentSession.correct;
+      existing.reviewed += reviewed;
+      existing.correct += correct;
     } else {
-      state.sessions.push({
-        date: today,
-        reviewed: currentSession.reviewed,
-        correct: currentSession.correct,
-      });
+      state.sessions.push({ date: today, reviewed, correct });
     }
     persist();
+  }
+
+  function finishSession() {
+    recordPractice(currentSession.reviewed, currentSession.correct);
     currentView = "summary";
     render();
   }
 
   /* ---------- routing ---------- */
   let coachSig = null;       // last (view, object, index) the coaching counter ran for
-  function navigate(view) {
+  function navigate(view, arg) {
     if (view === "help" && currentView !== "help") nav.helpBack = currentView;   // for the Back button on Help
     currentView = view;
+    nav.bridgeArg = arg;       // bridge views take one argument (frame id, rule id...)
     coachSig = null;
-    // Sync top tabs
-    $$(".tab").forEach((t) => t.classList.toggle("is-active", t.dataset.view === view));
-    $$(".bn-tab").forEach((t) => t.classList.toggle("is-active", t.dataset.view === view));
+    // Sync top tabs (bridge pages live under Browse)
+    const tab = view.startsWith("bridge") ? "browse" : view;
+    $$(".tab").forEach((t) => t.classList.toggle("is-active", t.dataset.view === tab));
+    $$(".bn-tab").forEach((t) => t.classList.toggle("is-active", t.dataset.view === tab));
     render();
     window.scrollTo({ top: 0, behavior: "instant" });
   }
@@ -498,7 +509,8 @@ const App = (function () {
       case "help":    viewEl = Onboarding.renderHelp(); break;
       case "pronunciation": viewEl = renderPronunciation(); break;
       case "plan":    viewEl = Goals.renderPlan(goalsCtx()); break;
-      default:       viewEl = renderHome();
+      default:
+        viewEl = currentView.startsWith("bridge") && window.Bridge ? Bridge.render(bridgeCtx(), currentView, nav.bridgeArg) : renderHome();
     }
     if (viewEl) {
       mountCoach(viewEl);
@@ -506,7 +518,8 @@ const App = (function () {
     }
     // Focus mode: no bottom nav while a session or drill is running.
     document.body.classList.toggle("is-focus",
-      (currentView === "study" && !!currentSession) || (currentView === "drill" && !!currentDrill));
+      (currentView === "study" && !!currentSession) || (currentView === "drill" && !!currentDrill) ||
+      (currentView === "bridge-session" && !!window.Bridge && Bridge.sessionActive()));
     syncHeaderHeight();
   }
 
@@ -681,6 +694,10 @@ const App = (function () {
     cta.addEventListener("click", () => startSession(caughtUp && goalCap && goalCap.quotaReached ? { extra: true } : {}));
     if (!first) wrap.appendChild(cta);
     if (!first) wrap.appendChild(Goals.homeCard(goalsCtx()));
+    if (!first && window.Bridge && Bridge.enabled(state)) {
+      const bc = Bridge.homeCard(bridgeCtx());
+      if (bc) wrap.appendChild(bc);
+    }
 
     // Caught up for today: say what to do instead of leaving a dead end.
     if (!first && reviewDue === 0 && todaySession) {
@@ -2128,7 +2145,9 @@ const App = (function () {
   function renderBrowse() {
     const hasPron = !!pronGuide();
     const read = state.passagesRead || {};
+    const bridge = window.Bridge ? Bridge.browseBlock(bridgeCtx()) : null;
     const sections = [
+      bridge && bridge.section ? ["bridge", "Bridge"] : null,
       hasPron ? ["sounds", "Sounds"] : null,
       ["words", "Words"], ["sentences", "Sentences"], ["dialogues", "Dialogues"], ["grammar", "Grammar"],
       (window.PASSAGES || []).length ? ["reading", "Reading"] : null,
@@ -2137,9 +2156,15 @@ const App = (function () {
     const wrap = el(`
       <div class="view view-browse">
         ${pageHeader({ title: "Browse", lead: "Pick a category to learn or revisit." })}
+        <div id="browse-bridge-ask"></div>
         <nav class="jump-bar" aria-label="Jump to section">
           ${sections.map(([id, label]) => `<button type="button" class="jump-chip" data-jump="${id}">${label}</button>`).join("")}
         </nav>
+
+        ${bridge && bridge.section ? `<section class="browse-sec" id="sec-bridge" data-sec="bridge" aria-labelledby="h-bridge">
+          <div class="section-header"><h2 id="h-bridge">Bridge</h2></div>
+          <div id="browse-bridge"></div>
+        </section>` : ""}
 
         ${hasPron ? `<section class="browse-sec" id="sec-sounds" data-sec="sounds" aria-labelledby="h-sounds">
           <div class="section-header"><h2 id="h-sounds">Sounds</h2></div>
@@ -2176,6 +2201,8 @@ const App = (function () {
 
     const pronItem = pronLinkItem();
     if (pronItem && hasPron) $("#browse-pron", wrap).appendChild(pronItem);
+    if (bridge && bridge.ask) $("#browse-bridge-ask", wrap).appendChild(bridge.ask);
+    if (bridge && bridge.section) $("#browse-bridge", wrap).appendChild(bridge.section);
 
     // Themes
     const themeGrid = $("#theme-grid", wrap);
@@ -3449,6 +3476,7 @@ const App = (function () {
     Speech.cancel();
     currentSession = null;
     currentDrill = null;
+    if (window.Bridge) Bridge.reset();
     loadLanguage(id);          // re-point deck, reload that language's state, voices, branding
     applyTheme();              // each language keeps its own theme setting
     // Drop any ?lang= override from the URL so a later reload honours the stored choice.
@@ -3456,7 +3484,7 @@ const App = (function () {
       history.replaceState(null, "", location.pathname);
     }
     buildLangSwitcher();       // reflect the newly-active language in the selector
-    const view = SESSION_VIEWS.includes(currentView) ? "home" : currentView;
+    const view = SESSION_VIEWS.includes(currentView) || (currentView.startsWith("bridge") && !(window.Bridge && Bridge.enabled(state))) ? "home" : currentView;
     navigate(view);            // re-sync tabs, re-render the (preserved) view, scroll to top
   }
 
@@ -3541,7 +3569,7 @@ const App = (function () {
   // expose for debugging
   window.__app = { state: () => state, store: Store, srs: SRS, lang: Lang };
 
-  return { init, navigate, startSession, openPronunciation, arrowFwd, arrowBack, isolateRtl, confirmDialog, pageHeader };
+  return { init, navigate, startSession, bridgeCtx, openPronunciation, arrowFwd, arrowBack, isolateRtl, confirmDialog, pageHeader };
 })();
 
 document.addEventListener("DOMContentLoaded", App.init);

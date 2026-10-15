@@ -442,6 +442,28 @@ window.Speech = (function () {
     return webSpeak(clean, opts);
   }
 
+  // Is there a recording (or a live voice) for this text? Pre-rendered-only languages (Kurdish)
+  // have nothing else to fall back to, so the UI uses this to dim play buttons with no clip.
+  async function hasClip(text, opts = {}) {
+    if (!text) return false;
+    const lang = opts.lang || defaultLang;
+    const lang2 = lang.toLowerCase().split("-")[0];
+    if (!targetSpeech && lang2 !== "en") return false;
+    if (targetLive) return true;
+    const voice = voiceForLang(lang, opts.voice);
+    if (!voice) return false;
+    try { await pregenReady; } catch (_) {}
+    if (!pregen || !pregen.size) return false;
+    const clean = cleanForTts(text);
+    const key = await clipKey(voice, lang2, clean);
+    if (key && pregen.has(key)) return true;
+    if (pregenVoices[lang2] && pregenVoices[lang2] !== voice) {
+      const alt = await clipKey(pregenVoices[lang2], lang2, clean);
+      if (alt && pregen.has(alt)) return true;
+    }
+    return false;
+  }
+
   function cancel() { cancelCurrent(); }
   function isPlaying() {
     return activeAudios.size > 0 || (supported && window.speechSynthesis.speaking);
@@ -505,6 +527,7 @@ window.Speech = (function () {
 
   return {
     speak,
+    hasClip,
     cancel,
     isPlaying,
     transcribe,

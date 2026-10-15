@@ -20,6 +20,14 @@ window.Store = (function () {
       seenGrammar: {},    // gId -> ms epoch last viewed
       coach: { seen: {}, dismissed: {} }, // onboarding tips: key -> times met / dismissed
       pronunciation: { last: null, read: {} }, // pronunciation guide: last section id, sectionId -> ms epoch first read
+      bridge: {                                // bridge course (js/bridge.js): which Kurdish variety the learner already speaks
+        known: { kmr: null, ckb: null },       // target -> "ckb" | "kmr" | null
+        explainIn: "ku",                       // "ku" (learner's own variety) | "en"
+        done: {},                              // frame id / "rule:<id>" / "view:<x>" / "read:<id>" -> ms epoch
+        probe: {},                             // direction -> latest placement-probe result
+        scriptLevel: { ckb: 0 },               // reading-guide fading: 0 shown, 1 tap, 2 hidden
+        scriptHist: { ckb: [] },               // recent right/wrong (1/0) that drive the fading
+      },
       settings: {
         theme: "auto",          // 'auto' | 'light' | 'dark'
         sessionSize: 16,        // cards per session

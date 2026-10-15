@@ -13,7 +13,7 @@
 window.__DECK = window.__DECK || {};
 window.__DECK.ckb = window.__DECK.ckb || {};
 window.__DECK.ckb.CONJUGATIONS = [
-  { inf: "بوون",        en: "to be",             irregular: true,
+  { inf: "بوون",        en: "to become",             irregular: true,
     s1: "دەبم",         s2: "دەبیت",           s3: "دەبێت",           p1: "دەبین",           p2: "دەبن",             p3: "دەبن" },
   { inf: "هەبوون",      en: "to have",           irregular: true,
     s1: "هەمە",         s2: "هەتە",             s3: "هەیەتی",          p1: "هەمانە",          p2: "هەتانە",           p3: "هەیانە" },
@@ -38,7 +38,7 @@ window.__DECK.ckb.CONJUGATIONS = [
   { inf: "بینین",       en: "to see",            irregular: true,
     s1: "دەبینم",       s2: "دەبینیت",          s3: "دەبینێت",         p1: "دەبینین",         p2: "دەبینن",           p3: "دەبینن" },
   { inf: "بیستن",       en: "to hear",           irregular: false,
-    s1: "دەبیسم",       s2: "دەبیسیت",          s3: "دەبیسێت",         p1: "دەبیسین",         p2: "دەبیسن",           p3: "دەبیسن" },
+    s1: "دەبیستم",      s2: "دەبیستیت",         s3: "دەبیستێت",        p1: "دەبیستین",        p2: "دەبیستن",          p3: "دەبیستن" },
   { inf: "قسەکردن",     en: "to speak",          irregular: true,
     s1: "قسە دەکەم",    s2: "قسە دەکەیت",       s3: "قسە دەکات",       p1: "قسە دەکەین",      p2: "قسە دەکەن",        p3: "قسە دەکەن" },
   { inf: "گوتن",        en: "to say/talk",       irregular: true,

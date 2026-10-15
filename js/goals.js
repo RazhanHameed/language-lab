@@ -228,6 +228,14 @@
     grammar: { label: "Grammar capsules", unit: "capsule", all: () => (root.GRAMMAR || []).map((g) => g.id), seen: (st) => st.seenGrammar || {} },
     dialogues: { label: "Scenario dialogues", unit: "dialogue", all: () => (root.SCENARIOS || []).map((s) => s.id), seen: (st) => st.seenScenarios || {} },
     passages: { label: "Short passages", unit: "passage", all: () => (root.PASSAGES || []).map((p) => p.id), seen: (st) => st.passagesRead || {} },
+    // Bridge course (Sorani <-> Kurmanji): a frame counts once it has been introduced (its first drills done).
+    bridge: {
+      label: "Bridge frames", unit: "frame",
+      note: "A frame counts once you have done its first questions or marked it as known.",
+      avail: (st) => !!(root.Bridge && root.Bridge.enabled && root.Bridge.enabled(st)),
+      all: () => (root.Bridge && root.Bridge.frameIds ? root.Bridge.frameIds() : []),
+      seen: (st) => (st.bridge && st.bridge.done) || {},
+    },
   };
 
   // Card ids a words goal draws from.
@@ -797,7 +805,7 @@
         d.kind = d.kind || "pronunciation"; d.days = d.days || 14;
         root0.innerHTML = `${head(2, "Finish something")}
           <div class="field"><label for="f-kind">What to finish</label>
-            <select id="f-kind">${Object.entries(CONTENT_KINDS).map(([k, v]) => `<option value="${k}">${esc(v.label)}</option>`).join("")}</select></div>
+            <select id="f-kind">${Object.entries(CONTENT_KINDS).filter(([, v]) => !v.avail || v.avail(state)).map(([k, v]) => `<option value="${k}">${esc(v.label)}</option>`).join("")}</select></div>
           <div class="field"><label for="f-days">In how many days</label><input id="f-days" type="number" inputmode="numeric" min="1" max="365" value="${d.days}"></div>
           <div class="preview" id="preview" role="status" aria-live="polite"></div>
           <div class="sheet-foot"><button class="btn" id="sheet-back">Back</button><button class="btn primary" id="sheet-next">Next</button></div>`;
@@ -811,7 +819,7 @@
           if (!left) { pv.innerHTML = `<p>You have already opened all ${ids.length} of these. Nothing left to finish.</p>`; nb.disabled = true; return; }
           nb.disabled = false;
           const per = left / d.days;
-          pv.innerHTML = `<p>${left} of ${ids.length} ${esc(k.unit)}s still to open: about <strong>${per < 1 ? `1 every ${Math.round(1 / per)} days` : `${Math.ceil(per)} a day`}</strong>. Finish by <strong>${esc(fmtDate(addDays(today, d.days), true))}</strong>.</p><p class="small muted">An item counts when you open it. This is a pace guide, not a test of knowing it.</p>`;
+          pv.innerHTML = `<p>${left} of ${ids.length} ${esc(k.unit)}s still to open: about <strong>${per < 1 ? `1 every ${Math.round(1 / per)} days` : `${Math.ceil(per)} a day`}</strong>. Finish by <strong>${esc(fmtDate(addDays(today, d.days), true))}</strong>.</p><p class="small muted">${esc(k.note || "An item counts when you open it.")} This is a pace guide, not a test of knowing it.</p>`;
         }
         [fk, fd].forEach((e) => e.addEventListener("input", update));
         root0.querySelector("#sheet-back").addEventListener("click", () => { ui.step = 1; repaint(); });
