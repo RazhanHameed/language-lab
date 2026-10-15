@@ -229,6 +229,8 @@ const App = (function () {
     return {
       state, persist, navigate, render, toast, pageHeader, focusBar, confirmDialog,
       todayISO, recordPractice, answerOk, typeHint,
+      // Switch the app language (Sorani <-> Kurmanji from the varieties hub); returns a fresh context.
+      switchLanguage: (id) => { switchLanguage(id); return bridgeCtx(); },
     };
   }
 
@@ -516,6 +518,7 @@ const App = (function () {
       mountCoach(viewEl);
       main.appendChild(viewEl);
     }
+    syncTitle();
     // Focus mode: no bottom nav while a session or drill is running.
     document.body.classList.toggle("is-focus",
       (currentView === "study" && !!currentSession) || (currentView === "drill" && !!currentDrill) ||
@@ -3453,14 +3456,22 @@ const App = (function () {
     applyBranding(cfg);
   }
 
+  // Header brand per language; the tab title is "Language Lab · <language>" and the
+  // favicon is the static favicon.svg (index.html) for every language.
+  const APP_NAME = "Language Lab";
   function applyBranding(cfg) {
-    document.title = `${cfg.brand} — daily ${cfg.name} practice`;
+    syncTitle();
     const nameEl = document.querySelector(".brand-name");
     if (nameEl) nameEl.textContent = cfg.brand;
     const markEl = document.querySelector(".brand-mark");
     if (markEl) markEl.textContent = cfg.brand.charAt(0);
-    const fav = document.querySelector('link[rel="icon"]');
-    if (fav) fav.href = `data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>${encodeURIComponent(cfg.flag)}</text></svg>`;
+  }
+  function syncTitle() {
+    const cfg = Lang.cfg();
+    const inBridge = typeof currentView === "string" && currentView.startsWith("bridge") && window.Bridge && Bridge.title;
+    const part = inBridge ? Bridge.title(state) : (cfg && cfg.name);
+    const t = part ? `${APP_NAME} · ${part}` : APP_NAME;
+    if (document.title !== t) document.title = t;
   }
 
   // Switch language IN PLACE — no page reload, stay on the current view.
@@ -3484,8 +3495,8 @@ const App = (function () {
       history.replaceState(null, "", location.pathname);
     }
     buildLangSwitcher();       // reflect the newly-active language in the selector
-    const view = SESSION_VIEWS.includes(currentView) || (currentView.startsWith("bridge") && !(window.Bridge && Bridge.enabled(state))) ? "home" : currentView;
-    navigate(view);            // re-sync tabs, re-render the (preserved) view, scroll to top
+    const view = SESSION_VIEWS.includes(currentView) || (currentView.startsWith("bridge") && !(window.Bridge && Bridge.keepsView(currentView, state))) ? "home" : currentView;
+    navigate(view, view === currentView ? nav.bridgeArg : undefined);   // re-sync tabs, re-render the (preserved) view, scroll to top
   }
 
   function buildLangSwitcher() {
@@ -3563,7 +3574,10 @@ const App = (function () {
     }
 
     render();
-    Onboarding.maybeAutoTour();
+    // Deep link into a bridge: ?bridge=ckb-hac (or ckb-kmr, kmr>zza, varieties).
+    const bq = new URLSearchParams(location.search).get("bridge");
+    if (bq && window.Bridge && Bridge.openDeep) Bridge.openDeep(bridgeCtx(), bq);
+    else Onboarding.maybeAutoTour();
   }
 
   // expose for debugging

@@ -20,6 +20,7 @@ Every card, sentence, dialogue, grammar capsule, drill and reading passage is wr
 ## Contents
 
 - [What's inside](#whats-inside)
+- [Kurdish variety bridges](#kurdish-variety-bridges)
 - [How to use it](#how-to-use-it)
 - [Running it locally](#running-it-locally)
 - [How the audio works](#how-the-audio-works)
@@ -110,6 +111,29 @@ Also: a mobile-first layout with a desktop grid at ≥ 960 px, an offline notice
   - **Screen readers:** target-language text is tagged with its language, so screen readers switch voice. Speaker buttons say what they play ("Play pronunciation of …"), and answers are announced.
   - **Keyboard:** works throughout. Enter or Space flips a card, 1–4 rates it, Esc closes dialogs, and a skip link jumps to the content.
 - **Phones and Safari**: audio plays on iPhone and iPad. Safari only allows audio started by a tap, so the app unlocks its audio on your first tap. It also handles safe areas on notched screens and avoids the iOS input zoom.
+
+---
+
+## Kurdish variety bridges
+
+If you already speak one Kurdish variety, a bridge course teaches you another one. It starts from what you already know and teaches only what changes. Open it from **Browse → Kurdish varieties** while the app is set to Sorani or Kurmanji, or link to it directly with `?bridge=varieties`.
+
+| Direction | You speak | You learn | Script | Audio | Deep link |
+|---|---|---|---|---|---|
+| Sorani → Kurmanji | Sorani | Kurmanji | Latin | yes | `?bridge=ckb%3Ekmr` |
+| Kurmanji → Sorani | Kurmanji | Sorani | Arabic | yes | `?bridge=kmr%3Eckb` |
+| Sorani → Hawrami | Sorani | Hawrami (Hewramî) | Arabic, right to left | no | `?bridge=ckb-hac` |
+| Sorani → Kalhori | Sorani | Kalhori (Southern Kurdish) | Arabic, right to left | no | `?bridge=ckb-sdh` |
+| Kurmanji → Zazaki | Kurmanji | Zazaki (Kirmanckî / Dimilkî) | Latin | no | `?bridge=kmr-zza` |
+
+Each course has the same steps: shared words, sound rules, the script, sentences side by side, grammar frames with drills, traps (false friends), short parallel readings, whole paradigm tables and a sources page. Steps with no data are hidden. Explanations can be shown in your own Kurdish variety or in English.
+
+- **Grounded in published sources.** Every Hawrami, Kalhori and Zazaki word and sentence comes from a named published grammar, dictionary or course. The Sources page in each course lists them. A form built from attested pieces, such as a table cell, is marked as built. Each item names its source, and a separate provenance log records the location and a verbatim snippet for every form, so a reviewer can check it.
+- **Not yet checked by native speakers.** Each grammar sketch ends with a list of what still needs a native speaker.
+- **No audio** for Hawrami, Kalhori or Zazaki yet. Only Sorani and Kurmanji have recordings.
+- **Progress** in the three newer courses is shared between the Sorani and Kurmanji app languages. It is kept apart from the daily study session and included in the backup file.
+
+Method, data format and one grammar sketch per variety: [docs/bridges/](docs/bridges/README.md) ([Hawrami](docs/bridges/hawrami.md), [Kalhori](docs/bridges/kalhori.md), [Zazaki](docs/bridges/zazaki.md)).
 
 ---
 
@@ -221,12 +245,15 @@ language-lab/
 │   ├── drills.js               # drill controllers; spelling and diagnosis come from the language pack
 │   ├── storage.js              # localStorage state + backup/import (one key per language)
 │   ├── lang.js                 # language registry; swaps the active deck in
+│   ├── bridge.js               # Kurdish variety bridge courses (all five directions)
+│   ├── bridge/                 # bridge data: Sorani⇄Kurmanji at the top level, {hac,sdh,zza}/ per variety
 │   ├── lang/{nl,de,ckb,kmr}.js # language packs: numbers, times, respellers, error diagnosis, voices,
 │   │                           #   Sorani→Latin transliteration, onboarding tips
 │   └── data/
 │       ├── _boot.js            # per-language deck registry (window.__DECK)
 │       └── {nl,de,ckb,kmr}/    # vocab, sentences, scenarios, grammar, conjugations, chunks,
 │                               #   minimal_pairs, passages, pronunciation
+├── docs/bridges/               # bridge method, data format and one grammar sketch per variety
 ├── audio/                      # pre-rendered MP3 clips + manifest.json (generated; committed for Pages)
 ├── tts_voices/{ckb,kmr}/       # approved OmniVoice reference voices
 ├── tools/                      # audio item extractor, OmniVoice voice tool

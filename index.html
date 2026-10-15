@@ -8,7 +8,9 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <title>Leer Nederlands / Lern Deutsch — daily practice</title>
+  <title>Language Lab</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg?v=1" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png?v=1" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
@@ -36,18 +38,14 @@
   </script>
   <link rel="stylesheet" href="css/styles.css?v=34" />
   <link rel="stylesheet" href="css/goals.css?v=3" />
-  <link rel="stylesheet" href="css/bridge.css?v=4" />
-  <link
-    rel="icon"
-    href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🇳🇱</text></svg>"
-  />
+  <link rel="stylesheet" href="css/bridge.css?v=5" />
 </head>
 <body>
   <a class="skip-link" href="#app">Skip to main content</a>
   <header class="app-header">
     <div class="brand" data-no-guide>
-      <span class="brand-mark" aria-hidden="true">N</span>
-      <span class="brand-name">Leer&nbsp;Nederlands</span>
+      <span class="brand-mark" aria-hidden="true">L</span>
+      <span class="brand-name">Language&nbsp;Lab</span>
     </div>
     <nav class="tabs desktop-only" aria-label="Primary">
       <button data-view="home" class="tab is-active">Home</button>
@@ -125,7 +123,8 @@
   <script src="js/data/kmr/passages.js?v=5"></script>
   <script src="js/data/kmr/pronunciation.js?v=2"></script>
 
-  <!-- bridge course data (Sorani <-> Kurmanji); each file is optional -->
+  <!-- bridge course data (Sorani <-> Kurmanji); each file is optional.
+       Hawrami, Kalhori and Zazaki (js/bridge/<code>/) load on demand from js/bridge.js. -->
   <script src="js/bridge/lexicon.js?v=1"></script>
   <script src="js/bridge/rules.js?v=1"></script>
   <script src="js/bridge/frames_core.js?v=1"></script>
@@ -142,14 +141,14 @@
   <script src="js/lang/kmr.js?v=7"></script>
 
   <!-- shared engine -->
-  <script src="js/storage.js?v=9"></script>
+  <script src="js/storage.js?v=10"></script>
   <script src="js/audio.js?v=9"></script>
   <script src="js/srs.js?v=6"></script>
   <script src="js/drills.js?v=5"></script>
-  <script src="js/bridge.js?v=8"></script>
+  <script src="js/bridge.js?v=12"></script>
   <script src="js/onboarding.js?v=8"></script>
   <script src="js/goals.js?v=4"></script>
-  <script src="js/app.js?v=22"></script>
+  <script src="js/app.js?v=23"></script>
   <script src="js/a11y.js?v=3"></script>
 </body>
 </html>

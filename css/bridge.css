@@ -308,3 +308,93 @@ html.lang-rtl .br-kb[dir="rtl"], html.lang-rtl .br-pat[dir="rtl"] { line-height:
 .br-hook-where { display: block; font-size: 0.75rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px; }
 .br-hook-ex { margin: 6px 0 0; font-size: var(--tl-md, 1.05rem); }
 .br-hook-tgt { font-weight: var(--nl-weight, 600); }
+
+/* ===================== Other variety bridges (Hawrami, Kalhori, Zazaki) ===================== */
+
+/* Vazirmatn has no ڎ (U+068E) or ۮ (U+06EE), which Hawrami writes. These faces join the
+   Vazirmatn family for just those two code points, so every theme's font stack picks them
+   up (the last-defined face wins for its unicode-range; the font only downloads when one
+   of these letters is on the page). One face per weight the page loads, to match
+   Google's own Vazirmatn faces exactly. */
+@font-face {
+  font-family: "Vazirmatn"; font-style: normal; font-weight: 400; font-display: swap;
+  src: local("Noto Sans Arabic"), local("NotoSansArabic-Regular"), url(https://fonts.gstatic.com/s/notosansarabic/v33/nwpCtLGrOAZMl5nJ_wfgRg3DrWFZWsnVBJ_sS6tlqHHFlj4wv4r4xA.woff2) format("woff2");
+  unicode-range: U+068E, U+06EE;
+}
+@font-face {
+  font-family: "Vazirmatn"; font-style: normal; font-weight: 500; font-display: swap;
+  src: local("Noto Sans Arabic"), local("NotoSansArabic-Regular"), url(https://fonts.gstatic.com/s/notosansarabic/v33/nwpCtLGrOAZMl5nJ_wfgRg3DrWFZWsnVBJ_sS6tlqHHFlj4wv4r4xA.woff2) format("woff2");
+  unicode-range: U+068E, U+06EE;
+}
+@font-face {
+  font-family: "Vazirmatn"; font-style: normal; font-weight: 600; font-display: swap;
+  src: local("Noto Sans Arabic"), local("NotoSansArabic-Regular"), url(https://fonts.gstatic.com/s/notosansarabic/v33/nwpCtLGrOAZMl5nJ_wfgRg3DrWFZWsnVBJ_sS6tlqHHFlj4wv4r4xA.woff2) format("woff2");
+  unicode-range: U+068E, U+06EE;
+}
+@font-face {
+  font-family: "Vazirmatn"; font-style: normal; font-weight: 700; font-display: swap;
+  src: local("Noto Sans Arabic"), local("NotoSansArabic-Regular"), url(https://fonts.gstatic.com/s/notosansarabic/v33/nwpCtLGrOAZMl5nJ_wfgRg3DrWFZWsnVBJ_sS6tlqHHFlj4wv4r4xA.woff2) format("woff2");
+  unicode-range: U+068E, U+06EE;
+}
+
+/* Arabic-script targets other than Sorani: same fonts and direction as Sorani text. */
+[lang="hac"] em, [lang="hac"] i, [lang="sdh"] em, [lang="sdh"] i { font-synthesis: none; font-style: normal; }
+.br-kb[dir="rtl"][lang="hac"], .br-kb[dir="rtl"][lang="sdh"],
+.br-pat[dir="rtl"][lang="hac"], .br-pat[dir="rtl"][lang="sdh"] { line-height: 1.95; }
+
+/* Kurdish varieties hub */
+.br-var-group { margin-top: 8px; }
+.br-var-group > .br-h2 { margin: 8px 0 2px; }
+.br-pair-item { align-items: flex-start; text-align: start; }
+.br-pair-item .li-title { overflow-wrap: anywhere; }
+.br-pair-item .br-var-counts { color: var(--text); font-variant-numeric: tabular-nums; }
+.br-pair-item .br-var-ground { font-style: italic; }
+.br-pair-item[disabled] { opacity: 0.65; cursor: default; }
+.br-pair-item .chip { align-self: center; flex: none; }
+.br-pair-item .li-arrow { align-self: center; }
+.br-ask > .br-known { margin: 0; }
+
+/* "Where this comes from" */
+.br-ground { border-inline-start: 4px solid var(--accent); }
+.br-ground .br-ground-note { color: var(--text-muted); }
+
+/* Tables: paradigms side by side. The table scrolls inside its own box on narrow screens. */
+.br-jump { position: static; }
+.br-jump .br-tab { text-decoration: none; }
+.br-pcard { scroll-margin-top: calc(var(--header-h, 64px) + 12px); }
+.br-pverb { margin: 0; display: flex; flex-wrap: wrap; gap: 6px; align-items: baseline; }
+.br-ptable-scroll {
+  overflow-x: auto; max-width: 100%;
+  border: 1px solid var(--border); border-radius: 10px;
+  -webkit-overflow-scrolling: touch;
+}
+.br-ptable-scroll:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
+.br-ptable { border-collapse: separate; border-spacing: 0; width: 100%; min-width: max-content; font-variant-numeric: tabular-nums; }
+.br-ptable th, .br-ptable td { padding: 8px 10px; text-align: center; vertical-align: middle; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.br-ptable thead th { font-family: var(--sans); font-size: 0.8125rem; font-weight: 600; background: var(--surface-2, transparent); }
+.br-ptable .br-pers { display: block; }
+.br-ptable .br-pers-en { display: block; font-weight: 400; color: var(--text-muted); font-size: 0.75rem; }
+.br-ptable tbody th[scope="row"], .br-ptable .br-pcorner {
+  position: sticky; inset-inline-start: 0; z-index: 1;
+  background: var(--surface, var(--bg)); text-align: start;
+  font-family: var(--sans); font-size: 0.8125rem; font-weight: 600; color: var(--text-muted);
+  border-inline-end: 1px solid var(--border);
+}
+.br-ptable .br-prow-label th {
+  text-align: start; font-family: var(--sans); font-size: 0.8125rem; font-weight: 700;
+  color: var(--text); background: var(--surface-2, transparent); padding-top: 10px;
+}
+.br-ptable .br-prow-label th > * { position: sticky; inset-inline-start: 10px; }
+.br-ptable .br-prow-tgt td { font-family: var(--serif); font-weight: var(--nl-weight); font-size: var(--tl-md, 1.125rem); }
+.br-ptable .br-prow-src td { color: var(--text-muted); border-bottom-width: 2px; }
+.br-ptable td.br-miss { color: var(--text-subtle, var(--text-muted)); }
+.br-ptable .br-built { color: var(--accent-text); font-family: var(--sans); font-size: 0.7em; margin-inline-start: 2px; }
+.br-ptable bdi[dir="rtl"] { line-height: 1.8; }
+
+/* Sources */
+.br-src-group { margin-top: 8px; }
+.br-src-group > .br-h2 { margin: 8px 0 2px; }
+.br-src { padding: 12px 14px; }
+.br-src-name { font-weight: 600; overflow-wrap: anywhere; }
+.br-src-what { margin: 4px 0 0; }
+.br-sources-item { margin-top: 4px; }

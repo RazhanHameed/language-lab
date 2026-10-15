@@ -71,17 +71,45 @@ window.Store = (function () {
     localStorage.removeItem(KEY);
   }
 
+  // Shared across languages: progress in the other variety bridges (js/bridge.js), so a
+  // Hawrami or Zazaki course keeps its place whichever app language is active.
+  // Shape: { v: 1, pairs: { "<pairId>": { done, probe, cards, explainIn } } }.
+  const SHARED_KEY = "langlab:bridges:v1";
+  function loadShared() {
+    try {
+      const raw = localStorage.getItem(SHARED_KEY);
+      const parsed = raw ? JSON.parse(raw) : null;
+      return parsed && typeof parsed === "object" ? parsed : { v: 1, pairs: {} };
+    } catch (e) {
+      console.warn("Bridge progress unreadable, starting fresh.", e);
+      return { v: 1, pairs: {} };
+    }
+  }
+  function saveShared(obj) {
+    try { localStorage.setItem(SHARED_KEY, JSON.stringify(obj)); } catch (e) { console.error("Failed to save bridge progress.", e); }
+  }
+
   // Returns the JSON string AND mutates state to record the export
   // timestamp. Caller must persist() afterwards.
+  // The backup also carries the shared bridge progress (as `sharedBridges`).
   function exportJSON(state) {
     state.lastExportAt = Date.now();
-    return JSON.stringify(state, null, 2);
+    return JSON.stringify({ ...state, sharedBridges: loadShared() }, null, 2);
   }
 
   function importJSON(text) {
     const parsed = JSON.parse(text);
     if (!parsed || typeof parsed !== "object") throw new Error("Invalid file");
-    return { ...freshState(), ...parsed };
+    const { sharedBridges, ...rest } = parsed;
+    if (sharedBridges && typeof sharedBridges === "object" && sharedBridges.pairs && typeof sharedBridges.pairs === "object") {
+      // Never lose progress: per pair, keep whichever copy has more in it.
+      const cur = loadShared();
+      cur.pairs = cur.pairs && typeof cur.pairs === "object" ? cur.pairs : {};
+      const size = (p) => (p && typeof p === "object") ? Object.keys(p.done || {}).length + Object.keys(p.cards || {}).length : -1;
+      for (const [id, p] of Object.entries(sharedBridges.pairs)) if (size(p) > size(cur.pairs[id])) cur.pairs[id] = p;
+      saveShared(cur);
+    }
+    return { ...freshState(), ...rest };
   }
 
   // Trigger a browser download of the current state. Used both by the
@@ -105,5 +133,6 @@ window.Store = (function () {
 
   return {
     setKey, load, save, reset, exportJSON, importJSON, downloadBackup, daysSinceExport, freshState,
+    loadShared, saveShared,
   };
 })();

@@ -88,13 +88,16 @@ for (const cfg of Lang.list()) {
   for (let h = 1; h <= 12; h++) for (let m = 0; m < 60; m += 5) add(V, lang, cfg.timeToWord(h, m));
 }
 
-// Bridge course (Sorani <-> Kurmanji): every Kurdish text a bridge "hear it" button can speak,
+// Bridge course (Sorani <-> Kurmanji only): every Kurdish text a bridge "hear it" button can speak,
 // in the voice/engine of the language that text belongs to.
 (function addBridge() {
   const bdir = path.join(ROOT, "js/bridge");
   if (!fs.existsSync(bdir)) return;
   global.window.__BRIDGE = {};
-  for (const f of fs.readdirSync(bdir).filter((x) => x.endsWith(".js")).sort()) load(`js/bridge/${f}`);
+  // Top-level files only: js/bridge/<code>/ (Hawrami, Kalhori, Zazaki) has no recordings and is
+  // skipped on purpose; those bridges hide every hear-it button.
+  const files = fs.readdirSync(bdir, { withFileTypes: true }).filter((d) => d.isFile() && d.name.endsWith(".js")).map((d) => d.name).sort();
+  for (const f of files) load(`js/bridge/${f}`);
   const B = global.window.__BRIDGE;
   const side = {};
   for (const l of ["ckb", "kmr"]) {
