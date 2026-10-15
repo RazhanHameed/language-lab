@@ -43,7 +43,7 @@ window.__BRIDGE.RULES = [
     card: {
       "ckb>kmr": {
         en: "Kurmanji has no heavy ڵ. Every ڵ becomes a light l: ماڵ → mal, ساڵ → sal, دڵ → dil, گوڵ → gul. If you know Hewlêr speech, where ڵ can even turn into r, you already hear it as its own sound. In Kurmanji, just make it light.",
-        ku: "کورمانجی «ڵ»ی قورسی نییە؛ هەموو ڵێک دەبێتە l ی سووک: ماڵ ← mal، ساڵ ← sal، دڵ ← dil، گوڵ ← gul. لە قسەی هەولێریدا ڵ هەندێک جار دەبێتە ر، کەواتە دەزانیت دەنگێکی جیاوازە. لە کورمانجیدا تەنها بە سووکی بیڵێ."
+        ku: "کورمانجی «ڵ»ی قورسی نییە؛ هەموو ڵێک دەبێتە l ی سووک: ماڵ ← mal، ساڵ ← sal، دڵ ← dil، گوڵ ← gul. ئەگەر هەولێری بیت، دەزانیت ڵ دەنگێکی تایبەتە، چونکە لەوێ هەندێک جار دەبێتە ر. لە کورمانجیدا هەمیشە بە سووکی بیڵێ."
       },
       "kmr>ckb": {
         en: "Many of your l's are a heavy, dark ł in Sorani, written ڵ: mal → ماڵ (mał), sal → ساڵ (sał), dil → دڵ (dił), gul → گوڵ (guł). Plain ل also exists, so learn which l is heavy word by word. Hint: ł never starts a word.",
@@ -340,7 +340,7 @@ window.__BRIDGE.RULES = [
       { ckb: "دوازدە", kmr: "diwanzdeh", en: "twelve" },
       { ckb: "سێزدە", kmr: "sêzdeh", en: "thirteen" },
       { ckb: "چواردە", kmr: "çardeh", en: "fourteen" },
-      { ckb: "حەڤدە", kmr: "hivdeh", en: "seventeen" },
+      { ckb: "حەڤدە", kmr: "hevdeh", en: "seventeen" },
       { ckb: "هەژدە", kmr: "hejdeh", en: "eighteen" }
     ],
     test: [
@@ -355,7 +355,7 @@ window.__BRIDGE.RULES = [
     card: {
       "ckb>kmr": {
         en: "An h at the start of a word can come or go. Some Sorani h's vanish in Kurmanji: هەور → ewr, هێنان → anîn, هەینی → Înê. Other times Kurmanji adds one: ئەسپ → hesp, ئاسن → hesin, ئێسک → hestî. Treat it as a hint, not a law.",
-        ku: "h لە سەرەتای وشەدا دێت و دەڕوات. هەندێک h ی سۆرانی لە کورمانجیدا نامێنێت: هەور ← ewr، هێنان ← anîn، هەینی ← Înê. هەندێک جاریش کورمانجی h زیاد دەکات: ئەسپ ← hesp، ئاسن ← hesin، ئێسک ← hestî. وەک ئاماژە سەیری بکە، نەک یاسا."
+        ku: "دەنگی h لە سەرەتای وشەدا جێگیر نییە. هەندێک h ی سۆرانی لە کورمانجیدا نامێنێت: هەور ← ewr، هێنان ← anîn، هەینی ← Înê. هەندێک جاریش کورمانجی h زیاد دەکات: ئەسپ ← hesp، ئاسن ← hesin، ئێسک ← hestî. وەک ئاماژە سەیری بکە، نەک یاسا."
       },
       "kmr>ckb": {
         en: "An h at the start of a word can come or go: ewr → هەور (hewr), anîn → هێنان (hênan), Înê → هەینی (heynî); but hesp → ئەسپ (esp), hesin → ئاسن (asin). A Sorani word that starts with a vowel is written with a silent ئ.",
