@@ -2227,3 +2227,19 @@ ruby.guide rt { -webkit-user-select: none; user-select: none; }
 #narrow-status:empty { display: none; }
 #rec-toggle:not(.is-recording) #rec-icon .ico-sound { color: var(--on-primary); }
 .vocab-word-text { align-items: flex-start; }
+
+/* Sorani: a word (ruby base + guide) is one unbreakable unit. Wrapping happens
+   only between words; overflow-wrap:anywhere used to split words mid-letter. */
+ruby.guide { white-space: nowrap; word-break: keep-all; }
+.lang-rtl .view p, .lang-rtl .view li, .lang-rtl .li-title, .lang-rtl .li-sub,
+.lang-rtl .passage-para, .lang-rtl .nl-text, .lang-rtl .prompt-word,
+.lang-rtl .pron-ex-word .nl-text { overflow-wrap: break-word; word-break: normal; }
+
+/* Sorani vocab rows: Kurdish word and its gloss share the RTL start (right) edge,
+   like the example sentence below; chip and speaker keep their fixed LTR slots. */
+.lang-rtl .vocab-word-text { align-items: flex-end; text-align: right; }
+.lang-rtl .vocab-word-text .li-title { text-align: right; }
+.lang-rtl .vocab-ex-nl { text-align: right; }
+.lang-rtl .ex-card .tl-gloss, .lang-rtl .ex-card .ex-tag { text-align: right; }
+/* English gloss sits directly under the Kurdish line, on the same (right) side. */
+.lang-rtl .tl-gloss, .lang-rtl .dlg-en, .lang-rtl .ex-tag { text-align: right; }

@@ -2393,7 +2393,7 @@ const App = (function () {
               <div style="flex:1">
                 <div class="nl-text tl-sentence">${escape(s.nl)}</div>
                 <div class="tl-gloss">${escape(s.en)}</div>
-                ${s.pattern ? `<div style="margin-top:8px"><span class="chip">${escape(s.pattern)}</span></div>` : ""}
+                ${s.pattern ? `<div class="ex-tag" style="margin-top:8px"><span class="chip">${escape(s.pattern)}</span></div>` : ""}
                 ${s.reveals ? `<ul class="muted tl-notes">${s.reveals.map((r) => `<li>${escape(r)}</li>`).join("")}</ul>` : ""}
               </div>
               <button class="voice-btn" data-speak="${escape(s.nl)}" aria-label="Hear it">${iconSound()}</button>
@@ -2725,7 +2725,7 @@ const App = (function () {
             <div style="flex:1">
               <div class="nl-text tl-sentence">${escape(ex.nl)}</div>
               <div class="tl-gloss">${escape(ex.en)}</div>
-              ${ex.tag ? `<div style="margin-top:8px"><span class="chip">${escape(ex.tag)}</span></div>` : ""}
+              ${ex.tag ? `<div class="ex-tag" style="margin-top:8px"><span class="chip">${escape(ex.tag)}</span></div>` : ""}
             </div>
             <button class="voice-btn" data-speak aria-label="Hear it">${iconSound()}</button>
           </div>
