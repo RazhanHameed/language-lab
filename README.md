@@ -1,6 +1,6 @@
 # Language Lab
 
-**Learn Dutch, German, Central Kurdish (Sorani) or Northern Kurdish (Kurmanji) from zero to B1.**
+**Learn Dutch, German, Central Kurdish (Sorani), Northern Kurdish (Kurmanji) or Pashto from zero to B1.**
 
 **▶ Try it: <https://razhanhameed.github.io/language-lab/>** (no sign-up, no install; works on phones)
 
@@ -12,8 +12,9 @@ Language Lab is a free, open-source, local-first language-learning web app. It i
 | 🇩🇪 | **German** (Berlin-flavoured) | Latin | Supertonic-3 |
 | ☀️ | **Central Kurdish / Sorani** | Arabic-based, right-to-left | OmniVoice |
 | 🏔️ | **Northern Kurdish / Kurmanji** | Latin (Hawar alphabet) | OmniVoice |
+| 🪁 | **Pashto** (Afghan standard, Kandahari-leaning) | Arabic-based, right-to-left | OmniVoice |
 
-Every card, sentence, dialogue, grammar capsule, drill and reading passage is written separately for each language, not machine-translated from one master deck. Switch languages from the selector in the top bar, or link straight to one with `?lang=nl`, `?lang=de`, `?lang=ckb` or `?lang=kmr`. Each language keeps its own progress, streak and settings.
+Every card, sentence, dialogue, grammar capsule, drill and reading passage is written separately for each language, not machine-translated from one master deck. Switch languages from the selector in the top bar, or link straight to one with `?lang=nl`, `?lang=de`, `?lang=ckb`, `?lang=kmr` or `?lang=ps`. Each language keeps its own progress, streak and settings.
 
 ---
 
@@ -38,24 +39,24 @@ Every card, sentence, dialogue, grammar capsule, drill and reading passage is wr
 
 ### Content per language (A1 → B1)
 
-| | Dutch | German | Sorani | Kurmanji |
-|---|---|---|---|---|
-| Vocabulary cards | 508 | 538 | 498 | 499 |
-| Vocabulary themes | 21 | 22 | 21 | 21 |
-| Sentence patterns | 106 | 146 | 106 | 106 |
-| Scenario dialogues | 16 | 23 | 16 | 16 |
-| Grammar capsules | 21 | 21 | 21 | 21 |
-| Reading passages | 12 | 12 | 13 | 13 |
-| Chunks (set phrases) | 76 | 74 | 77 | 77 |
-| Conjugation verbs | 40 | 40 | 40 | 41 |
-| Minimal pairs | 22 | 23 | 22 | 22 |
-| Pronunciation guide | 16 sections | 16 sections | 16 sections | 16 sections |
+| | Dutch | German | Sorani | Kurmanji | Pashto |
+|---|---|---|---|---|---|
+| Vocabulary cards | 508 | 538 | 498 | 499 | 498 |
+| Vocabulary themes | 21 | 22 | 21 | 21 | 21 |
+| Sentence patterns | 106 | 146 | 106 | 106 | 106 |
+| Scenario dialogues | 16 | 23 | 16 | 16 | 16 |
+| Grammar capsules | 21 | 21 | 21 | 21 | 21 |
+| Reading passages | 12 | 12 | 13 | 13 | 13 |
+| Chunks (set phrases) | 76 | 74 | 77 | 77 | 77 |
+| Conjugation verbs | 40 | 40 | 40 | 41 | 40 |
+| Minimal pairs | 22 | 23 | 22 | 22 | 22 |
+| Pronunciation guide | 16 sections | 16 sections | 16 sections | 16 sections | 16 sections |
 
 - **Vocabulary**: survival themes (greetings, café, transport, work, numbers, …) and B1 themes (health, home, food, people, travel, nature, media, opinions, connectors), chosen by frequency. Each card has its part of speech (and gender where relevant), an example sentence and a usage or culture note.
 - **Sentence patterns**: word-order diagnostics, negation and everyday phrases, then B1 sets for telling stories in the past, giving opinions and linking ideas.
 - **Scenario dialogues**: café, supermarket, tram, pharmacy, landlord, … and at B1 a doctor's visit, a job interview, a complaint and a discussion. "Narrow listen · 3×" loops a dialogue with alternating voices.
-- **Grammar capsules**: short, example-led explanations. The Kurdish decks cover their own core, such as past-tense ergativity, the linking particle (danepał / veqetandek), clitics, the subjunctive, conditionals and the passive.
-- **Reading**: stories, opinion pieces, emails and how-tos from A1 to B1, plus an article on how each Kurdish script is read. Tap any word for a gloss and its pronunciation.
+- **Grammar capsules**: short, example-led explanations. The Kurdish decks cover their own core, such as past-tense ergativity, the linking particle (danepał / veqetandek), clitics, the subjunctive, conditionals and the passive. The Pashto deck covers gender, the direct/oblique cases, ergative agreement in the past, weak pronouns, circumpositions, aspect with و- and stress, the future with به, and compound verbs with کول / کېدل.
+- **Reading**: stories, opinion pieces, emails and how-tos from A1 to B1, plus an article on how each Kurdish script and the Pashto script are read. Tap any word for a gloss and its pronunciation.
 - **Pronunciation guide**: a long, systematic article per language (for example, how German spelling maps to sound by rule), with about 230 playable examples each and read-aloud practice sentences at the end.
 
 ### 8 study card types (interleaved within each session)
@@ -85,13 +86,14 @@ Cards are scheduled with FSRS-4.5 (stability and difficulty per card, targeting 
 | 🕗 **Times** | "08:30" → say it the local way | A classic learner trap |
 | 🧬 **Conjugation** | Pronoun + infinitive → the right form, top 40 verbs | Form-focused practice |
 
-Speaking and Shadowing score you with a local Whisper server (see [Running it locally](#running-it-locally)). On the public site they still play the audio but can't score you. Whisper has no Kurdish, so these two drills are not offered for Sorani or Kurmanji.
+Speaking and Shadowing score you with a local Whisper server (see [Running it locally](#running-it-locally)). On the public site they still play the audio but can't score you. Whisper has no Kurdish and its Pashto is too weak to score a learner, so these two drills are not offered for Sorani, Kurmanji or Pashto.
 
 ### Help for beginners
 
 - **First-run walkthrough**: a short, skippable tour explains the daily routine, what each part of the app is for and why it works. Reopen it any time from **How it works**.
 - **In-context coaching**: every card type, drill and view shows a one-line instruction the first few times you meet it, then shrinks to a small "?".
 - **Sorani reading guide**: every Sorani word shows a Latin transliteration above it, including the short *i* vowel that the script doesn't write. Typed answers are accepted in Kurdish script *or* in Latin letters. You can turn the guide off in Settings.
+- **Pashto reading guide**: every Pashto word shows a romanisation with its short vowels and stressed syllable (wə́likə). Pashto script doesn't write short vowels, so this comes from a hand-made dictionary of every word form in the deck (`js/lang/ps_roman.js`), not from rules. Latin answers are accepted too.
 - **"Say it like" respellings**: small English-style hints under Dutch, German and Kurmanji words.
 - **Feedback that explains the mistake**: wrong answers are classified (for example *niet* vs *geen*, *de*/*het*, verb-second order, a missing *-t*, a typo) with a one-line rule.
 - **Pretest mode**: "Challenge me · 5" on any vocabulary theme quizzes you before you study (the errorful-pretest effect).
@@ -198,13 +200,13 @@ The public site has **no backend**. Every word and sentence the app can speak is
 | `tools/extract_audio_items.js` | Lists every spoken item in all decks, with the engine for each language |
 | `build_static_audio.py` | Renders missing clips, checks quality, writes the manifest |
 | `supertonic_server.py` | Supertonic-3 TTS (Dutch, German, English), as a local server or in the build |
-| `omnivoice_tts.py` | OmniVoice model loading, Kurdish voices, number spelling, voicing check |
-| `tools/omnivoice_voices.py` | Design, audition and lock the Kurdish voices |
+| `omnivoice_tts.py` | OmniVoice model loading, Kurdish and Pashto voices, number spelling, voicing check |
+| `tools/omnivoice_voices.py` | Design, audition and lock the Kurdish and Pashto voices |
 | `deploy.sh` | The whole pipeline, each engine in its own venv |
 
 ### Kurdish voices (OmniVoice)
 
-Kurdish audio comes from [OmniVoice](https://github.com/k2-fsa/OmniVoice), which supports `ckb` and `kmr`. It exists **only** as pre-rendered clips (`ttsLive: false`): if a clip is missing, the app stays silent rather than mispronouncing the word with a system voice. OmniVoice needs PyTorch, and a CUDA GPU is strongly recommended. Install it in its own venv:
+Kurdish and Pashto audio comes from [OmniVoice](https://github.com/k2-fsa/OmniVoice), which supports `ckb`, `kmr` and `ps`. It exists **only** as pre-rendered clips (`ttsLive: false`): if a clip is missing, the app stays silent rather than mispronouncing the word with a system voice. OmniVoice needs PyTorch, and a CUDA GPU is strongly recommended. Install it in its own venv:
 
 ```bash
 uv venv --python 3.12 .venv-omnivoice
@@ -235,7 +237,7 @@ Changing a reference doesn't change clip hashes, so delete that language's clips
 ```
 language-lab/
 ├── index.html                  # single-page app shell: loads every deck and language pack
-├── css/styles.css              # mobile-first styles, RTL support, Sorani reading guide
+├── css/styles.css              # mobile-first styles, RTL support, reading guide
 ├── js/
 │   ├── app.js                  # router, all views, the 8 card types, the 7 drills, reader, pronunciation guide
 │   ├── onboarding.js           # first-run tour, in-context coaching, "How it works" page
@@ -247,11 +249,12 @@ language-lab/
 │   ├── lang.js                 # language registry; swaps the active deck in
 │   ├── bridge.js               # Kurdish variety bridge courses (all five directions)
 │   ├── bridge/                 # bridge data: Sorani⇄Kurmanji at the top level, {hac,sdh,zza}/ per variety
-│   ├── lang/{nl,de,ckb,kmr}.js # language packs: numbers, times, respellers, error diagnosis, voices,
+│   ├── lang/{nl,de,ckb,kmr,ps}.js # language packs: numbers, times, respellers, error diagnosis, voices,
 │   │                           #   Sorani→Latin transliteration, onboarding tips
+│   ├── lang/ps_roman.js        # Pashto reading-guide dictionary (word form → romanisation with stress)
 │   └── data/
 │       ├── _boot.js            # per-language deck registry (window.__DECK)
-│       └── {nl,de,ckb,kmr}/    # vocab, sentences, scenarios, grammar, conjugations, chunks,
+│       └── {nl,de,ckb,kmr,ps}/ # vocab, sentences, scenarios, grammar, conjugations, chunks,
 │                               #   minimal_pairs, passages, pronunciation
 ├── docs/bridges/               # bridge method, data format and one grammar sketch per variety
 ├── audio/                      # pre-rendered MP3 clips + manifest.json (generated; committed for Pages)
@@ -310,8 +313,9 @@ The data files are plain, hand-readable JS. Edit one and reload the page; no bui
 
 **Rules for target-language text** (it becomes audio):
 
-- In Kurdish, write numbers as words, never digits.
+- In Kurdish and Pashto, write numbers as words, never digits.
 - In Sorani, use the Kurdish letters `ی ک ە`, not Arabic `ي ك`.
+- In Pashto, use the Pashto letters (`ک ګ ی`, not `ك گ ى`), keep the five yes apart (`ی ي ې ۍ ئ`) and add no diacritics. Every new Pashto word form also needs an entry in `js/lang/ps_roman.js`, or the reading guide shows only a consonant skeleton for it.
 
 New text has no audio until it's rendered with `./deploy.sh` (or `build_static_audio.py`). Locally, Dutch and German fall back to the live TTS server or the system voice in the meantime.
 
@@ -377,7 +381,7 @@ Most language apps optimise for engagement. This one is built on what the resear
 
 Bug reports and pull requests are welcome. Most of the content is plain data, so many fixes need no JavaScript.
 
-**Native speakers are especially welcome**, above all for Sorani and Kurmanji. The content is carefully written but not yet fully native-reviewed. Areas that most need a check:
+**Native speakers are especially welcome**, above all for Sorani, Kurmanji and Pashto. The content is carefully written but not yet fully native-reviewed. Areas that most need a check:
 
 - Kurdish B1 grammar: unreal conditionals, clitic placement, the Kurmanji pluperfect and past-tense agreement.
 - Regional word choices and spellings (for example Kurmanji *firingî* vs *bacanê sor*, Sorani *دەرمانخانە* vs *دەرمانگا*).
@@ -396,7 +400,7 @@ Before opening a PR, check that the app loads without console errors in that lan
 [MIT](LICENSE). Use it, fork it, swap in the language you want to learn.
 
 - [Supertonic-3](https://huggingface.co/Supertone/supertonic-3) by Supertone: Dutch, German and English TTS
-- [OmniVoice](https://github.com/k2-fsa/OmniVoice) by k2-fsa: Sorani and Kurmanji TTS
+- [OmniVoice](https://github.com/k2-fsa/OmniVoice) by k2-fsa: Sorani, Kurmanji and Pashto TTS
 - [mlx-audio](https://github.com/Blaizzy/mlx-audio) by Prince Canuma: the on-device MLX speech runtime
 - [whisper-large-v3-turbo](https://huggingface.co/openai/whisper-large-v3-turbo) by OpenAI (MLX port by mlx-community)
 - [FSRS](https://github.com/open-spaced-repetition) by open-spaced-repetition

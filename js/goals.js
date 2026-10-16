@@ -33,6 +33,11 @@
       basis: "No direct study exists for Kurdish. Estimated from its closest rated relatives (Persian, Dari, Tajik, Pashto: all FSI Category III). The Latin script lowers the start-up cost slightly; ergativity, case and gender remain.",
       source: "Estimate from FSI ratings of Iranian-branch languages",
     },
+    ps: {
+      fsi: "III", hours: "~1100", weeks: "44", m: 1.7, estimated: false,
+      basis: "Listed by the FSI as Category III: about 44 weeks, ~1100 class hours. The Arabic-based script without short vowels, gender, two cases and past-tense ergativity account for most of the extra time.",
+      source: "FSI language difficulty ranking for English speakers",
+    },
   };
 
   // Cambridge English guided-learning hours, cumulative, for an "average" language.

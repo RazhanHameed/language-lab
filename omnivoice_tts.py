@@ -43,6 +43,14 @@ _NUMS = {
         "tens": {20: "bîst", 30: "sî", 40: "çil", 50: "pêncî", 60: "şêst", 70: "heftê", 80: "heştê", 90: "nod"},
         "hundred": "sed", "thousand": "hezar", "million": "milyon",
     },
+    "ps": {
+        "and": " او ",
+        "ones": ["صفر", "یو", "دوه", "درې", "څلور", "پنځه", "شپږ", "اووه", "اته", "نهه", "لس",
+                 "یوولس", "دولس", "دیارلس", "څوارلس", "پنځلس", "شپاړس", "اوولس", "اتلس", "نولس"],
+        "tens": {20: "شل", 30: "دېرش", 40: "څلوېښت", 50: "پنځوس", 60: "شپېته", 70: "اویا", 80: "اتیا", 90: "نوي"},
+        "hundred": "سل", "thousand": "زر", "million": "میلیون",
+        "hundred_pl": "سوه", "thousand_pl": "زره",
+    },
 }
 # Arabic-Indic (٠-٩) and Extended/Persian (۰-۹) digits -> ASCII.
 _DIGITS = str.maketrans("٠١٢٣٤٥٦٧٨٩۰۱۲۳۴۵۶۷۸۹", "01234567890123456789")
@@ -56,12 +64,15 @@ def number_to_words(n, lang):
         return w["ones"][n]
     if n < 100:
         t, o = n - n % 10, n % 10
+        if lang == "ps" and o:   # Pashto puts the unit first: 25 = pinza wisht (20 -> wisht here)
+            return w["ones"][o] + " " + ("ویشت" if t == 20 else w["tens"][t])
         return w["tens"][t] + (w["and"] + w["ones"][o] if o else "")
     for size, name in ((10**6, "million"), (1000, "thousand"), (100, "hundred")):
         if n >= size:
             head, rest = divmod(n, size)
             # "sed"/"hezar" alone for one; "du sed", "sê hezar" otherwise.
-            out = w[name] if head == 1 else number_to_words(head, lang) + " " + w[name]
+            unit = w.get(name + "_pl", w[name]) if head > 1 else w[name]   # Pashto: sal / dwa swa
+            out = w[name] if head == 1 else number_to_words(head, lang) + " " + unit
             return out + (w["and"] + number_to_words(rest, lang) if rest else "")
     raise ValueError(n)
 

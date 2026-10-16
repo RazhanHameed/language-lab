@@ -6,3 +6,4 @@ window.__DECK.nl = window.__DECK.nl || {};
 window.__DECK.de = window.__DECK.de || {};
 window.__DECK.ckb = window.__DECK.ckb || {};
 window.__DECK.kmr = window.__DECK.kmr || {};
+window.__DECK.ps = window.__DECK.ps || {};

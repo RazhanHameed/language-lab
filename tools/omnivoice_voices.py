@@ -31,6 +31,7 @@ CAND = os.path.join(ov.VOICES_DIR, "candidates")
 REF_TEXT = {
     "ckb": "سڵاو، بەخێربێن. ئەمڕۆ پێکەوە کوردی دەخوێنینەوە، بە هێواشی و بە ڕوونی.",
     "kmr": "Silav, hûn bi xêr hatin. Îro em ê bi hev re kurmancî bixwînin, hêdî û zelal.",
+    "ps": "سلام، ښه راغلاست. نن به موږ په ګډه پښتو ولولو، ورو او په ښکاره ډول.",
 }
 DESIGNS = {
     "M": ["male, middle-aged, moderate pitch", "male, young adult, moderate pitch",
@@ -55,6 +56,14 @@ SAMPLES = {
         "Trên ji sekoya pêncemîn diçe.",
         "Çayek bê şekir, ji kerema xwe.",
         "Kurmancî bi alfabeya latînî tê nivîsandin. Ev alfabe di sala hezar û neh sed û sî û du de ji aliyê Celadet Alî Bedirxan ve, di kovara Hawarê de, hat belavkirin.",
+    ],
+    "ps": [
+        "سلام", "مننه", "ښه راغلاست", "ښار", "شار", "ږمنځ", "زوی", "ځای", "څوک",
+        "یو ویشت", "اووه څلوېښت", "سل", "اته نیمې", "نهه بجې کم پاو",
+        "په لسو بجو زما غونډه ده.",
+        "اورګاډی له پنځم پلیټفارم څخه ځي.",
+        "یوه پیاله چای بې بورې، مهرباني وکړئ.",
+        "پښتو په عربي لیکدود لیکل کېږي. له ښي خوا څخه کیڼ لور ته لوستل کېږي، لکه دري او عربي. د پښتو الفبا څلوېښت توري لري.",
     ],
 }
 
@@ -118,10 +127,10 @@ def page():
     parts = ["<!doctype html><meta charset=utf-8><title>OmniVoice review</title>",
              "<style>body{font:15px system-ui;max-width:900px;margin:24px auto;padding:0 16px}"
              "td{padding:4px 8px;vertical-align:middle}.k{font-size:18px}audio{height:32px}</style>",
-             "<h1>OmniVoice — Kurdish voice review</h1>"]
+             "<h1>OmniVoice — voice review</h1>"]
     for lang in sorted(REF_TEXT):
         d = os.path.join(CAND, lang)
-        dirn = "rtl" if lang == "ckb" else "ltr"
+        dirn = "rtl" if lang in ("ckb", "ps") else "ltr"
         locked = [v for v in SLOTS if os.path.exists(ov.voice_ref(lang, v)[0])]
         parts.append(f"<h2>{lang} <small>(locked: {', '.join(locked) or 'none'})</small></h2>")
         for v in locked:
