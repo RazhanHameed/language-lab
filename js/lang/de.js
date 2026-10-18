@@ -56,6 +56,54 @@
     { key: "sie", label: "sie (Plural)" },
   ];
 
+  /* ---------- article hints (der / die / das) ----------
+   * Only rules that are reliable enough to teach. `sure` rules also explain the
+   * exception when the noun breaks them; the others speak up only when the noun
+   * agrees, so a learner is never shown a rule that is wrong for this word. */
+  const GENDER_WORDS = {
+    der: ["montag", "dienstag", "mittwoch", "donnerstag", "freitag", "samstag", "sonntag", "sonnabend",
+      "januar", "februar", "märz", "april", "mai", "juni", "juli", "august", "september", "oktober", "november", "dezember",
+      "frühling", "sommer", "herbst", "winter", "morgen", "vormittag", "mittag", "nachmittag", "abend"],
+  };
+  const GENDER_RULES = [
+    { end: "ling", g: "der", say: "Nouns ending in -ling are der.", sure: false },
+    { end: "ismus", g: "der", say: "Nouns ending in -ismus are der.", sure: true },
+    { end: "schaft", g: "die", say: "Nouns ending in -schaft are die.", sure: true },
+    { end: "heit", g: "die", say: "Nouns ending in -heit are die.", sure: true },
+    { end: "keit", g: "die", say: "Nouns ending in -keit are die.", sure: true },
+    { end: "ung", g: "die", say: "Nouns ending in -ung are die.", sure: true },
+    { end: "ion", g: "die", say: "Nouns ending in -ion are die.", sure: true },
+    { end: "tät", g: "die", say: "Nouns ending in -tät are die.", sure: true },
+    { end: "chen", g: "das", say: "Nouns ending in -chen (little ones) are always das.", sure: true },
+    { end: "lein", g: "das", say: "Nouns ending in -lein (little ones) are always das.", sure: true },
+    { end: "ment", g: "das", say: "Nouns ending in -ment are mostly das.", sure: false },
+    { end: "ik", g: "die", say: "Nouns ending in -ik are die.", sure: true },
+    { end: "ie", g: "die", say: "Nouns ending in -ie are die.", sure: true },
+    { end: "ei", g: "die", say: "Nouns ending in -ei are die.", sure: true },
+    { end: "ur", g: "die", say: "Nouns ending in -ur are die.", sure: true },
+    { end: "um", g: "das", say: "Nouns ending in -um are mostly das.", sure: false, not: /aum$/ },
+    { end: "ma", g: "das", say: "Many nouns ending in -ma are das.", sure: false },
+    { end: "or", g: "der", say: "Many nouns ending in -or are der.", sure: false },
+    { end: "ent", g: "der", say: "Nouns ending in -ent that name a person are der.", sure: false },
+    { end: "er", g: "der", say: "Many -er nouns for a person who does something are der.", sure: false },
+    { test: (w) => w.length > 5 && /^ge/.test(w), g: "das", say: "Many nouns starting with Ge- (things that belong together) are das.", sure: false },
+    { end: "e", g: "die", say: "Most nouns ending in -e are die.", sure: true, not: /ee$/ },
+  ];
+  function articleHint(card) {
+    if (!card || !card.gender || card.pos !== "noun") return null;
+    const word = String(card.nl).trim().split(/\s+/).pop().toLowerCase();
+    if (GENDER_WORDS[card.gender] && GENDER_WORDS[card.gender].includes(word)) {
+      return "Days, months, seasons and parts of the day are der.";
+    }
+    for (const r of GENDER_RULES) {
+      const hit = r.test ? r.test(word) : (word.length > r.end.length + 1 && word.endsWith(r.end) && !(r.not && r.not.test(word)));
+      if (!hit) continue;
+      if (r.g === card.gender) return r.say;
+      if (r.sure) return `${r.say.replace(/^Most/.test(r.say) ? /\.$/ : / are (always |mostly )?/, (m) => m === "." ? "" : " are usually ").replace(/\.$/, "")}, but this one is ${card.gender}.`;
+    }
+    return null;
+  }
+
   /* ---------- respeller (German → crude English respelling) ---------- */
   function respellWord(raw) {
     const m = raw.match(/^([^A-Za-zÀ-ÿ]*)([A-Za-zÀ-ÿ]+)(.*)$/);
@@ -224,9 +272,12 @@
     timeToWord,
     conjugationPronouns,
     respellWord,
+    articles: { der: "masculine", die: "feminine", das: "neuter" },
+    articleHint,
     onboarding: {
       tips: [
-        { icon: "🔊", text: "Tap the speaker on any German word to hear it. The small \"say it like\" line under each word is an English-style respelling to get you started." },
+        { icon: "🔊", text: "Tap the speaker on any German word to hear it. The small \"say it like\" line under each word is an English-style respelling: hyphens split the syllables, CAPITALS mark the stressed one, letters read as in English (kh = ch in loch, ur = German ö, ow = ou in \"out\")." },
+        { icon: "🏷️", text: "Every noun is learned with its article — der (blue), die (red), das (green)." },
         { icon: "🎙️", text: "Speaking and Shadowing listen to you and score what they hear. If scoring isn't available on your device, you can still record yourself, play the answer and compare. Everything else works without it." },
         { icon: "⌨️", text: "Typing exercises don't mind capitals or punctuation, and a wrong answer comes with a one-line rule explaining why." },
       ],

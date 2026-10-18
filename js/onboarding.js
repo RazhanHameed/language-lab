@@ -85,6 +85,7 @@ window.Onboarding = (function () {
       choice: "Pick the right meaning. A wrong guess is fine: seeing the answer straight after is how it sticks.",
       cloze: `Fill in the missing word.${typing() || " Type it, then press Enter or Check."}`,
       reorder: "Tap the words in the right order to build the sentence, then press Check. Tap a placed word to take it back.",
+      article: "Is it der, die or das? Tap your guess, then see the word with its article and hear it. A hint shows when the ending gives it away.",
       listen: `Listen, then type what you hear. Tap the speaker to replay it.${typing()}`,
       listen_sentence: `Listen, then type the whole sentence. Replay as often as you like.${typing()}`,
       sentence_recognize: `Read the sentence and work out what it means before you tap the card. ${RATE}`,
@@ -108,7 +109,7 @@ window.Onboarding = (function () {
     sentence_recognize: "Sentence", speaking: "Speaking", shadow: "Shadowing",
     minpair: "Minimal pairs", chunk: "Chunks", number: "Numbers", time: "Times",
     conjugation: "Conjugation", reader: "Reading", scenario: "Dialogues", grammar: "Grammar",
-    pronunciation: "Pronunciation",
+    pronunciation: "Pronunciation", article: "der, die or das?",
   };
 
   /* ---------- coaching component ----------

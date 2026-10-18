@@ -214,7 +214,7 @@
     respellWord,
     onboarding: {
       tips: [
-        { icon: "🔊", text: "Tap the speaker on any Dutch word to hear it. The small \"say it like\" line under each word is an English-style respelling to get you started." },
+        { icon: "🔊", text: "Tap the speaker on any Dutch word to hear it. The small \"say it like\" line under each word is an English-style respelling: hyphens split the syllables, CAPITALS mark the stressed one, letters read as in English (kh = ch in loch, ur = Dutch eu, ow = ou in \"out\")." },
         { icon: "🎙️", text: "Speaking and Shadowing listen to you and score what they hear. If scoring isn't available on your device, you can still record yourself, play the answer and compare. Everything else works without it." },
         { icon: "⌨️", text: "Typing exercises don't mind capitals or punctuation, and a wrong answer comes with a one-line rule explaining why." },
       ],

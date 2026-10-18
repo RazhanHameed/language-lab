@@ -48,11 +48,27 @@ const App = (function () {
    * Use the audio button as the source of truth; this is a reading aid, not a
    * phonetic standard.
    */
+  // Hand-made dictionary first (js/lang/say_<id>.js → window.__SAY[id]), keyed by
+  // the lowercase word; the pack's rule-based respellWord() covers anything missing.
+  function sayLookup(word) {
+    const dict = window.__SAY && window.__SAY[Lang.cfg().id];
+    return dict ? dict[word] : undefined;
+  }
+
+  function respellToken(tok) {
+    const m = tok.match(/^([^\p{L}\p{N}]*)(.*?)([^\p{L}\p{N}]*)$/u);
+    const core = m ? m[2] : "";
+    const hit = core && sayLookup(core.toLowerCase().replace(/\u2019/g, "'"));
+    if (!hit) return Lang.cfg().respellWord(tok);
+    const say = core[0] !== core[0].toLowerCase() && hit[0] === hit[0].toLowerCase()
+      ? hit[0].toUpperCase() + hit.slice(1) : hit;
+    return m[1] + say + m[3];
+  }
+
   function respell(text, override) {
     if (override) return override;
     if (!text) return "";
-    const respellWord = Lang.cfg().respellWord;
-    return text.split(/(\s+)/).map((tok) => /\S/.test(tok) ? respellWord(tok) : tok).join("");
+    return text.split(/(\s+)/).map((tok) => /\S/.test(tok) ? respellToken(tok) : tok).join("");
   }
 
   function respellLine(text, override) {
@@ -82,7 +98,7 @@ const App = (function () {
 
   function annotateGuide(root) {
     if (!root || !guideActive()) return;
-    const tr = Lang.cfg().transliterate;
+    const tr = (w) => sayLookup(w) || Lang.cfg().transliterate(w);   // dictionary respelling, else the rule-based reading
     if (root.nodeType === 3) root = root.parentElement;
     if (!root || root.closest && root.closest(NO_GUIDE)) return;
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
@@ -393,6 +409,9 @@ const App = (function () {
     const r = Math.random();
 
     if (isVocab(card)) {
+      // Nouns of a language that teaches articles: one review in three asks
+      // "der, die or das?". Not on first contact — the card must show the word first.
+      if (hasArticles() && card.pos === "noun" && card.gender && mature !== "new" && Math.random() < 1 / 3) return "article";
       if (mature === "new") {
         // Easier first contact: recognition + sometimes choice
         if (r < 0.6) return "recognize";
@@ -811,6 +830,11 @@ const App = (function () {
             <span class="drill-chip-label">Chunks</span>
             <span class="drill-chip-sub">${Lang.cfg().drillHints.chunk}</span>
           </button>
+          ${hasArticles() ? `<button class="drill-chip" data-drill="article">
+            <span class="drill-chip-emoji">🏷️</span>
+            <span class="drill-chip-label">Articles</span>
+            <span class="drill-chip-sub">der, die or das? · ${VOCAB.filter((v) => v.pos === "noun" && v.gender).length} nouns</span>
+          </button>` : ""}
           <button class="drill-chip" data-drill="number">
             <span class="drill-chip-emoji">🔢</span>
             <span class="drill-chip-label">Numbers</span>
@@ -952,6 +976,7 @@ const App = (function () {
     if (mode === "recall")    return cardRecall(card);
     if (mode === "choice")    return cardChoice(card);
     if (mode === "listen")    return cardListenVocab(card);
+    if (mode === "article")   return cardArticle(card);
     if (mode === "sentence_recognize") return cardSentenceRecognize(card);
     if (mode === "cloze")     return cardCloze(card);
     if (mode === "reorder")   return cardReorder(card);
@@ -970,15 +995,15 @@ const App = (function () {
             </button>
             <span class="prompt-line">${Lang.cfg().name} · what does this mean?</span>
             <div class="prompt-word">${gloss(card)}</div>
-            ${respellLine(card.nl, card.respell)}
-            ${card.gender ? `<div class="prompt-meta"><span class="chip primary">${card.gender}</span><span class="chip">${card.pos || ""}</span></div>` : `<div class="prompt-meta"><span class="chip">${card.pos || ""}</span></div>`}
+            ${vocabRespell(card)}
+            ${card.gender && !hasArticles() ? `<div class="prompt-meta"><span class="chip primary">${card.gender}</span><span class="chip">${card.pos || ""}</span></div>` : `<div class="prompt-meta"><span class="chip">${card.pos || ""}</span></div>`}
           </div>
           <div class="face back">
             <div class="speak-row">
-              <div class="prompt-word">${escape(card.nl)}</div>
-              <button class="voice-btn" data-speak-nl="${escape(card.nl)}" aria-label="Hear ${Lang.cfg().name}">${iconSound()}</button>
+              <div class="prompt-word">${fullFormHtml(card)}</div>
+              <button class="voice-btn" data-speak-nl="${escape(fullForm(card))}" aria-label="Hear ${Lang.cfg().name}">${iconSound()}</button>
             </div>
-            ${respellLine(card.nl, card.respell)}
+            ${vocabRespell(card)}
             <div class="prompt-en">${escape(card.en)}</div>
             ${exampleBlock(card)}
             ${noteBlock(card)}
@@ -993,7 +1018,7 @@ const App = (function () {
 
     audioBtn.addEventListener("click", (e) => {
       e.stopPropagation();
-      Speech.speak(card.nl, { rate: state.settings.prefRate });
+      Speech.speak(fullForm(card), { rate: state.settings.prefRate });
     });
 
     wireSpeakButtons(wrap);
@@ -1003,7 +1028,7 @@ const App = (function () {
       if (window.getSelection && window.getSelection().toString().length > 0) return;
       if (!flash.classList.contains("is-flipped")) {
         flash.classList.add("is-flipped");
-        if (state.settings.autoPlay) Speech.speak(card.nl, { rate: state.settings.prefRate });
+        if (state.settings.autoPlay) Speech.speak(fullForm(card), { rate: state.settings.prefRate });
         showRatingPad(wrap);
       }
     });
@@ -1018,10 +1043,10 @@ const App = (function () {
       <div class="flashcard-wrap">
         <div class="flashcard" id="flash">
           <div class="face front">
-            <span class="prompt-line">Say it in ${Lang.cfg().name}</span>
+            <span class="prompt-line">Say it in ${Lang.cfg().name}${hasArticles() && card.gender ? " — with its article" : ""}</span>
             <div class="prompt-en">${escape(card.en)}</div>
             <div class="prompt-meta">
-              ${card.gender ? `<span class="chip primary">${card.gender}</span>` : ""}
+              ${card.gender && !hasArticles() ? `<span class="chip primary">${card.gender}</span>` : ""}
               <span class="chip">${card.pos || ""}</span>
             </div>
             <p class="muted" style="margin-top:14px; font-size:0.875rem">Say it aloud first. Then tap to check.</p>
@@ -1029,8 +1054,8 @@ const App = (function () {
           <div class="face back">
             <button class="voice-btn voice-btn--float" id="audio-btn" aria-label="Hear it">${iconSound()}</button>
             <span class="prompt-line">${Lang.cfg().name}</span>
-            <div class="prompt-word">${escape(card.nl)}</div>
-            ${respellLine(card.nl, card.respell)}
+            <div class="prompt-word">${fullFormHtml(card)}</div>
+            ${vocabRespell(card)}
             ${exampleBlock(card)}
             ${noteBlock(card)}
           </div>
@@ -1045,7 +1070,7 @@ const App = (function () {
       if (window.getSelection && window.getSelection().toString().length > 0) return;
       if (!flash.classList.contains("is-flipped")) {
         flash.classList.add("is-flipped");
-        if (state.settings.autoPlay) Speech.speak(card.nl, { rate: state.settings.prefRate });
+        if (state.settings.autoPlay) Speech.speak(fullForm(card), { rate: state.settings.prefRate });
         showRatingPad(wrap);
       }
     });
@@ -1054,7 +1079,7 @@ const App = (function () {
       const ab = $("#audio-btn", wrap);
       if (ab) ab.addEventListener("click", (e) => {
         e.stopPropagation();
-        Speech.speak(card.nl, { rate: state.settings.prefRate });
+        Speech.speak(fullForm(card), { rate: state.settings.prefRate });
       });
     }, 0);
 
@@ -1074,25 +1099,24 @@ const App = (function () {
     }
     const askInDutch = Math.random() < 0.5; // alternate direction
     const promptText = askInDutch ? card.nl : card.en;
-    const correctAnswer = askInDutch ? card.en : card.nl;
-    const choices = shuffle([
-      correctAnswer,
-      ...distractors.map((d) => askInDutch ? d.en : d.nl),
-    ]);
+    // Options are { val: plain text, html }: German options carry their coloured article.
+    const opt = (c) => askInDutch ? { val: c.en, html: escape(c.en) } : { val: fullForm(c), html: fullFormHtml(c) };
+    const correctAnswer = opt(card).val;
+    const choices = shuffle([opt(card), ...distractors.map(opt)]);
 
     const wrap = el(`
       <div class="card lg stack-sm">
         <span class="prompt-line">${askInDutch ? Lang.cfg().name + " · pick the meaning" : "English · pick the " + Lang.cfg().name}</span>
-        ${askInDutch ? `<div class="prompt-word">${escape(promptText)}</div>` : `<div class="prompt-en prompt-en--lg">${escape(promptText)}</div>`}
-        ${askInDutch ? respellLine(card.nl, card.respell) : ""}
+        ${askInDutch ? `<div class="prompt-word">${fullFormHtml(card)}</div>` : `<div class="prompt-en prompt-en--lg">${escape(promptText)}</div>`}
+        ${askInDutch ? vocabRespell(card) : ""}
         <div class="choice-grid" id="choices"></div>
         <div id="reveal-area"></div>
       </div>
     `);
 
     const grid = $("#choices", wrap);
-    choices.forEach((text) => {
-      const btn = el(`<button class="choice-btn ${askInDutch ? "" : "tl"}" data-val="${escape(text)}">${escape(text)}</button>`);
+    choices.forEach(({ val: text, html }) => {
+      const btn = el(`<button class="choice-btn ${askInDutch ? "" : "tl"}" data-val="${escape(text)}"><span>${html}</span></button>`);
       btn.addEventListener("click", () => {
         const isCorrect = text === correctAnswer;
         $$(".choice-btn", grid).forEach((b) => {
@@ -1101,7 +1125,7 @@ const App = (function () {
           if (b.dataset.val === correctAnswer && !isCorrect) b.classList.add("correct");
           if (b !== btn && b.dataset.val !== correctAnswer) b.classList.add("dim");
         });
-        Speech.speak(card.nl, { lang: Lang.cfg().langCode, rate: state.settings.prefRate });
+        Speech.speak(fullForm(card), { lang: Lang.cfg().langCode, rate: state.settings.prefRate });
         showRatingPad(wrap, { auto: isCorrect ? 4 : 0 });
       });
       grid.appendChild(btn);
@@ -1109,7 +1133,7 @@ const App = (function () {
 
     if (askInDutch) {
       const audioBtn = el(`<button class="btn audio voice-action" style="align-self:flex-start">${iconSound()} Hear it</button>`);
-      audioBtn.addEventListener("click", () => Speech.speak(card.nl, { rate: state.settings.prefRate }));
+      audioBtn.addEventListener("click", () => Speech.speak(fullForm(card), { rate: state.settings.prefRate }));
       wrap.insertBefore(audioBtn, grid);
     }
 
@@ -1121,7 +1145,7 @@ const App = (function () {
     const wrap = el(`
       <div class="card lg stack-sm">
         <span class="prompt-line">Listen and type</span>
-        <p class="muted" style="margin:0">You'll hear a ${Lang.cfg().name} word — type what you hear.</p>
+        <p class="muted" style="margin:0">You'll hear a ${Lang.cfg().name} word — type what you hear${hasArticles() && card.gender ? ", with its article" : ""}.</p>
         <div class="row" style="gap: 10px">
           <button class="btn audio voice-action" id="play-btn">${iconSound()} Play</button>
           <button class="btn audio voice-action" id="play-slow">${iconSound()} Slow</button>
@@ -1139,22 +1163,27 @@ const App = (function () {
     const checkBtn = $("#check-btn", wrap);
 
     playBtn.addEventListener("click", () => {
-      Speech.speak(card.nl, { rate: state.settings.prefRate });
+      Speech.speak(fullForm(card), { rate: state.settings.prefRate });
       played = true;
       setTimeout(() => inp.focus(), 200);
     });
-    slowBtn.addEventListener("click", () => Speech.speak(card.nl, { rate: 0.6 }));
+    slowBtn.addEventListener("click", () => Speech.speak(fullForm(card), { rate: 0.6 }));
 
     setTimeout(() => playBtn.click(), 280);
 
     function check() {
-      const ok = answerOk(inp.value, card.nl);
+      const ok = answerOk(inp.value, fullForm(card));
+      // Right noun, wrong or missing article: not a pass, but say exactly what slipped.
+      const nounOnly = !ok && hasArticles() && card.gender
+        && answerOk(inp.value.trim().replace(/^(der|die|das|den|dem|des)\s+/i, ""), card.nl);
       inp.classList.add(ok ? "correct" : "incorrect");
       checkBtn.disabled = true;
       const reveal = $("#reveal-area", wrap);
       reveal.innerHTML = `
         <div class="feedback ${ok ? "correct" : "incorrect"}">
-          ${ok ? "Spot on." : `Correct: <strong>${escape(card.nl)}</strong>`}
+          ${ok ? "Spot on."
+            : nounOnly ? `Right noun — the article is <b>${artSpan(card.gender)}</b>: <b>${fullFormHtml(card)}</b>.`
+            : `Correct: <strong>${fullFormHtml(card)}</strong>`}
         </div>
         <div style="margin-top:8px" class="muted">${escape(card.en)}</div>
       `;
@@ -1163,6 +1192,55 @@ const App = (function () {
     checkBtn.addEventListener("click", check);
     inp.addEventListener("keydown", (e) => { if (e.key === "Enter") check(); });
 
+    return wrap;
+  }
+
+  /* ===== card type: article (German nouns: der, die or das?) ===== */
+  const ARTICLES = ["der", "die", "das"];
+
+  // The three big buttons, shared by the card and the drill. `onPick(article, btn)`
+  // fires once; the buttons are then locked and marked.
+  function articleButtons(card, onPick) {
+    const grid = el(`<div class="art-grid">${ARTICLES.map((g) => `<button class="art-btn art-${g}" data-art="${g}">${g}</button>`).join("")}</div>`);
+    $$(".art-btn", grid).forEach((btn) => btn.addEventListener("click", () => {
+      const isCorrect = btn.dataset.art === card.gender;
+      $$(".art-btn", grid).forEach((b) => {
+        b.disabled = true;
+        if (b === btn) b.classList.add(isCorrect ? "correct" : "incorrect");
+        else if (b.dataset.art === card.gender) b.classList.add("correct");
+        else b.classList.add("dim");
+      });
+      onPick(isCorrect);
+    }));
+    return grid;
+  }
+
+  // Under the revealed word: hear it, its respelling, and the gender rule of thumb if one fits.
+  function articleReveal(card) {
+    return `
+      <button class="btn audio voice-action" data-speak-nl="${escape(fullForm(card))}">${iconSound()} Hear it</button>
+      ${vocabRespell(card)}
+      ${articleHintHtml(card)}`;
+  }
+
+  function cardArticle(card) {
+    const wrap = el(`
+      <div class="card lg stack-sm">
+        <span class="prompt-line">${Lang.cfg().name} · der, die or das?</span>
+        <div class="prompt-word" id="art-word">${escape(card.nl)}</div>
+        <div class="muted art-gloss">${escape(card.en)}</div>
+        <div id="art-grid-slot"></div>
+        <div id="reveal-area"></div>
+      </div>
+    `);
+    $("#art-grid-slot", wrap).appendChild(articleButtons(card, (isCorrect) => {
+      $("#art-word", wrap).innerHTML = fullFormHtml(card);
+      const reveal = $("#reveal-area", wrap);
+      reveal.innerHTML = `<div class="feedback ${isCorrect ? "correct" : "incorrect"}">${isCorrect ? "Right." : `It's ${artSpan(card.gender)}.`}</div>${articleReveal(card)}`;
+      wireSpeakButtons(reveal);
+      Speech.speak(fullForm(card), { lang: Lang.cfg().langCode, rate: state.settings.prefRate });
+      showRatingPad(wrap, { auto: isCorrect ? 4 : 0 });
+    }));
     return wrap;
   }
 
@@ -1415,7 +1493,34 @@ const App = (function () {
   }
 
   /* ===== card content blocks ===== */
+  // Languages whose pack sets `articles` (German) learn every noun with its
+  // article: "der Kaffee". Everywhere else the bare word is the word.
+  function hasArticles() { return !!Lang.cfg().articles; }
+  function fullForm(card) {
+    return hasArticles() && card.gender ? `${card.gender} ${card.nl}` : card.nl;
+  }
+  function artSpan(g) { return `<span class="art art-${escape(g)}">${escape(g)}</span>`; }
+  // fullForm() as HTML: coloured article (a trailing space inside the text keeps copy/paste readable).
+  function fullFormHtml(card) {
+    return hasArticles() && card.gender ? `${artSpan(card.gender)} ${escape(card.nl)}` : escape(card.nl);
+  }
+  // Colour every standalone der/die/das in a plain sentence.
+  function colorArticles(text) {
+    return escape(text).replace(/\b(der|die|das)\b/g, (g) => artSpan(g));
+  }
+  // Respelling line for a vocab card; a hand-set card.respell covers the bare noun only.
+  function vocabRespell(card) {
+    const art = hasArticles() && card.gender;
+    return respellLine(fullForm(card), art && card.respell ? `${respell(card.gender)} ${card.respell}` : card.respell);
+  }
+  // Rule-of-thumb line for a noun's gender (pack-specific), as HTML or "".
+  function articleHintHtml(card) {
+    const fn = Lang.cfg().articleHint;
+    const t = fn ? fn(card) : null;
+    return t ? `<div class="metaling-tip art-hint"><span>${colorArticles(t)}</span></div>` : "";
+  }
   function gloss(card) {
+    if (hasArticles() && card.gender) return fullFormHtml(card);
     if (card.gender) {
       // Trailing space INSIDE the span keeps copy/paste readable: "de tram"
       // not "detram", while CSS margin-right gives the visual gap.
@@ -1477,6 +1582,7 @@ const App = (function () {
   function startDrill(kind) {
     if (kind === "speaking")     currentDrill = makeSpeakingDrill();
     else if (kind === "shadow")  currentDrill = makeShadowDrill();
+    else if (kind === "article") currentDrill = makeArticleDrill();
     else                         currentDrill = Drills.makeDrill(kind, kind === "minpair" ? 12 : 10);
     navigate("drill");
   }
@@ -1486,6 +1592,7 @@ const App = (function () {
     if (currentDrill.kind === "speaking") return renderSpeakingQuestion();
     if (currentDrill.kind === "shadow")   return renderShadowQuestion();
     if (currentDrill.kind === "minpair")  return renderMinPairQuestion();
+    if (currentDrill.kind === "article")  return renderArticleQuestion();
     return renderTextDrillQuestion();
   }
 
@@ -1575,6 +1682,7 @@ const App = (function () {
       speaking: `Speaking · say it in ${L}`,
       shadow: "Shadowing · repeat after the voice",
       minpair: "Minimal pairs · which did you hear?",
+      article: "Articles · der, die or das?",
     })[kind] || kind;
   }
 
@@ -1846,6 +1954,56 @@ const App = (function () {
       if (!ok) status.textContent = "Record yourself, then play the answer and compare.";
     });
 
+    return wrap;
+  }
+
+  // ----- Articles drill (German): nouns in a rapid stream, tap der / die / das -----
+  function makeArticleDrill() {
+    const pool = VOCAB.filter((v) => v.pos === "noun" && v.gender);
+    const queue = shuffle(pool).slice(0, 12).map((c) => ({
+      kind: "article", card: c, answer: fullForm(c), hint: c.en,
+    }));
+    return { kind: "article", total: queue.length, queue, idx: 0, correct: 0, wrongAnswers: [] };
+  }
+
+  function renderArticleQuestion() {
+    const d = currentDrill;
+    const q = d.queue[d.idx];
+    const card = q.card;
+    const wrap = el(`
+      <div class="view view-drill">
+        ${focusBar(d.idx, d.total, "quit-drill", "drill")}
+        <div class="card lg drill-card">
+          <span class="eyebrow">${drillLabel(d.kind)}</span>
+          <div class="drill-prompt">
+            <div class="drill-big art-word" id="art-word">${escape(card.nl)}</div>
+            <div class="drill-sub">${escape(card.en)}</div>
+          </div>
+          <div id="art-grid-slot"></div>
+          <div id="drill-feedback"></div>
+        </div>
+      </div>
+    `);
+    function nextOrFinish() {
+      if (Drills.advance(d)) finishDrill();
+      else render();
+    }
+    $("#art-grid-slot", wrap).appendChild(articleButtons(card, (isCorrect) => {
+      if (isCorrect) d.correct += 1;
+      else d.wrongAnswers.push({ q, gave: "" });
+      $("#art-word", wrap).innerHTML = fullFormHtml(card);
+      const fb = $("#drill-feedback", wrap);
+      fb.innerHTML = `
+        <div class="feedback ${isCorrect ? "correct" : "incorrect"}">${isCorrect ? "Correct." : `It's ${artSpan(card.gender)}.`}</div>
+        ${articleReveal(card)}
+        <div style="margin-top:6px"><button class="btn primary full" id="drill-next">Next ${arrowFwd()}</button></div>
+      `;
+      wireSpeakButtons(fb);
+      Speech.speak(fullForm(card), { lang: Lang.cfg().langCode, rate: 0.9 });
+      $("#drill-next", fb).addEventListener("click", nextOrFinish);
+      $("#drill-next", fb).focus();
+    }));
+    $("#quit-drill", wrap).addEventListener("click", () => { endDrill(); });
     return wrap;
   }
 
@@ -2373,6 +2531,7 @@ const App = (function () {
               <button class="btn primary" id="study-theme">Study this theme</button>
               <button class="btn" id="challenge-theme" title="Test yourself before studying — even failed pretests boost later retention">Challenge me · 5</button>
             </div>` })}
+          ${hasArticles() ? `<p class="art-legend muted">Every noun comes with its article: ${ARTICLES.map(artSpan).join(" · ")}</p>` : ""}
           <div class="stack-sm" id="vocab-list"></div>
         </div>
       `);
@@ -2384,11 +2543,11 @@ const App = (function () {
           <div class="list-item vocab-item">
             <div class="vocab-top">
               <div class="vocab-word-text">
-                <span class="li-title nl-text">${v.gender ? `<span class="vocab-gender">${v.gender}</span> ` : ""}${escape(v.nl)}</span>
+                <span class="li-title nl-text">${hasArticles() && v.gender ? fullFormHtml(v) : `${v.gender ? `<span class="vocab-gender">${v.gender}</span> ` : ""}${escape(v.nl)}`}</span>
                 <span class="li-sub">${escape(v.en)}</span>
               </div>
               <span class="chip ${m === "mature" ? "success" : m === "young" ? "primary" : ""}">${({ mature: "well known", young: "getting there", learning: "learning", new: "new" })[m] || m}</span>
-              <button class="voice-btn" data-speak-nl="${escape(v.nl)}" aria-label="Hear ${escape(v.nl)}">${iconSound()}</button>
+              <button class="voice-btn" data-speak-nl="${escape(fullForm(v))}" aria-label="Hear ${escape(fullForm(v))}">${iconSound()}</button>
             </div>
             ${v.example ? `
               <div class="vocab-ex">

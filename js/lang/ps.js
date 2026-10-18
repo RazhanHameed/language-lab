@@ -260,12 +260,12 @@
     transliterate,
     answerMatches,
     inputHint: "Type in Pashto script or Latin letters (e.g. manana)…",
-    guideKey: "Guide letters: ā as in 'father' · a short, like the u in 'cup' · ə the weak 'uh' of 'about' · e as in 'they' · i 'ee' · o 'oh' · u 'oo' · ay as in 'aisle' · əy 'uh-ee' · ṭ ḍ ṛ ṇ = tongue curled back · ṣh ẓh = retroflex sh / zh (Kandahari; Peshawar says kh / g) · kh as in 'loch' · gh its gargled partner · ts, dz single sounds · zh as in 'measure' · q a deep k. The accent marks the stressed syllable (wə́likə). Short vowels are not written in Pashto script; the guide restores them.",
+    guideKey: "How to read the guide: hyphens split the syllables, CAPITALS mark the stressed syllable, and letters sound as in English. kh = ch in 'loch' · gh = its gargled partner · zh = s in 'measure' · ay = 'ay' in 'day' · ee = 'ee' in 'see' · oo = 'oo' in 'moon' · uh = the weak vowel of 'about' · ts, dz = single sounds. Short vowels are not written in Pashto script; the guide restores them.",
     onboarding: {
       typing: "Pashto script or Latin letters both work (e.g. manana).",
       tourNote: "Pashto is written right to left. The app itself stays in English and reads left to right; only the Pashto text runs right to left.",
       tips: [
-        { icon: "🔤", text: "Under every Pashto word you'll see a small Latin reading guide with the stressed syllable marked. Read it aloud, and tap the speaker to hear how it really sounds." },
+        { icon: "🔤", text: "Under every Pashto word you'll see a small Latin reading guide: hyphens split the syllables and CAPITALS mark the stressed one. Read it aloud, and tap the speaker to hear how it really sounds." },
         { icon: "⌨️", text: "Type answers in Latin letters (manana) or in Pashto script. Both count as correct." },
         { icon: "⚙️", text: "Want the guide off once you can read? Stats, then Settings, then Reading guide." },
         { icon: "🎙️", text: "Speaking and Shadowing need speech recognition that's good enough for Pashto, which doesn't exist yet, so they're hidden. Everything else works." },

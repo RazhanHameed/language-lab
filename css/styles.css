@@ -28,6 +28,9 @@
   --accent: #d97706;           /* warm dutch orange: fills, borders, decoration */
   --accent-text: #9a4a05;      /* the same hue, dark enough to read as text */
   --accent-soft: rgba(217, 119, 6, 0.10);
+  --g-der: #1f5fd0;            /* German articles: der blue, die red, das green */
+  --g-die: #c42b2b;
+  --g-das: #1c7a3f;
   --on-accent: #1d1203;
   --success: #146b42;
   --success-soft: rgba(21, 127, 77, 0.10);
@@ -89,6 +92,9 @@
   --error-soft: rgba(248, 113, 113, 0.10);
   --focus: #8cb6ff;
   --link: #8cb6ff;
+  --g-der: #6da3ff;
+  --g-die: #f87171;
+  --g-das: #34d399;
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.35);
   --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.5);
@@ -121,6 +127,9 @@
     --error-soft: rgba(248, 113, 113, 0.10);
     --focus: #8cb6ff;
     --link: #8cb6ff;
+    --g-der: #6da3ff;
+    --g-die: #f87171;
+    --g-das: #34d399;
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
     --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.35);
     --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.5);
@@ -644,6 +653,7 @@ ruby.guide rt {
   font-weight: 400;
   font-style: normal;
   letter-spacing: 0.01em;
+  text-transform: none;
   color: var(--text-subtle);
   direction: ltr;
   unicode-bidi: isolate;
@@ -657,7 +667,9 @@ ruby.guide rt {
   font-size: 0.8125rem;
   color: var(--text-subtle);
   font-style: italic;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;   /* the stressed syllable is in CAPITALS: keep them from crowding */
+  text-transform: none;
+  font-weight: 500;
   margin-top: 4px;
   font-family: var(--sans);
 }
@@ -830,6 +842,27 @@ ruby.guide rt {
 .vocab-top { display: flex; align-items: center; gap: 10px; }
 .vocab-word-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .vocab-item .li-title { font-size: var(--tl-md); }
+/* German articles, colour-coded by gender */
+.art { font-family: var(--sans); font-weight: 700; }
+.art-der { color: var(--g-der); }
+.art-die { color: var(--g-die); }
+.art-das { color: var(--g-das); }
+.art-legend { margin: 0; font-size: 0.8125rem; }
+.art-gloss { font-size: 0.9375rem; margin-top: -4px; }
+.art-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 8px; }
+.art-btn {
+  min-height: 64px; font-family: var(--sans); font-size: 1.5rem; font-weight: 700;
+  background: var(--surface); border: 2px solid var(--border-strong); border-radius: 14px; cursor: pointer;
+}
+.art-btn.art-der { color: var(--g-der); border-color: var(--g-der); }
+.art-btn.art-die { color: var(--g-die); border-color: var(--g-die); }
+.art-btn.art-das { color: var(--g-das); border-color: var(--g-das); }
+.art-btn:hover:not(:disabled) { background: var(--surface-2); }
+.art-btn.correct { background: var(--success-soft); }
+.art-btn.incorrect { background: var(--error-soft); text-decoration: line-through; }
+.art-btn.dim { opacity: 0.4; }
+.art-hint { margin-top: 8px; }
+.drill-big.art-word { font-size: clamp(2rem, 9vw, 3rem); }
 .vocab-gender { color: var(--text-muted); font-family: var(--sans); font-weight: 400; }
 .vocab-item .li-sub { margin-top: 0; }
 .vocab-ex { display: flex; align-items: center; gap: 10px; padding-top: 8px; border-top: 1px dashed var(--border); }

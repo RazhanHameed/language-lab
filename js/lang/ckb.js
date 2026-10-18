@@ -365,12 +365,12 @@
     transliterate,
     answerMatches,
     inputHint: "Type in Kurdish script or Latin letters (e.g. siław)…",
-    guideKey: "Guide letters: ê = 'ay' · î = 'ee' · û = 'oo' · e as in 'bed' · i as in 'bit' · c = 'j' · ç = 'ch' · ş = 'sh' · j = 'zh' · x = 'kh' · q = deep k · ř = rolled r · ł = dark l · ḧ = breathy h · ẍ = French r. The short i is never written in Sorani script — the guide restores it.",
+    guideKey: "How to read the guide: hyphens split the syllables, CAPITALS mark the stressed syllable, and letters sound as in English. kh = ch in 'loch' · zh = s in 'measure' · ay = 'ay' in 'day' · ee = 'ee' in 'see' · oo = 'oo' in 'moon'. The short i is never written in Sorani script — the guide restores it.",
     onboarding: {
       typing: "Kurdish script or Latin letters both work (e.g. siław).",
       tourNote: "Sorani is written right to left. The app itself stays in English and reads left to right; only the Sorani text runs right to left.",
       tips: [
-        { icon: "🔤", text: "Under every Kurdish word you'll see a small Latin reading guide. Read it aloud, and tap the speaker to hear how it really sounds." },
+        { icon: "🔤", text: "Under every Kurdish word you'll see a small Latin reading guide: hyphens split the syllables and CAPITALS mark the stressed one. Read it aloud, and tap the speaker to hear how it really sounds." },
         { icon: "⌨️", text: "Type answers in Latin letters (siław) or in Kurdish script. Both count as correct." },
         { icon: "⚙️", text: "Want the guide off once you can read? Stats, then Settings, then Reading guide." },
         { icon: "🎙️", text: "Speaking and Shadowing need speech recognition, which Kurdish doesn't have yet, so they're hidden. Everything else works." },

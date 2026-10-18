@@ -58,6 +58,8 @@ for (const cfg of Lang.list()) {
 
   (d.VOCAB || []).forEach((v) => {
     add(V, lang, v.nl);
+    // Languages that teach articles (German) speak the noun with it: "der Kaffee".
+    if (cfg.articles && v.gender) add(V, lang, `${v.gender} ${v.nl}`);
     if (v.example && v.example.nl) add(V, lang, v.example.nl);
   });
   (d.SENTENCES || []).forEach((s) => add(V, lang, s.nl));
